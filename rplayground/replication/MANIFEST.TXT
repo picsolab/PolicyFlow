@@ -1,0 +1,16 @@
+dhb2015apsr-networks.csv (application/vnd.ms-excel) 2495046 bytes.
+gaming.replication.R (text/plain; charset=US-ASCII) 10470 bytes.
+gaming.tab (text/tab-separated-values) 549008 bytes.
+infer_networks.R (text/plain; charset=US-ASCII) 14810 bytes.
+lottery.replication.R (text/plain; charset=US-ASCII) 9631 bytes.
+lottery.tab (text/tab-separated-values) 39986 bytes.
+mkdata-network02-statehood.tab (text/tab-separated-values) 1556 bytes.
+mkdata-network02.tab (text/tab-separated-values) 36787 bytes.
+mkdata-pooled01.tab (text/tab-separated-values) 66358466 bytes.
+pooled.replication.R (text/plain; charset=US-ASCII) 9654 bytes.
+punishment.replication.R (text/plain; charset=US-ASCII) 10769 bytes.
+punishment.tab (text/tab-separated-values) 241060 bytes.
+smoking.replication.R (text/plain; charset=US-ASCII) 12255 bytes.
+smoking.tab (text/tab-separated-values) 906474 bytes.
+dhb2015apsr-modellinks-nomiss.tab (text/tab-separated-values) 23388802 bytes.
+dhb2015apsr-modellinks-QAPiters.R (text/plain; charset=US-ASCII) 3033 bytes.
