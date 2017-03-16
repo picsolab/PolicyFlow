@@ -17,17 +17,47 @@
 # RStudio files
 .Rproj.user/
 
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
+# See http://help.github.com/ignore-files/ for more about ignoring files.
 
-# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
-.httr-oauth
+# compiled output
+/dist
+/tmp
 
-# knitr and R markdown default cache directories
-/*_cache/
-/cache/
+# dependencies
+/node_modules
 
-# Temporary files created by R markdown
-*.utf8.md
-*.knit.md
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage/*
+/libpeerconnection.log
+npm-debug.log
+testem.log
+/typings
+
+# e2e
+/e2e/*.js
+/e2e/*.map
+
+#System Files
+.DS_Store
+Thumbs.db
+
+# npm log
+npm-debug.log
