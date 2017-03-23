@@ -1,0 +1,93 @@
+@import url("./variables.css");
+
+/*
+ * Main components
+ */
+
+#content-wrapper {
+    margin-top: 50px;
+}
+
+/*
+ * Vis panels
+ */
+
+/*policy network panel*/
+
+#policy-network-wrapper {
+    background-color: lightgrey;
+    height: 600px;
+}
+
+#policy-cascade-wrapper {
+    background-color: darkgray;
+    height: 600px;
+}
+
+#stat-bar-wrapper {
+    background-color: grey;
+    height: 100px;
+}
+
+/*
+ * Sidebar
+ */
+
+
+/* Hide for mobile, show later */
+
+.sidebar {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 51px;
+        bottom: 0;
+        left: 0;
+        z-index: 1000;
+        display: block;
+        padding: 20px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        /* Scrollable contents if viewport is shorter than content. */
+        background-color: var(--color-sidebar-bg);
+        border-right: 1px solid #eee;
+    }
+}
+
+.breadcrumb {
+    margin-bottom: 0;
+}
+
+.select-wrapper {
+    padding-left: 15px;
+    padding-right: 15px;
+    width: 100%;
+}
+
+.bootstrap-select {
+    width: 100% !important;
+}
+
+/* Sidebar navigation */
+
+.nav-sidebar {
+    margin-right: -21px;
+    /* 20px padding + 1px border */
+    margin-bottom: 20px;
+    margin-left: -20px;
+}
+
+.nav-sidebar>li>a {
+    padding-right: 20px;
+    padding-left: 20px;
+}
+
+.nav-sidebar>.active>a,
+.nav-sidebar>.active>a:hover,
+.nav-sidebar>.active>a:focus {
+    color: #fff;
+    background-color: #428bca;
+}

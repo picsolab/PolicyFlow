@@ -1,0 +1,74 @@
+{% extends "layout.html" %} {% block title %} <span>Visualization</span> {% endblock %} {% block body %}
+<!-- Some templates used by the views -->
+<script type="text/template" id="tweet-widget-template">
+
+</script>
+<div class="container-fluid" id="content-wrapper">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <div class="nav nav-sidebar" id="subject-wrapper">
+                <ol class="breadcrumb">
+                    <li class="active">
+                        <h4>Subject</h4>
+                    </li>
+                </ol>
+                <div class="select-wrapper" id="subject-select-wrapper">
+                    <select name="subject-select" id="subject-select" class="selectpicker show-tick" data-live-search="true"></select>
+                </div>
+            </div>
+            <div class="nav nav-sidebar" id="policy-wrapper">
+                <ol class="breadcrumb">
+                    <li class="active">
+                        <h4>Policy</h4>
+                    </li>
+                </ol>
+                <div class="select-wrapper" id="policy-select-wrapper">
+                    <select name="subject-select" id="policy-select" class="selectpicker show-tick" data-live-search="true"></select>
+                </div>
+            </div>
+            <div class="nav nav-sidebar" id="meta-wrapper">
+                <ol class="breadcrumb">
+                    <li class="active">
+                        <h4>Metadata</h4>
+                    </li>
+                </ol>
+                <div id="metadata-radio" class="select-wrapper btn-group-vertical" role="group" data-toggle="buttons" aria-label="...">
+                    <label class="btn btn-default active">
+                        <input type="radio" name="metadata" id="option-per-capita-income" value="perCapitaIncome" autocomplete="off" checked> Per Capita Income
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="metadata" id="option-minority-diversity" value="minorityDiversity" autocomplete="off"> Minority Diversity
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="metadata" id="option-legislative-professionalism" value="legislativeProfessionalism" autocomplete="off"> Legislative Professionalism
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="metadata" id="option-citizen-ideology" value="citizenIdeology" autocomplete="off"> Citizen Ideology
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="metadata" id="option-total-population" value="totalPopulation" autocomplete="off"> Total Population
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="metadata" id="option-population-density" value="populationDensity" autocomplete="off"> Population Density
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main row">
+            <div class="page-header">
+                <h2 id="page-header"></h2>
+            </div>
+            <div id="stat-bar-wrapper" class="col-sm-12 col-md-12 col-lg-12">
+                <svg id="svg-stat-bar-view"></svg>
+            </div>
+            <div id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
+                <svg id="svg-network-view"></svg>
+            </div>
+            <div id="policy-cascade-wrapper" class="col-sm-12 col-md-3 col-lg-3">
+                <svg id="svg-cascade-view"></svg>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

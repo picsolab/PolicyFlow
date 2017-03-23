@@ -6,17 +6,17 @@ var helpers = require('./helpers');
 const ENV = process.env.ENV = process.env.NODE_ENV = 'development';
 
 module.exports = webpackMerge(commonConfig, {
-    devtool: 'cheap-module-eval-source-map',
+    // devtool: 'cheap-module-eval-source-map',
 
     output: {
-        path: helpers.root('dist'),
-        publicPath: 'http://localhost:8080/',
-        filename: '[name].js',
+        path: helpers.root('static'),
+        publicPath: 'http://localhost:8001/',
+        filename: '[name].bundle.js',
         chunkFilename: '[id].chunk.js'
     },
 
     plugins: [
-        new ExtractTextPlugin('[name].css')
+        new ExtractTextPlugin('[name].bundle.css')
     ],
 
     devServer: {

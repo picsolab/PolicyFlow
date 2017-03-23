@@ -5,8 +5,8 @@ var helpers = require('./helpers');
 
 module.exports = {
     entry: {
-        'vendor': './src/vendor.ts',
-        'app': './src/main.ts'
+        app: './src/main.js',
+        vendor: './src/vendor.js'
     },
 
     resolve: {
@@ -15,12 +15,8 @@ module.exports = {
 
     module: {
         rules: [{
-                test: /\.html$/,
-                loader: 'html-loader'
-            },
-            {
                 test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)$/,
-                loader: 'file-loader?name=assets/[name].[hash].[ext]'
+                loader: 'file-loader?name=static/assets/[name].[hash].[ext]'
             },
             {
                 test: /\.css$/,
@@ -30,7 +26,7 @@ module.exports = {
             {
                 test: /\.css$/,
                 include: helpers.root('src', 'app'),
-                loader: 'raw-loader'
+                loader: ExtractTextPlugin.extract({ fallbackLoader: 'style-loader', loader: 'css-loader' })
             }
         ]
     },
@@ -38,11 +34,16 @@ module.exports = {
     plugins: [
 
         new webpack.optimize.CommonsChunkPlugin({
-            name: ['app', 'vendor']
+            name: ['app', 'vendor'],
+            minChunks: Infinity
         }),
-
-        new HtmlWebpackPlugin({
-            template: 'src/index.html'
+        new webpack.ProvidePlugin({
+            $: 'jquery',
+            jQuery: 'jquery',
+            _: 'lodash',
+            d3: 'd3',
+            Backbone: 'backbone'
         })
+
     ]
 };
