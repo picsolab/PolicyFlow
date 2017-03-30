@@ -1,3 +1,6 @@
 :root {
-    --color-sidebar-bg: #f5f5f5
+    --color-sidebar-bg: #f5f5f5;
+    --color-trans-in: #134F7F;
+    --color-trans-out: #73C1FF;
+    --color-pop-up: #666;
 }

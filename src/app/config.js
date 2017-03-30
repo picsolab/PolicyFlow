@@ -405,6 +405,54 @@ const Config = {
             'workcom': 'Workmens’ Compensation',
             'zerotol': 'Zero Tolerance (<.02 BAC) for Underage Drinking'
         }
+    },
+    mock: {
+        cascade1: {
+            policyId: 'equalpay',
+            policyName: 'Equal Pay For Females',
+            policySubjectId: 9,
+            policySubjectName: 'Labor',
+            policyStart: '1919',
+            policyEnd: '1966',
+            maxCount: 4,
+            totalCount: 27,
+            detail: {
+                '1919': ["MI", "MT"],
+                '1943': ["WA"],
+                '1944': ["NY", "IL"],
+                '1945': ["MA"],
+                '1946': ["RI"],
+                '1947': ["NH"],
+                '1948': ["PA"],
+                '1949': ["CT", "ME", "CA"],
+                '1952': ["NJ"],
+                '1955': ["AR", "CO", "OR"],
+                '1959': ["OH", "WY"],
+                '1962': ["AZ"],
+                '1963': ["MO"],
+                '1965': ["ND", "OK", "WV"],
+                '1966': ["SD", "GA", "KY", "MD"]
+            }
+        },
+        cascade2: {
+            policyId: 'soil',
+            policyName: 'Soil Conservation Districts',
+            policySubjectId: 3,
+            policySubjectName: 'Conservation',
+            policyStart: '1937',
+            policyEnd: '1945',
+            maxCount: 21,
+            totalCount: 49,
+            detail: {
+                '1937': ["NJ", "PA", "IN", "MI", "WI", "KS", "MN", "NE", "ND", "SD", "AR", "FL", "GA", "NC", "SC", "MD", "OK", "CO", "NV", "NM", "UT"],
+                '1938': ["VA", "LA", "MS", "CA"],
+                '1939': ["VT", "IL", "IA", "AL", "TX", "TN", "WV", "ID", "MT", "OR", "WA"],
+                '1940': ["NY", "KY"],
+                '1941': ["ME", "OH", "AZ", "WY"],
+                '1943': ["RI", "DE", "MO"],
+                '1945': ["CT", "MA", "NH"]
+            }
+        }
     }
 };
 

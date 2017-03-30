@@ -9,25 +9,39 @@ let Router = require('./router.js');
 
 let conditions = new Model.Conditions(),
     policyModel = new Model.PolicyModel(),
-    policyView = new View.PolicyView({
+    networkModel = new Model.NetworkModel(),
+    stateModel = new Model.StateModel(),
+    appRouter = new Router.AppRouter();
+let policyView = new View.PolicyView({
         model: policyModel
     }),
-    networkModel = new Model.NetworkModel(),
     networkView = new View.NetworkView({
         model: networkModel
     }),
-    stateModel = new Model.StateModel(),
-    statBarView = new View.StatBarView(),
-    appRouter = new Router.AppRouter();
+    statBarView = new View.StatBarView();
 
 $(document).ready(() => {
     initDom();
     bindEvents();
+    policyModel.set(conf.mock.cascade1);
+    initRendering();
+
     conditions.on('change', () => {
-        console.log(conditions.attributes);
         updateHeader();
+        if (conditions.hasChanged('policy')) {
+            // policyModel.populate(conditions);
+            policyModel.set(conf.mock.cascade2);
+        }
+    });
+
+    policyModel.on('change', () => {
+        policyView.render();
     });
 });
+
+function initRendering() {
+    policyView.render();
+}
 
 function bindEvents() {
     // selected subject to conditions
