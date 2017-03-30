@@ -18,12 +18,19 @@ let policyView = new View.PolicyView({
     networkView = new View.NetworkView({
         model: networkModel
     }),
-    statBarView = new View.StatBarView();
+    statBarView = new View.StatBarView({
+        model: stateModel
+    });
 
 $(document).ready(() => {
     initDom();
     bindEvents();
+
+    // BEGIN: for demo
     policyModel.set(conf.mock.cascade1);
+    stateModel.set('detail', conf.mock.bar);
+    // END: for demo
+
     initRendering();
 
     conditions.on('change', () => {
@@ -41,6 +48,7 @@ $(document).ready(() => {
 
 function initRendering() {
     policyView.render();
+    statBarView.render();
 }
 
 function bindEvents() {

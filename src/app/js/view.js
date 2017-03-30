@@ -196,7 +196,44 @@ let NetworkView = Backbone.View.extend({
 
 let StatBarView = Backbone.View.extend({
     el: '#svg-stat-bar-view',
-    render() {}
+    render() {
+        //prepare params
+        let _self = this,
+            data = _self.model.get("detail");
+
+        // set the dimensions of the canvas
+        var svg = d3.select(_self.el)
+            .attr("height", "100")
+            .attr("width", "1200");
+
+        // load the data
+        data.forEach(function(d) {
+            d.state = d.state;
+            d.num = +d.num;
+        });
+
+        // Add bar chart
+        svg.selectAll("bar")
+            .data(data)
+            .enter().append("rect")
+            .attr("width", "20")
+            .attr("x", function(d, i) { return (i * 22) })
+            .attr("y", "0")
+            .attr("fill", "#bcbddc")
+            .attr("height", function(d, i) { return (d.num * 6) });
+
+        svg.selectAll("text")
+            .data(data)
+            .enter()
+            .append("text")
+            .text(function(d) { return d.state; })
+            .attr("x", function(d, i) { return (i * 22) })
+            .attr("y", function(d, i) { return (10 + d.num * 6) })
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "11px")
+            .attr("fill", "black");
+
+    }
 });
 
 module.exports = {

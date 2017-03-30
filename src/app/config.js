@@ -452,7 +452,204 @@ const Config = {
                 '1943': ["RI", "DE", "MO"],
                 '1945': ["CT", "MA", "NH"]
             }
-        }
+        },
+        bar: [{
+                "state": "AL",
+                "num": 3
+            },
+            {
+                "state": "AK",
+                "num": 4
+            },
+            {
+                "state": "AZ",
+                "num": 1
+            },
+            {
+                "state": "AR",
+                "num": 2
+            },
+            {
+                "state": "CA",
+                "num": 10
+            },
+            {
+                "state": "CO",
+                "num": 1
+            },
+            {
+                "state": "CT",
+                "num": 3
+            },
+            {
+                "state": "DE",
+                "num": 1
+            },
+            {
+                "state": "FL",
+                "num": 6
+            },
+            {
+                "state": "GA",
+                "num": 1
+            },
+            {
+                "state": "HI",
+                "num": 2
+            },
+            {
+                "state": "ID",
+                "num": 2
+            },
+            {
+                "state": "IL",
+                "num": 5
+            },
+            {
+                "state": "IN",
+                "num": 3
+            },
+            {
+                "state": "IA",
+                "num": 11
+            },
+            {
+                "state": "KS",
+                "num": 4
+            },
+            {
+                "state": "KY",
+                "num": 2
+            },
+            {
+                "state": "LA",
+                "num": 7
+            },
+            {
+                "state": "ME",
+                "num": 5
+            },
+            {
+                "state": "MD",
+                "num": 5
+            },
+            {
+                "state": "MA",
+                "num": 3
+            },
+            {
+                "state": "MI",
+                "num": 4
+            },
+            {
+                "state": "MN",
+                "num": 2
+            },
+            {
+                "state": "MS",
+                "num": 6
+            },
+            {
+                "state": "MO",
+                "num": 1
+            },
+            {
+                "state": "MT",
+                "num": 2
+            },
+            {
+                "state": "NV",
+                "num": 1
+            },
+            {
+                "state": "NH",
+                "num": 3
+            },
+            {
+                "state": "NJ",
+                "num": 4
+            },
+            {
+                "state": "NM",
+                "num": 3
+            },
+            {
+                "state": "NY",
+                "num": 13
+            },
+            {
+                "state": "NC",
+                "num": 2
+            },
+            {
+                "state": "ND",
+                "num": 2
+            },
+            {
+                "state": "OH",
+                "num": 4
+            },
+            {
+                "state": "OK",
+                "num": 5
+            },
+            {
+                "state": "OR",
+                "num": 5
+            },
+            {
+                "state": "PA",
+                "num": 1
+            },
+            {
+                "state": "RI",
+                "num": 3
+            },
+            {
+                "state": "SC",
+                "num": 5
+            },
+            {
+                "state": "SD",
+                "num": 8
+            },
+            {
+                "state": "TN",
+                "num": 2
+            },
+            {
+                "state": "TX",
+                "num": 9
+            },
+            {
+                "state": "UT",
+                "num": 2
+            },
+            {
+                "state": "VT",
+                "num": 4
+            },
+            {
+                "state": "VA",
+                "num": 3
+            },
+            {
+                "state": "WA",
+                "num": 4
+            },
+            {
+                "state": "WV",
+                "num": 2
+            },
+            {
+                "state": "WI",
+                "num": 1
+            },
+            {
+                "state": "WY",
+                "num": 1
+            }
+        ]
     }
 };
 

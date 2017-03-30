@@ -69,8 +69,11 @@
 /*stat-bar-panel*/
 
 #stat-bar-wrapper {
-    background-color: grey;
     height: 100px;
+}
+
+.bar:hover {
+    fill: var(--color-bar-hover);
 }
 
 
