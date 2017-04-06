@@ -206,6 +206,8 @@ let NetworkView = Backbone.View.extend({
         var svg = d3.select(_self.el)
             .attr("width", 850)
             .attr("height", 600)
+            .attr('preserveAspectRatio', 'xMinYMin meet')
+            .attr('viewBox', ("0 0 850 850"))
             .attr("class", "bubble");
 
         var projection = d3.geo.albersUsa();

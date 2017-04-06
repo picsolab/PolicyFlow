@@ -24,7 +24,6 @@ let policyView = new View.PolicyView({
     });
 
 $(document).ready(() => {
-    initDom();
 
     policyModel.on('change', () => {
         policyView.render();
@@ -45,6 +44,7 @@ $(document).ready(() => {
         }
     });
 
+    initDom();
     initRendering();
 });
 
@@ -56,19 +56,32 @@ function initRendering() {
     // END: for demo
 
     policyModel.fetch();
-    policyOptionsModel.fetch();
 }
 
 function bindEvents() {
     // selected subject to conditions
     $('#subject-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        conditions.set('subject', conf.bases.subject.list[clickedIndex]);
-        // console.log($(event.target).find('option')[clickedIndex].value);
+        let subjectList = Object.keys(policyOptionsModel.get("policies")),
+            selectedSubject = $(event.target).find('option')[clickedIndex].value,
+            policies = policyOptionsModel.get("policies"),
+            pipe = policyOptionsModel.get("pipe");
+
+        conditions.set('subject', subjectList[clickedIndex], { silent: true });
+
+        // reload policy select drop down
+        $('#policy-select option').remove();
+        policies[selectedSubject].forEach(policyId => {
+            $('#policy-select').append("<option value='" + policyId + "'>" + pipe[policyId] + "</option>");
+        });
+        $('#policy-select').selectpicker('val', policies[selectedSubject][0]);
+        $('#policy-select').selectpicker('refresh');
+        conditions.set('policy', policies[selectedSubject][0]);
+
     });
 
     // selected policy to conditions
     $('#policy-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        conditions.set('policy', conf.bases.policy.list[clickedIndex]);
+        conditions.set('policy', policyOptionsModel.get("policies")[conditions.get("subject")][clickedIndex]);
     });
 
     // selected metadata to conditions
@@ -78,23 +91,37 @@ function bindEvents() {
 }
 
 function initDom() {
-    // headers
-    let headerStr = conf.pipe.policy[conf.bases.policy.default] + "&nbsp;<small>" + conf.bases.subject.default+"</small>";
-    $('#page-header').html(headerStr);
-
-    // subject select drop down
-    conf.bases.subject.list.forEach(option => {
-        $('#subject-select').append("<option value='" + option + "'>" + option + "</option>");
+    $('#subject-select').selectpicker({
+        "noneSelectedText": "Loading..."
     });
-    $('#subject-select').val(conf.bases.subject.default);
-    $('#subject-select').selectpicker('refresh');
-
-    // policy select drop down
-    conf.bases.policy.list.forEach(option => {
-        $('#policy-select').append("<option value='" + option + "'>" + conf.pipe.policy[option] + "</option>");
+    $('#policy-select').selectpicker({
+        "noneSelectedText": "Loading..."
     });
-    $('#policy-select').val(conf.bases.policy.default);
-    $('#policy-select').selectpicker('refresh');
+
+    policyOptionsModel.fetch({
+        success(model, response, options) {
+            console.log(model);
+            let policies = model.get("policies")
+            let pipe = model.get("pipe");
+
+            // subject select drop down
+            Object.keys(policies).forEach(subjectName => {
+                $('#subject-select').append("<option value='" + subjectName + "'>" + (subjectName + " (" + policies[subjectName].length + ")") + "</option>");
+            });
+            $('#subject-select').val(conf.bases.subject.default);
+            $('#subject-select').selectpicker('refresh');
+
+            // policy select drop down
+            policies[conf.bases.subject.default].forEach(policyId => {
+                $('#policy-select').append("<option value='" + policyId + "'>" + pipe[policyId] + "</option>");
+            });
+            $('#policy-select').val(conf.bases.policy.default);
+            $('#policy-select').selectpicker('refresh');
+
+            // headers
+            updateHeader();
+        }
+    });
 
     bindEvents();
 }
@@ -105,6 +132,6 @@ function initDom() {
 
 // Update page header when conditions change
 function updateHeader() {
-    let headerStr = conf.pipe.policy[conditions.get("policy")] + "&nbsp;<small>" + conditions.get("subject") + "</small>";
+    let headerStr = policyOptionsModel.get("pipe")[conditions.get("policy")] + "&nbsp;<small>" + conditions.get("subject") + "</small>";
     $('#page-header').html(headerStr);
 }

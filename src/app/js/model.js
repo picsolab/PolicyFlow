@@ -6,7 +6,7 @@ let Conditions = Backbone.Model.extend({
 });
 
 let PolicyOptionsModel = Backbone.Model.extend({
-    url: '/api/policies'
+    url: '/api/subjects'
 });
 
 let PolicyModel = Backbone.Model.extend({

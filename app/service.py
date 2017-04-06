@@ -35,26 +35,15 @@ class PageService(Service):
     @app.route("/api/subjects", methods=["GET"])
     def get_subject_list():
         """get all subject from database."""
-        subject_list = page_dao.get_all_subjects()
-        g.fn = json.dumps(subject_list)
-        print ("Request headers", request.headers, g.fn)
-        return json.dumps(subject_list)
-
-    @staticmethod
-    @app.route("/api/policies", methods=["GET"])
-    def get_policy_list():
-        """get all policies and map from policyId to policyName from database."""
-        policies = page_dao.get_all_policies()
-        return json.dumps(policies)
+        return json.dumps(page_dao.get_all_subjects())
 
 
 class PolicyService(Service):
     """policy service handling requests from policy view"""
-    def __init(self):
+    def __init__(self):
         pass
 
     @staticmethod
     @app.route("/api/policy/<policyId>")
     def get_policy_by_id(policyId):
-        policyObj = policy_dao.get_policy_by_id(policyId)
-        return json.dumps(policyObj)
+        return json.dumps(policy_dao.get_policy_by_id(policyId))
