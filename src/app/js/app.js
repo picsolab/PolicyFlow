@@ -26,13 +26,17 @@ let policyView = new View.PolicyView({
 $(document).ready(() => {
     initDom();
 
-    // BEGIN: for demo
-    stateModel.set('detail', conf.mock.bar);
-    // END: for demo
-
     policyModel.on('change', () => {
         policyView.render();
     });
+
+    stateModel.on('change', () => {
+        statBarView.render();
+    });
+
+    networkModel.on('change', () => {
+        networkView.render();
+    })
 
     conditions.on('change', () => {
         updateHeader();
@@ -45,17 +49,14 @@ $(document).ready(() => {
 });
 
 function initRendering() {
-    policyModel.fetch();
-    statBarView.render();
 
-    policyOptionsModel.fetch({
-        success: (model, res, option) => {
-            console.log(model);
-        },
-        error: (model, res, option) => {
-            console.log(res);
-        }
-    });
+    // BEGIN: for demo
+    stateModel.set('detail', conf.mock.bar);
+    networkModel.set('detail', conf.mock.net);
+    // END: for demo
+
+    policyModel.fetch();
+    policyOptionsModel.fetch();
 }
 
 function bindEvents() {

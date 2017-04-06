@@ -191,7 +191,53 @@ let PolicyView = Backbone.View.extend({
 
 let NetworkView = Backbone.View.extend({
     el: '#svg-network-view',
-    render() {}
+    render() {
+        console.log("network view rendering...");
+        var _self = this,
+            data = this.model.get("detail");
+        //var diameter = 500, //max size of the bubbles
+        var color = d3.scale.category20b(); //color category
+
+        var bubble = d3.layout.pack()
+            .sort(null)
+            //  .size([diameter, diameter])
+            .padding(1.5);
+
+        var svg = d3.select(_self.el)
+            .attr("width", 850)
+            .attr("height", 600)
+            .attr("class", "bubble");
+
+        var projection = d3.geo.albersUsa();
+
+        //setup the chart
+        var bubbles = svg.append("g")
+            .selectAll(".bubble")
+            //.data(nodes)
+            .data(data)
+            .enter();
+
+        //create the bubbles
+        bubbles.append("circle")
+            .attr("r", function(d) { return d.rpcpinc * 10; })
+            .attr("fill", "DodgerBlue")
+            .attr("opacity", 0.7)
+            .attr("cx", function(d) { return 15 * (180 + d.long) - 600; })
+            .attr("cy", function(d) { return 20 * (80 - d.lat) - 400; });
+        //.style("fill", function(d) { return color(d.value); });
+
+        //format the text for each bubble
+        bubbles.append("text")
+            .attr("x", function(d) { return 15 * (180 + d.long) - 600; })
+            .attr("y", function(d) { return 20 * (80 - d.lat) - 400; })
+            .attr("text-anchor", "middle")
+            .attr("fill", "white")
+            .attr("font-size", function(d) { return d.rpcpinc * 5; })
+            .attr("font-family", "sans-serif")
+            .attr("font-weight", function(d) { return d.rpcpinc * 100; })
+            .text(function(d) { return d["state_id"]; });
+
+    }
 });
 
 let StatBarView = Backbone.View.extend({
