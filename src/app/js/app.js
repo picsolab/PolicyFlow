@@ -8,6 +8,7 @@ let Model = require('./model.js');
 let Router = require('./router.js');
 
 let conditions = new Model.Conditions(),
+    policyOptionsModel = new Model.PolicyOptionsModel(),
     policyModel = new Model.PolicyModel(),
     networkModel = new Model.NetworkModel(),
     stateModel = new Model.StateModel(),
@@ -24,31 +25,37 @@ let policyView = new View.PolicyView({
 
 $(document).ready(() => {
     initDom();
-    bindEvents();
 
     // BEGIN: for demo
-    policyModel.set(conf.mock.cascade1);
     stateModel.set('detail', conf.mock.bar);
     // END: for demo
-
-    initRendering();
-
-    conditions.on('change', () => {
-        updateHeader();
-        if (conditions.hasChanged('policy')) {
-            // policyModel.populate(conditions);
-            policyModel.set(conf.mock.cascade2);
-        }
-    });
 
     policyModel.on('change', () => {
         policyView.render();
     });
+
+    conditions.on('change', () => {
+        updateHeader();
+        if (conditions.hasChanged('policy')) {
+            policyModel.populate(conditions);
+        }
+    });
+
+    initRendering();
 });
 
 function initRendering() {
-    policyView.render();
+    policyModel.fetch();
     statBarView.render();
+
+    policyOptionsModel.fetch({
+        success: (model, res, option) => {
+            console.log(model);
+        },
+        error: (model, res, option) => {
+            console.log(res);
+        }
+    });
 }
 
 function bindEvents() {
@@ -87,6 +94,8 @@ function initDom() {
     });
     $('#policy-select').val(conf.bases.policy.default);
     $('#policy-select').selectpicker('refresh');
+
+    bindEvents();
 }
 
 /*

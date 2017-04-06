@@ -1,8 +1,8 @@
 const Config = {
     bases: {
         subject: {
-            list: ['asd', 'subject', 'dfg', 'fgh', 'ghj', 'hjk', 'jkl'],
-            default: 'subject'
+            list: ["Administrative Organzation", "Civil Rights ", "Conservation", "Corrections ", "Education", "Elections ", "Health", "Highway ", "Labor", "Planning ", "Professional Regulation", "Taxes ", "Unknown", "Welfare"],
+            default: "Administrative Organzation"
         },
         policy: {
             list: [
@@ -202,14 +202,14 @@ const Config = {
     models: {
         conditions: {
             defaults: {
-                subject: 'subject',
+                subject: 'Administrative Organzation',
                 policy: 'aboldeapen',
                 metadata: 'perCapitaIncome'
             }
         }
     },
     api: {
-        root: 'api/',
+        root: '/api/',
         policyBase: 'policy/',
         networkBase: 'network/'
     },

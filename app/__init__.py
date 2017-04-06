@@ -11,11 +11,12 @@ app = Flask(__name__)
 app.config.from_pyfile('_config.py')
 db = SQLAlchemy(app)
 
-from app import views, models, service, dao
+from app import views
+from .service import PageService
+
+page_service = PageService()
 
 Compress(app)
 
 # http://bl.ocks.org/WillTurman/4631136
 # http://bl.ocks.org/lgrammel/1963983
-
-
