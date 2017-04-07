@@ -61,7 +61,6 @@ function initRendering() {
 function bindEvents() {
     // selected subject to conditions
     $('#subject-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        console.log(clickedIndex);
         let subjectList = Object.keys(policyOptionsModel.get("policies")),
             selectedSubject = $(event.target).find('option')[clickedIndex].value,
             policies = policyOptionsModel.get("policies"),
@@ -70,19 +69,18 @@ function bindEvents() {
         conditions.set('subject', subjectList[clickedIndex - 1], { silent: true });
 
         // reload policy select drop down
-        $('#policy-select option').remove();
+        $('#policy-select option.policy-option').remove();
         policies[selectedSubject].forEach(policyId => {
-            $('#policy-select').append("<option value='" + policyId + "'>" + pipe[policyId] + "</option>");
+            $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
         });
+        $('#policy-select').selectpicker('refresh');
         $('#policy-select').selectpicker('val', policies[selectedSubject][0]);
         conditions.set('policy', policies[selectedSubject][0]);
-        console.log(conditions.attributes);
-
     });
 
     // selected policy to conditions
     $('#policy-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        conditions.set('policy', policyOptionsModel.get("policies")[conditions.get("subject")][clickedIndex]);
+        conditions.set('policy', policyOptionsModel.get("policies")[conditions.get("subject")][clickedIndex - 1]);
     });
 
     // selected metadata to conditions
@@ -95,7 +93,7 @@ function initDom() {
 
     policyOptionsModel.fetch({
         success(model, response, options) {
-            console.log(model);
+
             let policies = model.get("policies")
             let pipe = model.get("pipe");
 
@@ -109,7 +107,7 @@ function initDom() {
 
             // policy select drop down
             policies[conf.bases.subject.default].forEach(policyId => {
-                $('#policy-select').append("<option value='" + policyId + "'>" + pipe[policyId] + "</option>");
+                $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
             });
             $('#policy-select').val(conf.bases.policy.default);
             $('#policy-select').prop('disabled', false);
