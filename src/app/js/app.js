@@ -61,12 +61,13 @@ function initRendering() {
 function bindEvents() {
     // selected subject to conditions
     $('#subject-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
+        console.log(clickedIndex);
         let subjectList = Object.keys(policyOptionsModel.get("policies")),
             selectedSubject = $(event.target).find('option')[clickedIndex].value,
             policies = policyOptionsModel.get("policies"),
             pipe = policyOptionsModel.get("pipe");
 
-        conditions.set('subject', subjectList[clickedIndex], { silent: true });
+        conditions.set('subject', subjectList[clickedIndex - 1], { silent: true });
 
         // reload policy select drop down
         $('#policy-select option').remove();
@@ -74,8 +75,8 @@ function bindEvents() {
             $('#policy-select').append("<option value='" + policyId + "'>" + pipe[policyId] + "</option>");
         });
         $('#policy-select').selectpicker('val', policies[selectedSubject][0]);
-        $('#policy-select').selectpicker('refresh');
         conditions.set('policy', policies[selectedSubject][0]);
+        console.log(conditions.attributes);
 
     });
 
@@ -91,12 +92,6 @@ function bindEvents() {
 }
 
 function initDom() {
-    $('#subject-select').selectpicker({
-        "noneSelectedText": "Loading..."
-    });
-    $('#policy-select').selectpicker({
-        "noneSelectedText": "Loading..."
-    });
 
     policyOptionsModel.fetch({
         success(model, response, options) {
@@ -106,9 +101,10 @@ function initDom() {
 
             // subject select drop down
             Object.keys(policies).forEach(subjectName => {
-                $('#subject-select').append("<option value='" + subjectName + "'>" + (subjectName + " (" + policies[subjectName].length + ")") + "</option>");
+                $('#subject-select').append("<option data-subtext=(" + policies[subjectName].length + ") value='" + subjectName + "'>" + (subjectName) + "</option>");
             });
             $('#subject-select').val(conf.bases.subject.default);
+            $('#subject-select').prop('disabled', false);
             $('#subject-select').selectpicker('refresh');
 
             // policy select drop down
@@ -116,6 +112,7 @@ function initDom() {
                 $('#policy-select').append("<option value='" + policyId + "'>" + pipe[policyId] + "</option>");
             });
             $('#policy-select').val(conf.bases.policy.default);
+            $('#policy-select').prop('disabled', false);
             $('#policy-select').selectpicker('refresh');
 
             // headers

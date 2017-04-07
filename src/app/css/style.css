@@ -96,7 +96,7 @@
         z-index: 1000;
         display: block;
         padding: 20px;
-        overflow-x: hidden;
+        overflow-x: visible;
         overflow-y: auto;
         /* Scrollable contents if viewport is shorter than content. */
         background-color: var(--color-sidebar-bg);
@@ -112,10 +112,6 @@
     padding-left: 15px;
     padding-right: 15px;
     width: 100%;
-}
-
-.bootstrap-select {
-    width: 100% !important;
 }
 
 
