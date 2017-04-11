@@ -1,14 +1,16 @@
-from app import db
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Float, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
+
+from app import db
+
 
 class Network(db.Model):
     """Network class"""
     __tablename__ = 'network'
 
-    stateFromId = db.Column('state_from_id', db.String(2), primary_key=True, index=True)
-    stateToId = db.Column('state_to_id', db.String(2), primary_key=True, index=True)
+    stateFromId = db.Column('state_from_id', ForeignKey('state.state_id'), primary_key=True, index=True)
+    stateToId = db.Column('state_to_id', ForeignKey('state.state_id'), primary_key=True, index=True)
 
     def __repr__(self):
         return '<Network from %r to %r>' % (self.stateFromId, self.stateToId)
@@ -87,16 +89,15 @@ class Metadata(db.Model):
 
     stateId = db.Column('state_id', db.String(2), ForeignKey('state.state_id'), primary_key=True)
     stateName = db.Column('state_name', db.String(45))
-    stateYear = db.Column('year', db.Integer, primary_key=True)
-    statePerCapitaIncome = db.Column('state_pci', db.Float)
-    statePopulation = db.Column('state_pop', db.Float)
-    stateMinorityDiversity = db.Column('state_md', db.Float)
-    stateCitizenIdeology = db.Column('state_ci', db.Float)
-    stateLegislativeProfessionalism = db.Column('state_lp', db.Float)
-    statePopulationDensity = db.Column('state_pd', db.Float)
+    year = db.Column('year', db.Integer, primary_key=True)
+    perCapitaIncome = db.Column('state_pci', db.Float)
+    totalPopulation = db.Column('state_pop', db.Float)
+    minorityDiversity = db.Column('state_md', db.Float)
+    citizenIdeology = db.Column('state_ci', db.Float)
+    legislativeProfessionalism = db.Column('state_lp', db.Float)
+    populationDensity = db.Column('state_pd', db.Float)
 
     state = relationship("State", back_populates="meta")
 
     def __repr__(self):
         return '<Metadata of %r>' % (self.stateName)
-        

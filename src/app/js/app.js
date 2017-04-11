@@ -42,6 +42,18 @@ $(document).ready(() => {
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
         }
+        if (conditions.hasChanged('policy') || conditions.hasChanged('metadata')) {
+            // BEGIN: for demo
+            console.log("meta change");
+            let networkUrl = "/api/network/" + conditions.get("metadata") + "/" + conditions.get("policy");
+            $.getJSON(networkUrl, (data, textStatus, jqXHR) => {
+                console.log(data);
+                data.forEach(obj => {
+                    console.log(obj.year);
+                })
+            });
+            // END: for demo
+        }
     });
 
     initDom();
