@@ -8,6 +8,11 @@ class BaseDao(object):
     def __init__(self):
         pass
 
+    def get_all_subjects(self):
+        return Subject.query.all()
+
+    def get_all_policies(self):
+        return Policy.query.all()
 
     def get_all_state(self):
         return State.query.all()
@@ -44,6 +49,22 @@ class PageDao(BaseDao):
                 pipe[policy.policyId] = policy.policyName
         output["policies"] = policies
         output["pipe"] = pipe
+        return output
+
+    def get_all_policies(self):
+        output = {}
+        subject_pipe = {}
+        policy_set = {}
+        policy_pipe = {}
+        subjects = super(PageDao, self).get_all_subjects()
+        policies = Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId).all()
+        for subject in subjects:
+            subject_pipe[subject.subjectId] = subject.subjectName
+        for policy in policies:
+            policy_set.setdefault(subject_pipe[policy.policySubjectId], []).append(policy.policyId)
+            policy_pipe[policy.policyId] = policy.policyName
+        output["policies"] = policy_set
+        output["pipe"] = policy_pipe
         return output
 
 

@@ -37,7 +37,7 @@ class PageService(Service):
     @app.route("/api/subjects", methods=["GET"])
     def get_subject_list():
         """get all subject from database."""
-        return json.dumps(page_dao.get_all_subjects())
+        return json.dumps(page_dao.get_all_policies())
 
 
 class PolicyService(Service):
