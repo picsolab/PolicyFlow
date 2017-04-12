@@ -28,7 +28,7 @@ class BaseDao(object):
         return year
 
     def helper_normalizer(self, cur, min_val, max_val):
-        return (cur - min_val)/(max_val - min_val)
+        return round((cur - min_val)/(max_val - min_val), 4)
 
 class PageDao(BaseDao):
     """page dao providing page related data"""
@@ -144,19 +144,27 @@ class NetworkDao(BaseDao):
             if stateId == "NE":
                 temp_object["valid"] = False if stateId in meta_unadopted_set else True
                 temp_object["metadata"] = -1
-                temp_object["year"] = -1
+                temp_object["normalizedMetadata"] = -1
+                temp_object["dataYear"] = -1
+                temp_object["adoptedYear"] = -1
             elif stateId in meta_unadopted_set:
                 temp_object["valid"] = False
-                temp_object["metadata"] = super(NetworkDao, self).helper_normalizer(meta_unadopted_set[stateId], min_meta, max_meta)
-                temp_object["year"] = min_year
+                temp_object["metadata"] = meta_unadopted_set[stateId]
+                temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_unadopted_set[stateId], min_meta, max_meta)
+                temp_object["dataYear"] = min_year
+                temp_object["adoptedYear"] = -1
             else:
                 temp_object["valid"] = True
                 if stateId in meta_set:
-                    temp_object["metadata"] = super(NetworkDao, self).helper_normalizer(meta_set[stateId], min_meta, max_meta)
-                    temp_object["year"] = year_set[stateId]
+                    temp_object["metadata"] = meta_set[stateId]
+                    temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_set[stateId], min_meta, max_meta)
+                    temp_object["adoptedYear"] = year_set[stateId]
+                    temp_object["dataYear"] = year_set[stateId]
                 else:
-                    temp_object["metadata"] = super(NetworkDao, self).helper_normalizer(meta_noshow_set[stateId], min_meta, max_meta)
-                    temp_object["year"] = min_year
+                    temp_object["metadata"] = meta_noshow_set[stateId]
+                    temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_noshow_set[stateId], min_meta, max_meta)
+                    temp_object["adoptedYear"] = min_year
+                    temp_object["dataYear"] = min_year
             output.append(temp_object)
         return output
 
