@@ -27,21 +27,6 @@ let PolicyView = Backbone.View.extend({
         // clear the canvas
         d3.select(_self.el).selectAll('g').remove();
 
-        // create svg element
-        let svg = d3.select(_self.el)
-            .attr('width', gs.p.size.width)
-            .attr('height', gs.p.size.height)
-            .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("0 0 " + gs.p.size.width + " " + gs.p.size.height + ""))
-            .classed('svg-content-responsive', true)
-            .append('g')
-            .attr('class', "graph")
-            .attr('transform', "translate(" + gs.p.margin.left + "," + gs.p.margin.top + ")");
-
-        // create axes group
-        let axesG = svg.append('g')
-            .attr('class', "axes");
-
         // define x-axis scale - liner
         let xScale = d3.scale.ordinal()
             .domain(Array.apply(null, { length: gs.p.config.xMaxTick }).map(Number.call, Number))
@@ -65,6 +50,26 @@ let PolicyView = Backbone.View.extend({
             .ticks(gs.p.config.yMaxTick)
             .tickFormat(utils.axisTimeFormat);
 
+        let zoom = d3.behavior.zoom()
+            .y(yScale)
+            .scaleExtent([1, 10]);
+
+        // create svg element
+        let svg = d3.select(_self.el)
+            .attr('width', gs.p.size.width)
+            .attr('height', gs.p.size.height)
+            .attr('preserveAspectRatio', 'xMidYMin meet')
+            .attr('viewBox', ("0 0 " + gs.p.size.width + " " + gs.p.size.height + ""))
+            .classed('svg-content-responsive', true)
+            .append('g')
+            .attr('class', "graph")
+            .attr('transform', "translate(" + gs.p.margin.left + "," + gs.p.margin.top + ")")
+            .call(zoom);
+
+        // create axes group
+        let axesG = svg.append('g')
+            .attr('class', "axes");
+
         // render axes
         axesG.append('g')
             .attr({
@@ -81,6 +86,22 @@ let PolicyView = Backbone.View.extend({
         // create palette group
         let paletteG = svg.append('g')
             .attr('class', "palette");
+
+        _self.renderPalette(paletteG, yearList, xScale, yScale);
+        _self.bindTriggers(yScale);
+
+        zoom.on('zoom', (e) => {
+            $(".temp-tick").remove();
+            d3.select(_self.el).select(".y-axis").call(yAxis);
+            _self.renderPalette(paletteG, yearList, xScale, yScale);
+            _self.bindTriggers(yScale);
+        });
+
+        return this;
+    },
+    renderPalette(paletteG, yearList, xScale, yScale) {
+        let _self = this;
+        paletteG.selectAll('g').remove();
 
         yearList.forEach((year, index) => {
             // prepare data and params
@@ -127,10 +148,6 @@ let PolicyView = Backbone.View.extend({
                     transform: (d, i) => "translate(" + (xScale.rangeBand() + gs.p.margin.textXShift) + "," + (Math.floor(i / gs.p.config.xMaxTick) * (xScale.rangeBand() + gs.p.margin.yPadding) + gs.p.margin.textYShift) + ")"
                 });
         });
-
-        _self.bindTriggers(yScale);
-
-        return this;
     },
     bindTriggers(yScale) {
         let element, year, tickList = [];
@@ -156,7 +173,6 @@ let PolicyView = Backbone.View.extend({
                     y: yScale(new Date(+year, 0, 1)),
                     transform: () => tickList.indexOf("" + year) === -1 ? "translate(-37,4)" : "translate(-8,4)"
                 });
-
         });
 
         $(".partial").on('mouseout', (e) => {

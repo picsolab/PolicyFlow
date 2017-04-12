@@ -64,6 +64,12 @@
     text-align: left;
 }
 
+.partial rect,
+.partial text,
+.y-axis {
+    cursor: all-scroll;
+}
+
 
 /*stat-bar-panel*/
 
