@@ -47,10 +47,7 @@ $(document).ready(() => {
             console.log("meta change");
             let networkUrl = "/api/network/" + conditions.get("metadata") + "/" + conditions.get("policy");
             $.getJSON(networkUrl, (data, textStatus, jqXHR) => {
-                console.log(data);
-                data.forEach(obj => {
-                    console.log(obj.year);
-                })
+                console.log(networkUrl);
             });
             // END: for demo
         }

@@ -27,6 +27,9 @@ class BaseDao(object):
             year = max_year
         return year
 
+    def helper_normalizer(self, cur, min_val, max_val):
+        return (cur - min_val)/(max_val - min_val)
+
 class PageDao(BaseDao):
     """page dao providing page related data"""
     @staticmethod
@@ -73,6 +76,9 @@ class NetworkDao(BaseDao):
         year_set = {}
         meta_noshow_set = {}
         meta_unadopted_set = {}
+        min_year = 9999
+        min_meta = 9999
+        max_meta = 0
         pipe = {
             "perCapitaIncome": "state_pci",
             "minorityDiversity": "state_md",
@@ -97,14 +103,16 @@ class NetworkDao(BaseDao):
         result_with_valid_data = db.session.query(State.stateId, Metadata.year, getattr(Metadata, meta_flag)).from_statement(stmt).params(policy_id=policy_id).all()
 
         for item in result_with_valid_data:
-            meta_set[item.stateId] = getattr(item, meta_flag)
+            meta = getattr(item, meta_flag)
+            meta_set[item.stateId] = meta
             year_set[item.stateId] = item.year
+            max_meta = max(max_meta, meta)
+            min_meta = min(min_meta, meta)
 
         # data from those states who:
         # - were affected by the specified policy
         # - without time limitations
         result_full = super(NetworkDao, self).get_cascade_by_policy_id(policy_id)
-        min_year = 9999
         for item in result_full:
             if item.stateId not in meta_set:
                 meta_noshow_set[item.stateId] = 0
@@ -116,10 +124,13 @@ class NetworkDao(BaseDao):
         for item in meta_from_earliest_year:
             stateId = item.stateId
             if stateId not in meta_set:
+                meta = getattr(item, meta_flag)
                 if stateId in meta_noshow_set:
-                    meta_noshow_set[stateId] = getattr(item, meta_flag)
+                    meta_noshow_set[stateId] = meta
                 else:
-                    meta_unadopted_set[stateId] = getattr(item, meta_flag)
+                    meta_unadopted_set[stateId] = meta
+                max_meta = max(max_meta, meta)
+                min_meta = min(min_meta, meta)
 
         states = super(NetworkDao, self).get_all_state()
 
@@ -136,15 +147,15 @@ class NetworkDao(BaseDao):
                 temp_object["year"] = -1
             elif stateId in meta_unadopted_set:
                 temp_object["valid"] = False
-                temp_object["metadata"] = meta_unadopted_set[stateId]
+                temp_object["metadata"] = super(NetworkDao, self).helper_normalizer(meta_unadopted_set[stateId], min_meta, max_meta)
                 temp_object["year"] = min_year
             else:
                 temp_object["valid"] = True
                 if stateId in meta_set:
-                    temp_object["metadata"] = meta_set[stateId]
+                    temp_object["metadata"] = super(NetworkDao, self).helper_normalizer(meta_set[stateId], min_meta, max_meta)
                     temp_object["year"] = year_set[stateId]
                 else:
-                    temp_object["metadata"] = meta_noshow_set[stateId]
+                    temp_object["metadata"] = super(NetworkDao, self).helper_normalizer(meta_noshow_set[stateId], min_meta, max_meta)
                     temp_object["year"] = min_year
             output.append(temp_object)
         return output
