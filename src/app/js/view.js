@@ -3,6 +3,9 @@ let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
 
+// d3-tip
+let d3tip = require('d3-tip');
+
 let colorList = [];
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
@@ -265,34 +268,47 @@ let StatBarView = Backbone.View.extend({
         let _self = this,
             data = _self.model.get("detail");
 
+        var tip = d3tip()
+            .attr('class', 'd3-tip')
+            .offset([-10, 0])
+            .html(function(d) {
+                return "<span style='color:red'>" + d.state_name + "</span><strong> root number:</strong> <span style='color:black'>" + d.num + "</span>";
+            });
+
         // set the dimensions of the canvas
         var svg = d3.select(_self.el)
             .attr("height", "100")
             .attr("width", "1200");
 
+        svg.call(tip);
+
         // load the data
         data.forEach(function(d) {
-            d.state = d.state;
+            d.state_id = d.state_id;
             d.num = +d.num;
+            d.state_name = d.state_name;
         });
 
         // Add bar chart
         svg.selectAll("bar")
             .data(data)
             .enter().append("rect")
+            .attr("class", "bar")
             .attr("width", "20")
             .attr("x", function(d, i) { return (i * 22) })
             .attr("y", "0")
             .attr("fill", "#bcbddc")
-            .attr("height", function(d, i) { return (d.num * 6) });
+            .attr("height", function(d, i) { return (d.num * 3) })
+            .on('mouseover', tip.show)
+            .on('mouseout', tip.hide);
 
         svg.selectAll("text")
             .data(data)
             .enter()
             .append("text")
-            .text(function(d) { return d.state; })
+            .text(function(d) { return d.state_id; })
             .attr("x", function(d, i) { return (i * 22) })
-            .attr("y", function(d, i) { return (10 + d.num * 6) })
+            .attr("y", function(d, i) { return (10 + d.num * 3) })
             .attr("font-family", "sans-serif")
             .attr("font-size", "11px")
             .attr("fill", "black");

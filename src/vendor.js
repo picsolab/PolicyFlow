@@ -13,3 +13,6 @@ require('../node_modules/bootstrap-select/dist/css/bootstrap-select.min.css');
 
 // lodash   
 require('lodash');
+
+// d3-tip
+require('d3-tip');
