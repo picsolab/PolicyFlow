@@ -204,7 +204,6 @@ let PolicyView = Backbone.View.extend({
                 maxTickCount = count;
             }
         });
-
     }
 });
 
@@ -212,53 +211,138 @@ let NetworkView = Backbone.View.extend({
     el: '#svg-network-view',
     render() {
         console.log("network view rendering...");
-        var _self = this,
-            data = this.model.get("detail");
-        //var diameter = 500, //max size of the bubbles
-        var color = d3.scale.category20b(); //color category
+        var _self = this;
 
-        var bubble = d3.layout.pack()
-            .sort(null)
-            //  .size([diameter, diameter])
-            .padding(1.5);
+        d3.select(_self.el).selectAll('g').remove();
+
+        var tip = d3tip()
+            .attr('class', 'd3-tip-network')
+            .offset([-10, 0])
+            .html(function(d) {
+                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>Metadata: <span style='color:white'>" + d.metadata + "</span></p><p>Adopted year: <span style='color:white'>" + d.adoptedYear + "</span></p>";
+            });
+
+        var force = d3.layout.force()
+            .charge(-60)
+            .gravity(0)
+            .size([1500, 600]);
 
         var svg = d3.select(_self.el)
             .attr("width", 850)
             .attr("height", 600)
             .attr('preserveAspectRatio', 'xMinYMin meet')
             .attr('viewBox', ("0 0 850 850"))
-            .attr("class", "bubble");
+            .append("g")
+            .attr("transform", "translate(50,30)");
 
-        var projection = d3.geo.albersUsa();
+        _self.udpate(svg, tip, force);
+    },
+    udpate(svg, tip, force) {
+        var _self = this,
+            nodes = _self.model.get("detail");
 
-        //setup the chart
-        var bubbles = svg.append("g")
-            .selectAll(".bubble")
-            //.data(nodes)
-            .data(data)
-            .enter();
+        svg.call(tip);
 
-        //create the bubbles
-        bubbles.append("circle")
-            .attr("r", function(d) { return d.rpcpinc * 10; })
-            .attr("fill", "DodgerBlue")
-            .attr("opacity", 0.7)
-            .attr("cx", function(d) { return 15 * (180 + d.long) - 600; })
-            .attr("cy", function(d) { return 20 * (80 - d.lat) - 400; });
-        //.style("fill", function(d) { return color(d.value); });
+        nodes.forEach(function(d) {
+            d.state_id = d.stateId;
+            d.x = +d.longtitude;
+            d.x = 15 * (180 + d.x) - 600;
+            d.y = +d.latitude;
+            d.y = 20 * (80 - d.y) - 400
+            d.gravity_x = d.x * 1.8;
+            d.gravity_y = d.y;
+            if (d.normalizedMetadata < 0) { d.r = 20; } else d.r = d.normalizedMetadata * 150;
+        });
 
-        //format the text for each bubble
-        bubbles.append("text")
-            .attr("x", function(d) { return 15 * (180 + d.long) - 600; })
-            .attr("y", function(d) { return 20 * (80 - d.lat) - 400; })
+        nodes = nodes.slice(0, 50)
+
+        force
+            .nodes(nodes)
+            .start()
+            .on("tick", function(e) {
+                var k = e.alpha,
+                    kg = k * .02,
+                    spaceAround = 0.;
+
+                nodes.forEach(function(a, i) {
+                    // Apply gravity forces.
+                    a.x += (a.gravity_x - a.x) * kg;
+                    a.y += (a.gravity_y - a.y) * kg;
+
+                    a.overlapCount = 0;
+
+                    nodes.slice(i + 1).forEach(function(b) {
+
+                        dx = (a.x - b.x)
+                        dy = (a.y - b.y)
+
+                        adx = Math.abs(dx)
+                        ady = Math.abs(dy)
+
+                        mdx = (1 + spaceAround) * (a.r + b.r) / 2
+                        mdy = (1 + spaceAround) * (a.r + b.r) / 2
+
+                        if (adx < mdx && ady < mdy) {
+                            l = Math.sqrt(dx * dx + dy * dy)
+
+                            lx = (adx - mdx) / l * k
+                            ly = (ady - mdy) / l * k
+
+                            // choose the direction with less overlap
+                            if (lx > ly && ly > 0) lx = 0;
+                            else if (ly > lx && lx > 0) ly = 0;
+
+                            dx *= lx;
+                            dy *= ly;
+                            a.x -= dx;
+                            a.y -= dy;
+                            b.x += dx;
+                            b.y += dy;
+
+                            a.overlapCount++;
+                        }
+                    });
+                });
+
+                svg.selectAll("circle")
+                    .attr("cx", function(d) { return d.x - d.r / 2; })
+                    .attr("cy", function(d) { return d.y - d.r / 2; });
+
+                svg.selectAll("text")
+                    .attr("x", function(d) { return d.x - d.r / 2; })
+                    .attr("y", function(d) { return d.y - d.r / 2; });
+            });
+
+        var g = svg.selectAll("g")
+            .data(nodes)
+            .enter()
+            .append("g")
+            .attr("transform", "translate(100,100),scale(0.5)")
+            .call(force.drag);
+
+        g.append("circle")
+            .attr("opacity", 0.75)
+            .attr("cx", function(d) { return d.x - d.r / 2; })
+            .attr("cy", function(d) { return d.y - d.r / 2; })
+            .attr("r", function(d) { return d.r; })
+            .on("mouseover", function(d, i) {
+                tip.show(d, i);
+                d3.select(".d3-tip")
+                    .style("opacity", 0.9);
+            })
+            .on('mouseout', tip.hide);
+
+        g.append("text")
+            .attr("x", function(d) { return d.x - d.r / 2; })
+            .attr("y", function(d) { return d.y - d.r / 2; })
             .attr("text-anchor", "middle")
-            .attr("fill", "white")
-            .attr("font-size", function(d) { return d.rpcpinc * 5; })
+            .attr("fill", "black")
+            .attr("font-size", function(d) { return 30; })
             .attr("font-family", "sans-serif")
-            .attr("font-weight", function(d) { return d.rpcpinc * 100; })
+            .attr("font-weight", function(d) { return d.r; })
             .text(function(d) { return d["state_id"]; });
-
     }
+
 });
 
 let StatBarView = Backbone.View.extend({

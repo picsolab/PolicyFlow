@@ -20,6 +20,23 @@
     height: 600px;
 }
 
+circle {
+    fill: lightblue;
+}
+
+circle:hover {
+    fill: #cc9900;
+}
+
+.d3-tip-network {
+    line-height: 1;
+    padding: 12px;
+    background: #2F4F4F;
+    color: #fff;
+    border-radius: 1px;
+    z-index: 1001;
+}
+
 
 /*policy cascade panel*/
 

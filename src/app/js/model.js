@@ -23,7 +23,19 @@ let PolicyModel = Backbone.Model.extend({
     }
 });
 
-let NetworkModel = Backbone.Model.extend({});
+let NetworkModel = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.networkBase;
+        this.url = this.urlRoot + conf.models.conditions.defaults.metadata + "/" + conf.models.conditions.defaults.policy;
+    },
+    populate(conditions) {
+        let _self = this;
+        this.url = this.urlRoot + conditions.get("metadata") + "/" + conditions.get("policy");
+        $.getJSON(_self.url).done((data) => {
+            _self.set(data);
+        });
+    }
+});
 
 let StateModel = Backbone.Model.extend({});
 

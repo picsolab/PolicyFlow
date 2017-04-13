@@ -61,7 +61,7 @@ class NetworkService(Service):
     def get_specified_network_by(meta_flag, policy_id):
         """get_specified_network_by meta_flag and policy_id"""
         query_result = network_dao.get_parameterized_network(meta_flag, policy_id)
-        return json.dumps(query_result, cls=DecimalEncoder)
+        return json.dumps({"detail": query_result}, cls=DecimalEncoder)
 
 class ServiceUtils():
     """service utils"""
@@ -72,4 +72,3 @@ class DecimalEncoder(json.JSONEncoder):
         if isinstance(o, Decimal):
             return float(o)
         return super(DecimalEncoder, self).default(o)
-        

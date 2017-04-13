@@ -43,13 +43,7 @@ $(document).ready(() => {
             policyModel.populate(conditions);
         }
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata')) {
-            // BEGIN: for demo
-            console.log("meta change");
-            let networkUrl = "/api/network/" + conditions.get("metadata") + "/" + conditions.get("policy");
-            $.getJSON(networkUrl, (data, textStatus, jqXHR) => {
-                console.log(networkUrl);
-            });
-            // END: for demo
+            networkModel.populate(conditions);
         }
     });
 
@@ -61,9 +55,9 @@ function initRendering() {
 
     // BEGIN: for demo
     stateModel.set('detail', conf.mock.bar);
-    networkModel.set('detail', conf.mock.net);
     // END: for demo
 
+    networkModel.fetch();
     policyModel.fetch();
 }
 
