@@ -96,6 +96,7 @@ class NetworkDao(BaseDao):
         meta_set = {}
         year_set = {}
         meta_noshow_set = {}
+        year_noshow_set = {}
         meta_unadopted_set = {}
         min_year = 9999
         min_meta = 9999
@@ -127,6 +128,7 @@ class NetworkDao(BaseDao):
             meta = getattr(item, meta_flag)
             meta_set[item.stateId] = meta
             year_set[item.stateId] = item.year
+            print item.year
             max_meta = max(max_meta, meta)
             min_meta = min(min_meta, meta)
 
@@ -137,6 +139,7 @@ class NetworkDao(BaseDao):
         for item in result_full:
             if item.stateId not in meta_set:
                 meta_noshow_set[item.stateId] = 0
+                year_noshow_set[item.stateId] = item.adoptedYear
             if item.adoptedYear < min_year:
                 min_year = item.adoptedYear
         min_year = super(NetworkDao, self).helper_get_valid_year(min_year)
@@ -184,7 +187,7 @@ class NetworkDao(BaseDao):
                 else:
                     temp_object["metadata"] = meta_noshow_set[stateId]
                     temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_noshow_set[stateId], min_meta, max_meta)
-                    temp_object["adoptedYear"] = min_year
+                    temp_object["adoptedYear"] = year_noshow_set[stateId]
                     temp_object["dataYear"] = min_year
             output.append(temp_object)
         return output

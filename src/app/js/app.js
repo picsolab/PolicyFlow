@@ -57,8 +57,8 @@ function initRendering() {
     stateModel.set('detail', conf.mock.bar);
     // END: for demo
 
-    networkModel.fetch();
     policyModel.fetch();
+    networkModel.fetch();
 }
 
 function bindEvents() {

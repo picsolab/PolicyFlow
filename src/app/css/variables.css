@@ -3,5 +3,6 @@
     --color-trans-in: #134F7F;
     --color-trans-out: #73C1FF;
     --color-pop-up: #666;
-    --color-bar-hover: lightblue
+    --color-bar-hover: lightblue;
+    --color-unadopted: lightgray;
 }

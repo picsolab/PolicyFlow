@@ -6,12 +6,11 @@ let utils = require('./utils.js');
 // d3-tip
 let d3tip = require('d3-tip');
 
-let colorList = [];
+let colorList = [],
+    colorMap = {};
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
     render() {
-        console.log("policy view rendering...");
-
         // prepare params
         // - use Jan 1st to represent the year.
         let _self = this,
@@ -24,6 +23,9 @@ let PolicyView = Backbone.View.extend({
 
         // compute color list based on length of year list
         colorList = utils.generateColor(css_variables["--color-trans-out"], css_variables["--color-trans-in"], yearList.length);
+        yearList.forEach((year, index) => {
+            colorMap[year] = colorList[index];
+        });
 
         // this.initParams();
 
@@ -210,7 +212,6 @@ let PolicyView = Backbone.View.extend({
 let NetworkView = Backbone.View.extend({
     el: '#svg-network-view',
     render() {
-        console.log("network view rendering...");
         var _self = this;
 
         d3.select(_self.el).selectAll('g').remove();
@@ -223,7 +224,7 @@ let NetworkView = Backbone.View.extend({
             });
 
         var force = d3.layout.force()
-            .charge(-60)
+            .charge(-100)
             .gravity(0)
             .size([1500, 600]);
 
@@ -231,9 +232,9 @@ let NetworkView = Backbone.View.extend({
             .attr("width", 850)
             .attr("height", 600)
             .attr('preserveAspectRatio', 'xMinYMin meet')
-            .attr('viewBox', ("0 0 850 850"))
+            .attr('viewBox', ("0 0 850 900"))
             .append("g")
-            .attr("transform", "translate(50,30)");
+            .attr("transform", "translate(50,80)");
 
         _self.udpate(svg, tip, force);
     },
@@ -321,13 +322,20 @@ let NetworkView = Backbone.View.extend({
             .call(force.drag);
 
         g.append("circle")
-            .attr("opacity", 0.75)
+            .attr("opacity", 0.8)
+            .attr("fill", function(d) {
+                if (+d.adoptedYear === -1) {
+                    return css_variables["--color-unadopted"];
+                } else {
+                    return colorMap[d.adoptedYear];
+                }
+            })
             .attr("cx", function(d) { return d.x - d.r / 2; })
             .attr("cy", function(d) { return d.y - d.r / 2; })
             .attr("r", function(d) { return d.r; })
             .on("mouseover", function(d, i) {
                 tip.show(d, i);
-                d3.select(".d3-tip")
+                d3.select(".d3-tip-network")
                     .style("opacity", 0.9);
             })
             .on('mouseout', tip.hide);

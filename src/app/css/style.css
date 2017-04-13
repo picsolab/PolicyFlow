@@ -20,10 +20,6 @@
     height: 600px;
 }
 
-circle {
-    fill: lightblue;
-}
-
 circle:hover {
     fill: #cc9900;
 }
