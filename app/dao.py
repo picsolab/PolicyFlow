@@ -92,7 +92,7 @@ class NetworkDao(BaseDao):
 
     def get_parameterized_network(self, meta_flag, policy_id):
         """get_parameterized_network"""
-        output = []
+        output = {}
         meta_set = {}
         year_set = {}
         meta_noshow_set = {}
@@ -128,7 +128,6 @@ class NetworkDao(BaseDao):
             meta = getattr(item, meta_flag)
             meta_set[item.stateId] = meta
             year_set[item.stateId] = item.year
-            print item.year
             max_meta = max(max_meta, meta)
             min_meta = min(min_meta, meta)
 
@@ -189,6 +188,6 @@ class NetworkDao(BaseDao):
                     temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_noshow_set[stateId], min_meta, max_meta)
                     temp_object["adoptedYear"] = year_noshow_set[stateId]
                     temp_object["dataYear"] = min_year
-            output.append(temp_object)
+            output[stateId] = temp_object
         return output
 
