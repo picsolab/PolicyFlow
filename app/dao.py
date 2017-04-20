@@ -92,7 +92,7 @@ class NetworkDao(BaseDao):
 
     def get_parameterized_network(self, meta_flag, policy_id):
         """get_parameterized_network"""
-        output = {}
+        output = []
         meta_set = {}
         year_set = {}
         meta_noshow_set = {}
@@ -108,6 +108,14 @@ class NetworkDao(BaseDao):
             "citizenIdeology": "state_ci",
             "totalPopulation": "state_pop",
             "populationDensity": "state_pd"
+        }
+        readable_meta_name = {
+            "perCapitaIncome": "Per Capita Income",
+            "minorityDiversity": "Minority Diversity",
+            "legislativeProfessionalism": "Legislative Professionalism",
+            "citizenIdeology": "Citizen Ideology",
+            "totalPopulation": "Total Population",
+            "populationDensity": "Population Density"
         }
         stmt = text("SELECT s.state_id AS stateId, m.year AS year, m." + pipe[meta_flag] + " AS " + meta_flag + " "
                     "FROM state AS s, `metadata` AS m "
@@ -164,6 +172,8 @@ class NetworkDao(BaseDao):
             temp_object["stateName"] = state.stateName
             temp_object["longtitude"] = state.longtitude
             temp_object["latitude"] = state.latitude
+            temp_object["metaId"] = meta_flag
+            temp_object["metaName"] = readable_meta_name[meta_flag]
             if stateId == "NE":
                 temp_object["valid"] = False if stateId in meta_unadopted_set else True
                 temp_object["metadata"] = -1
@@ -188,6 +198,6 @@ class NetworkDao(BaseDao):
                     temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_noshow_set[stateId], min_meta, max_meta)
                     temp_object["adoptedYear"] = year_noshow_set[stateId]
                     temp_object["dataYear"] = min_year
-            output[stateId] = temp_object
+            output.append(temp_object)
         return output
 
