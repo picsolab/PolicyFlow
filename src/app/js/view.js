@@ -235,40 +235,142 @@ let NetworkView = Backbone.View.extend({
         _self.udpate(svg, tip, force);
     },
     udpate(svg, tip, force) {
+        /**
+         * NOTES: modifications made:
+         * 1. tip class name: d3-tip-network;
+         * 2. color and opacity: locate by search:  .attr("fill", (d) => {
+         * 3. move gradient definition to seperate function named defineGradient
+         * 4. remove duplicated svg definition
+         */
         var _self = this,
-            nodes = _self.model.get("detail");
+            nnodes = _self.model.get("detail");
 
         svg.call(tip);
 
-        nodes.forEach(function(d) {
+        nnodes.forEach(function(d) {
             d.state_id = d.stateId;
             d.x = +d.longtitude;
             d.x = 15 * (180 + d.x) - 600;
             d.y = +d.latitude;
-            d.y = 20 * (80 - d.y) - 400
-            d.gravity_x = d.x * 1.8;
+            d.y = 20 * (80 - d.y) - 400;
+            d.gravity_x = d.x * 1.5;
             d.gravity_y = d.y;
-            if (d.normalizedMetadata < 0) { d.r = 20; } else d.r = d.normalizedMetadata * 150;
+            if (d.normalizedMetadata < 0) {
+                d.r = 20;
+            } else d.r = d.normalizedMetadata * 100;
         });
 
-        nodes = nodes.slice(0, 50)
+        nnodes = nnodes.slice(0, 50)
 
         force
-            .nodes(nodes)
+            .nodes(nnodes)
+            //.links(eedges)
             .start()
+            .on("end", function(e) {
+                var d3line = d3.svg.line()
+                    .x(function(d) {
+                        return d.x;
+                    })
+                    .y(function(d) {
+                        return d.y;
+                    });
+                var fbundling = d3.ForceEdgeBundling().nodes(nnodes).edges(eedges);
+                var results = fbundling();
+
+                var defs = svg.append("defs");
+                _self.defineGradient(defs);
+
+                var texts = $("#svg-network-view text");
+                // console.log("texts", texts[3].innerHTML);
+
+                for (var i = 0; i < results.length; i++) {
+                    // console.log("results", results[i]);
+
+                    svg.append("svg:defs").selectAll("marker")
+                        .data(["end"]) // Different link/path types can be defined here
+                        .enter().append("svg:marker") // This section adds in the arrows
+                        .attr("id", String)
+                        .attr("viewBox", "0 -5 12 12")
+                        .attr("refX", 0)
+                        .attr("refY", 0)
+                        .attr("markerWidth", 4)
+                        .attr("markerHeight", 3)
+                        .style("fill", "red")
+                        .style('opacity', 0.3)
+                        .attr("orient", "auto")
+                        .append("svg:path")
+                        .attr("d", "M0,-5L10,0L0,5");
+
+                    if (results[i][0].adoptedYear != -1 && results[i][results[i].length - 1].adoptedYear != -1) {
+                        svg.append("path")
+                            .attr("d", d3line(results[i]))
+                            .attr("id", String(i))
+                            .style("stroke-width", 10)
+                            .attr('stroke-linecap', 'round')
+                            .style("stroke", function(d) {
+                                if (results[i][0].adoptedYear > results[i][results[i].length - 1].adoptedYear) {
+                                    return "black";
+                                } else if (results[i][0].x < results[i][results[i].length - 1].x) {
+                                    return "url(#gradient_1)";
+                                } else if (results[i][0].x >= results[i][results[i].length - 1].x) {
+                                    return "url(#gradient_2)";
+                                }
+                            })
+                            //.style("stroke", function(d) {if (results[i][0].adoptedYear < results[i][results[i].length-1].adoptedYear == -1)  {return "grey";} })
+                            .style("fill", "none")
+                            .style('stroke-opacity', 0.3)
+                            .attr("marker-end", "url(#end)")
+
+                        .on("mouseover", function() {
+                            var temp = parseInt(d3.select(this).attr("id"));
+                            var temp_len = results[temp].length;
+
+                            $(_self.el).find("text").css("fill", "Silver");
+                            d3.select(this).style('stroke-opacity', 1).style("stroke-width", 15);
+                            d3.selectAll("marker").style("opacity", 1);
+                            for (var j = 0; j < texts.length; j++) {
+                                if (texts[j].innerHTML == results[temp][0].state_id) {
+                                    d3.select(texts[j]).attr("font-size", 50).style("fill", "black").style("font-weight", "bold").moveToFront();
+                                }
+                                if (texts[j].innerHTML == results[temp][temp_len - 1].state_id) {
+                                    d3.select(texts[j]).attr("font-size", 50).style("fill", "black").style("font-weight", "bold").moveToFront();
+                                }
+                            }
+                        })
+
+                        .on("mouseout", function() {
+                            var temp = parseInt(d3.select(this).attr("id"));
+                            var temp_len = results[temp].length;
+
+                            $(_self.el).find("text").css("fill", "black");
+                            d3.select(this).style('stroke-opacity', 0.4).style("stroke-width", 10);
+                            d3.selectAll("marker").style("opacity", 0.3);
+                            for (var j = 0; j < texts.length; j++) {
+                                if (texts[j].innerHTML == results[temp][0].state_id) {
+                                    d3.select(texts[j]).attr("font-size", 30);
+                                }
+                                if (texts[j].innerHTML == results[temp][temp_len - 1].state_id) {
+                                    d3.select(texts[j]).attr("font-size", 30);
+                                }
+                            }
+                        })
+                    }
+                }
+            })
             .on("tick", function(e) {
+
                 var k = e.alpha,
                     kg = k * .02,
                     spaceAround = 0.;
 
-                nodes.forEach(function(a, i) {
+                nnodes.forEach(function(a, i) {
                     // Apply gravity forces.
                     a.x += (a.gravity_x - a.x) * kg;
                     a.y += (a.gravity_y - a.y) * kg;
 
                     a.overlapCount = 0;
 
-                    nodes.slice(i + 1).forEach(function(b) {
+                    nnodes.slice(i + 1).forEach(function(b) {
 
                         dx = (a.x - b.x)
                         dy = (a.y - b.y)
@@ -299,36 +401,44 @@ let NetworkView = Backbone.View.extend({
                             a.overlapCount++;
                         }
                     });
-                });
-
-                svg.selectAll("circle")
-                    .attr("cx", function(d) { return d.x - d.r / 2; })
-                    .attr("cy", function(d) { return d.y - d.r / 2; });
+                    //node.for each braces
+                })
 
                 svg.selectAll("text")
-                    .attr("x", function(d) { return d.x - d.r / 2; })
-                    .attr("y", function(d) { return d.y - d.r / 2; });
+                    .data(nnodes)
+                    .attr("x", function(d) {
+                        return d.x - d.r / 2;
+                    })
+                    .attr("y", function(d) {
+                        return d.y - d.r / 2;
+                    });
+
+                svg.selectAll("circle")
+                    .data(nnodes)
+                    .attr("cx", function(d) {
+                        return d.x - d.r / 2;
+                    })
+                    .attr("cy", function(d) {
+                        return d.y - d.r / 2;
+                    });
+                //tick braces
             });
 
-        var g = svg.selectAll("g")
-            .data(nodes)
+        //Run the FDEB algorithm using default values on the data 
+        svg.selectAll('.node')
+            .data(d3.entries(nnodes))
             .enter()
-            .append("g")
-            .attr("transform", "translate(100,100),scale(0.5)")
-            .call(force.drag);
-
-        g.append("circle")
+            .append('circle')
             .attr("opacity", 0.8)
-            .attr("fill", function(d) {
-                if (+d.adoptedYear === -1) {
-                    return css_variables["--color-unadopted"];
-                } else {
-                    return colorMap[d.adoptedYear];
+            .attr("fill", (d) => {
+                d = d.value;
+                return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+            })
+            .attr({
+                'r': function(d) {
+                    return d.value.r;
                 }
             })
-            .attr("cx", function(d) { return d.x - d.r / 2; })
-            .attr("cy", function(d) { return d.y - d.r / 2; })
-            .attr("r", function(d) { return d.r; })
             .on("mouseover", function(d, i) {
                 tip.show(d, i);
                 d3.select(".d3-tip-network")
@@ -336,15 +446,72 @@ let NetworkView = Backbone.View.extend({
             })
             .on('mouseout', tip.hide);
 
-        g.append("text")
-            .attr("x", function(d) { return d.x - d.r / 2; })
-            .attr("y", function(d) { return d.y - d.r / 2; })
-            .attr("text-anchor", "middle")
+        svg.selectAll('.node')
+            .data(d3.entries(nnodes))
+            .enter()
+            .append('text')
             .attr("fill", "black")
-            .attr("font-size", function(d) { return 30; })
-            .attr("font-family", "sans-serif")
-            .attr("font-weight", function(d) { return d.r; })
-            .text(function(d) { return d["state_id"]; });
+            .attr("font-size", function(d) {
+                return 30;
+            })
+            .attr("font-family", "Trebuchet MS")
+            .attr("text-anchor", "middle")
+            .text(function(d, i) {
+                return d.value.state_id;
+            })
+            .on("mouseover", function(d, i) {
+                tip.show(d, i);
+                d3.select(".d3-tip-network")
+                    .style("opacity", 0.9);
+            })
+            .on('mouseout', tip.hide);
+    },
+    defineGradient(defs) {
+        var gradient_1 = defs.append("linearGradient")
+            .attr("id", "gradient_1")
+            .attr("x1", "0%")
+            .attr("y1", "0%")
+            .attr("x2", "100%")
+            .attr("y2", "0%")
+            .attr("spreadMethod", "pad");
+
+        gradient_1.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "darkblue")
+            .attr("stop-opacity", 0.15);
+
+        gradient_1.append("stop")
+            .attr("offset", "50%")
+            .attr("stop-color", "grey")
+            .attr("stop-opacity", 0.3);
+
+        gradient_1.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "red")
+            .attr("stop-opacity", 1);
+
+        var gradient_2 = defs.append("linearGradient")
+            .attr("id", "gradient_2")
+            .attr("x1", "0%")
+            .attr("y1", "0%")
+            .attr("x2", "100%")
+            .attr("y2", "0%")
+            .attr("spreadMethod", "pad");
+
+        gradient_2.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "red")
+            .attr("stop-opacity", 1);
+
+        gradient_2.append("stop")
+            .attr("offset", "50%")
+            .attr("stop-color", "grey")
+            .attr("stop-opacity", 0.3);
+
+        gradient_2.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "darkblue")
+            .attr("stop-opacity", 0.15);
     }
 
 });
