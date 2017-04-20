@@ -21,6 +21,9 @@ let policyView = new View.PolicyView({
     }),
     statBarView = new View.StatBarView({
         model: stateModel
+    }),
+    policyOptionsView = new View.PolicyOptionsView({
+        model: policyOptionsModel
     });
 
 $(document).ready(() => {
@@ -52,11 +55,7 @@ $(document).ready(() => {
 });
 
 function initRendering() {
-
-    // BEGIN: for demo
-    stateModel.set('detail', conf.mock.bar);
-    // END: for demo
-
+    stateModel.fetch();
     policyModel.fetch();
     networkModel.fetch();
 }
@@ -70,6 +69,7 @@ function bindEvents() {
             pipe = policyOptionsModel.get("pipe");
 
         conditions.set('subject', subjectList[clickedIndex - 1], { silent: true });
+        stateModel.populate(conditions);
 
         // reload policy select drop down
         $('#policy-select option.policy-option').remove();

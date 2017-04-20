@@ -2,11 +2,12 @@ from decimal import Decimal
 from flask import request, g, json
 from app import app
 
-from .dao import PageDao, PolicyDao, NetworkDao
+from .dao import PageDao, PolicyDao, NetworkDao, StateDao
 
 page_dao = PageDao()
 policy_dao = PolicyDao()
 network_dao = NetworkDao()
+state_dao = StateDao()
 
 class Service(object):
     """Base Service class"""
@@ -38,6 +39,30 @@ class PageService(Service):
     def get_subject_list():
         """get all subject from database."""
         return json.dumps(page_dao.get_all_policies())
+
+class StateService(Service):
+    """state service handling requests from bar chart"""
+    def __init__(self):
+        pass
+
+    @staticmethod
+    @app.route("/api/root/<subject_id>", methods=["GET"])
+    def get_root_count(subject_id):
+        """get all subject from database."""
+        result = []
+        state_pipe = state_dao.get_state_id_names()
+        root_states = state_dao.get_root_count_list_for(subject_id)
+        for state in state_pipe:
+            if(root_states.has_key(state.stateId)):
+                result.append(root_states[state.stateId])
+            else:
+                result.append({
+                    "state_id": state.stateId,
+                    "state_name": state.stateName,
+                    "num":0
+                })
+        result.sort(key = lambda state: state["num"], reverse = True)
+        return json.dumps({"detail": result})
 
 
 class PolicyService(Service):

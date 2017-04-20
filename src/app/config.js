@@ -21,7 +21,24 @@ const Config = {
         policyBase: 'policy/',
         networkBase: 'network/'
     },
-    pipe: {},
+    pipe: {
+        subjectToId: {
+            "Administrative Organzation": 1,
+            "Civil Rights": 2,
+            "Conservation": 3,
+            "Corrections": 4,
+            "Education": 5,
+            "Elections": 6,
+            "Health": 7,
+            "Highway": 8,
+            "Labor": 9,
+            "Planning": 10,
+            "Professional Regulation": 11,
+            "Taxes": 12,
+            "Unknown": 13,
+            "Welfare": 14
+        }
+    },
     mock: {
         bar: [{
                 "state_id": "AK",

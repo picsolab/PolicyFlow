@@ -38,7 +38,19 @@ let NetworkModel = Backbone.Model.extend({
     }
 });
 
-let StateModel = Backbone.Model.extend({});
+let StateModel = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = '/api/root/';
+        this.url = this.urlRoot + conf.pipe.subjectToId[conf.bases.subject.default];
+    },
+    populate(conditions) {
+        let _self = this;
+        this.url = this.urlRoot + conf.pipe.subjectToId[conditions.get("subject")];
+        $.getJSON(_self.url).done((data) => {
+            _self.set(data);
+        });
+    }
+});
 
 
 module.exports = {

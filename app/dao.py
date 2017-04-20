@@ -1,6 +1,6 @@
 from app import db, models
 from .models import Subject, Policy, State, Cascade, Metadata
-from sqlalchemy import text
+from sqlalchemy import text, Integer
 from sqlalchemy.orm.session import Session
 
 class BaseDao(object):
@@ -16,6 +16,10 @@ class BaseDao(object):
 
     def get_all_state(self):
         return State.query.all()
+
+    def get_state_id_names(self):
+        return db.session.execute(\
+            text("SELECT state.state_id AS stateId, state_name AS stateName FROM `state`")).fetchall()
 
     def get_metadata_by_year(self, year):
         return Metadata.query.filter(Metadata.year == year)
@@ -65,6 +69,27 @@ class PageDao(BaseDao):
             policy_pipe[policy.policyId] = policy.policyName
         output["policies"] = policy_set
         output["pipe"] = policy_pipe
+        return output
+
+class StateDao(BaseDao):
+    pass
+
+    def get_root_count_list_for(self, subject_id):
+        output = {}
+        stmt = text("\
+        SELECT r.state_id AS stateId, s.state_name AS stateName, count(r.state_id) AS rootCount \
+        FROM policy AS p, root_state AS r, `state` AS s \
+        WHERE p.policy_subject_id=:subject_id AND p.policy_id=r.policy_id AND r.state_id=s.state_id \
+        GROUP BY r.state_id \
+        ")
+
+        query_result = db.session.execute(stmt, {'subject_id': int(subject_id)}).fetchall()
+        for item in query_result:
+            temp_object = {}
+            temp_object["state_id"] = item.stateId
+            temp_object["state_name"] = item.stateName
+            temp_object["num"] = item.rootCount
+            output[item.stateId] = temp_object
         return output
 
 
@@ -122,13 +147,13 @@ class NetworkDao(BaseDao):
         # data from those states who:
         # - were affected by the specified policy
         # - during 1960 to 1999
-        result_with_valid_data = db.session.query(State.stateId, Metadata.year, getattr(Metadata, meta_flag)).from_statement(stmt).params(policy_id=policy_id).all()
+        result_with_valid_data = db.session.query(State.stateId, Metadata.year, getattr(Metadata, meta_flag))\
+            .from_statement(stmt).params(policy_id=policy_id).all()
 
         for item in result_with_valid_data:
             meta = getattr(item, meta_flag)
             meta_set[item.stateId] = meta
             year_set[item.stateId] = item.year
-            print item.year
             max_meta = max(max_meta, meta)
             min_meta = min(min_meta, meta)
 
