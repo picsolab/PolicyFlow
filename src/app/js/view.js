@@ -212,7 +212,7 @@ let NetworkView = Backbone.View.extend({
     render() {
         var _self = this;
 
-        d3.select(_self.el).selectAll('g').remove();
+        $(_self.el).empty();
 
         var tip = d3tip()
             .attr('class', 'd3-tip-network')
