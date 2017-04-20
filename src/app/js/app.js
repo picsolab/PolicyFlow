@@ -34,6 +34,7 @@ $(document).ready(() => {
     });
 
     networkModel.on('change', () => {
+        console.log(networkModel);
         networkView.render();
     })
 

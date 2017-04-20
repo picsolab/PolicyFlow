@@ -22,6 +22,209 @@ const Config = {
         networkBase: 'network/'
     },
     pipe: {},
+    static: {
+        edges: [{
+                "source": 36,
+                "target": 1
+            },
+            {
+                "source": 4,
+                "target": 2
+            },
+            {
+                "source": 36,
+                "target": 3
+            },
+            {
+                "source": 22,
+                "target": 4
+            },
+            {
+                "source": 46,
+                "target": 5
+            },
+            {
+                "source": 33,
+                "target": 6
+            },
+            {
+                "source": 6,
+                "target": 7
+            },
+            {
+                "source": 4,
+                "target": 8
+            },
+            {
+                "source": 4,
+                "target": 9
+            },
+            {
+                "source": 6,
+                "target": 11
+            },
+            {
+                "source": 30,
+                "target": 12
+            },
+            {
+                "source": 4,
+                "target": 13
+            },
+            {
+                "source": 13,
+                "target": 14
+            },
+            {
+                "source": 4,
+                "target": 15
+            },
+            {
+                "source": 36,
+                "target": 16
+            },
+            {
+                "source": 5,
+                "target": 17
+            },
+            {
+                "source": 6,
+                "target": 18
+            },
+            {
+                "source": 4,
+                "target": 19
+            },
+            {
+                "source": 4,
+                "target": 20
+            },
+            {
+                "source": 33,
+                "target": 21
+            },
+            {
+                "source": 33,
+                "target": 22
+            },
+            {
+                "source": 4,
+                "target": 23
+            },
+            {
+                "source": 8,
+                "target": 24
+            },
+            {
+                "source": 4,
+                "target": 25
+            },
+            {
+                "source": 4,
+                "target": 26
+            },
+            {
+                "source": 4,
+                "target": 27
+            },
+            {
+                "source": 4,
+                "target": 28
+            },
+            {
+                "source": 6,
+                "target": 29
+            },
+            {
+                "source": 6,
+                "target": 30
+            },
+            {
+                "source": 4,
+                "target": 31
+            },
+            {
+                "source": 4,
+                "target": 32
+            },
+            {
+                "source": 6,
+                "target": 33
+            },
+            {
+                "source": 4,
+                "target": 34
+            },
+            {
+                "source": 36,
+                "target": 35
+            },
+            {
+                "source": 4,
+                "target": 36
+            },
+            {
+                "source": 33,
+                "target": 36
+            },
+            {
+                "source": 33,
+                "target": 37
+            },
+            {
+                "source": 30,
+                "target": 38
+            },
+            {
+                "source": 17,
+                "target": 39
+            },
+            {
+                "source": 46,
+                "target": 40
+            },
+            {
+                "source": 13,
+                "target": 41
+            },
+            {
+                "source": 44,
+                "target": 42
+            },
+            {
+                "source": 46,
+                "target": 43
+            },
+            {
+                "source": 13,
+                "target": 44
+            },
+            {
+                "source": 26,
+                "target": 44
+            },
+            {
+                "source": 6,
+                "target": 45
+            },
+            {
+                "source": 4,
+                "target": 46
+            },
+            {
+                "source": 18,
+                "target": 47
+            },
+            {
+                "source": 5,
+                "target": 49
+            },
+            {
+                "source": 5,
+                "target": 49
+            }
+        ]
+    },
     mock: {
         bar: [{
                 "state_id": "AK",
@@ -272,307 +475,6 @@ const Config = {
                 "state_id": "CA",
                 "state_name": "California",
                 "num": 29
-            }
-        ],
-        net: [{
-                "state_id": "HI",
-                "rpcpinc": 2.9659743,
-                "long": -157.8219,
-                "lat": 21.292
-            },
-            {
-                "state_id": "AK",
-                "rpcpinc": 3.0816245,
-                "long": -134.5721,
-                "lat": 58.3637
-            },
-            {
-                "state_id": "OR",
-                "rpcpinc": 2.917274,
-                "long": -123.0272,
-                "lat": 44.937
-            },
-            {
-                "state_id": "WA",
-                "rpcpinc": 3.2957551,
-                "long": -122.9016,
-                "lat": 47.0449
-            },
-            {
-                "state_id": "CA",
-                "rpcpinc": 3.3128164,
-                "long": -121.4871,
-                "lat": 38.5737
-            },
-            {
-                "state_id": "NV",
-                "rpcpinc": 3.2017016,
-                "long": -117.7519,
-                "lat": 39.1501
-            },
-            {
-                "state_id": "ID",
-                "rpcpinc": 2.512661,
-                "long": -116.2125,
-                "lat": 43.6021
-            },
-            {
-                "state_id": "AZ",
-                "rpcpinc": 2.654551,
-                "long": -112.0738,
-                "lat": 33.4483
-            },
-            {
-                "state_id": "MT",
-                "rpcpinc": 2.3804896,
-                "long": -112.0205,
-                "lat": 46.5911
-            },
-            {
-                "state_id": "UT",
-                "rpcpinc": 2.4774585,
-                "long": -111.8882,
-                "lat": 40.7716
-            },
-            {
-                "state_id": "NM",
-                "rpcpinc": 2.3174274,
-                "long": -105.9381,
-                "lat": 35.6816
-            },
-            {
-                "state_id": "CO",
-                "rpcpinc": 3.3387325,
-                "long": -104.9881,
-                "lat": 39.7551
-            },
-            {
-                "state_id": "WY",
-                "rpcpinc": 2.936279,
-                "long": -104.8165,
-                "lat": 41.1389
-            },
-            {
-                "state_id": "ND",
-                "rpcpinc": 2.537821,
-                "long": -100.7694,
-                "lat": 46.8084
-            },
-            {
-                "state_id": "SD",
-                "rpcpinc": 2.6797109,
-                "long": -100.3177,
-                "lat": 44.3776
-            },
-            {
-                "state_id": "TX",
-                "rpcpinc": 2.8506484,
-                "long": -97.7452,
-                "lat": 30.2687
-            },
-            {
-                "state_id": "NE",
-                "rpcpinc": 2,
-                "long": -97.548004,
-                "lat": 41.178558
-            },
-            {
-                "state_id": "OK",
-                "rpcpinc": 2.4573736,
-                "long": -97.4591,
-                "lat": 35.4931
-            },
-            {
-                "state_id": "KS",
-                "rpcpinc": 2.8967571,
-                "long": -95.6815,
-                "lat": 39.0474
-            },
-            {
-                "state_id": "IA",
-                "rpcpinc": 2.7577827,
-                "long": -93.6203,
-                "lat": 41.5888
-            },
-            {
-                "state_id": "MN",
-                "rpcpinc": 3.3001823,
-                "long": -93.1027,
-                "lat": 44.9446
-            },
-            {
-                "state_id": "AR",
-                "rpcpinc": 2.3276858,
-                "long": -92.2789,
-                "lat": 34.7244
-            },
-            {
-                "state_id": "MO",
-                "rpcpinc": 2.8311036,
-                "long": -92.1941,
-                "lat": 38.5698
-            },
-            {
-                "state_id": "LA",
-                "rpcpinc": 2.4250865,
-                "long": -91.1882,
-                "lat": 30.4493
-            },
-            {
-                "state_id": "MS",
-                "rpcpinc": 2.2195945,
-                "long": -90.178,
-                "lat": 32.3122
-            },
-            {
-                "state_id": "IL",
-                "rpcpinc": 3.3063376,
-                "long": -89.6533,
-                "lat": 39.8018
-            },
-            {
-                "state_id": "WI",
-                "rpcpinc": 2.9859514,
-                "long": -89.4007,
-                "lat": 43.0632
-            },
-            {
-                "state_id": "TN",
-                "rpcpinc": 2.7395337,
-                "long": -86.7821,
-                "lat": 36.1589
-            },
-            {
-                "state_id": "AL",
-                "rpcpinc": 2.479402,
-                "long": -86.2996,
-                "lat": 32.3754
-            },
-            {
-                "state_id": "IN",
-                "rpcpinc": 2.7966568,
-                "long": -86.1563,
-                "lat": 39.767
-            },
-            {
-                "state_id": "KY",
-                "rpcpinc": 2.487069,
-                "long": -84.8715,
-                "lat": 38.1894
-            },
-            {
-                "state_id": "MI",
-                "rpcpinc": 3.0081959,
-                "long": -84.5466,
-                "lat": 42.7336
-            },
-            {
-                "state_id": "GA",
-                "rpcpinc": 2.8909261,
-                "long": -84.3897,
-                "lat": 33.7545
-            },
-            {
-                "state_id": "FL",
-                "rpcpinc": 2.951073,
-                "long": -84.2806,
-                "lat": 30.4382
-            },
-            {
-                "state_id": "OH",
-                "rpcpinc": 2.9471853,
-                "long": -83.0007,
-                "lat": 39.9622
-            },
-            {
-                "state_id": "WV",
-                "rpcpinc": 2.2729383,
-                "long": -81.6354,
-                "lat": 38.3533
-            },
-            {
-                "state_id": "SC",
-                "rpcpinc": 2.5430043,
-                "long": -81.0353,
-                "lat": 34.0007
-            },
-            {
-                "state_id": "NC",
-                "rpcpinc": 2.8427656,
-                "long": -78.6434,
-                "lat": 35.7797
-            },
-            {
-                "state_id": "VA",
-                "rpcpinc": 3.1981382,
-                "long": -77.4339,
-                "lat": 39.5408
-            },
-            {
-                "state_id": "PA",
-                "rpcpinc": 3.0611076,
-                "long": -73.8849,
-                "lat": 42.274
-            },
-            {
-                "state_id": "MD",
-                "rpcpinc": 3.4787867,
-                "long": -73.5197,
-                "lat": 38.9693
-            },
-            {
-                "state_id": "DE",
-                "rpcpinc": 3.1392875,
-                "long": -71.5136,
-                "lat": 39.1615
-            },
-            {
-                "state_id": "NJ",
-                "rpcpinc": 3.818286,
-                "long": -70.7642,
-                "lat": 42.2202
-            },
-            {
-                "state_id": "NY",
-                "rpcpinc": 3.5229518,
-                "long": -68.7551,
-                "lat": 45.6517
-            },
-            {
-                "state_id": "CT",
-                "rpcpinc": 4.1808934,
-                "long": -67.6732,
-                "lat": 38.7665
-            },
-            {
-                "state_id": "VT",
-                "rpcpinc": 2.8365026,
-                "long": -66.5716,
-                "lat": 47.2627
-            },
-            {
-                "state_id": "NH",
-                "rpcpinc": 3.3513665,
-                "long": -65.5597,
-                "lat": 43.2314
-            },
-            {
-                "state_id": "RI",
-                "rpcpinc": 2.9955618,
-                "long": -65.4087,
-                "lat": 40.827
-            },
-            {
-                "state_id": "MA",
-                "rpcpinc": 3.7438855,
-                "long": -64.0568,
-                "lat": 38.3589
-            },
-            {
-                "state_id": "ME",
-                "rpcpinc": 2.7158854,
-                "long": -64.7323,
-                "lat": 48.3294
             }
         ]
     }

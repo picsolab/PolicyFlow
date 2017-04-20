@@ -2,9 +2,7 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
-
-// d3-tip
-let d3tip = require('d3-tip');
+const eedges = conf.static.edges;
 
 let colorList = [],
     colorMap = {};
@@ -220,7 +218,7 @@ let NetworkView = Backbone.View.extend({
             .attr('class', 'd3-tip-network')
             .offset([-10, 0])
             .html(function(d) {
-                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>Metadata: <span style='color:white'>" + d.metadata + "</span></p><p>Adopted year: <span style='color:white'>" + d.adoptedYear + "</span></p>";
+                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>" + d.metaName + ": <span style='color:white'>" + d.metadata + "</span></p ><p>Adopted year: <span style='color:white'>" + (d.adoptedYear > 0 ? d.adoptedYear : "Haven't adopted") + "</span></p >";
             });
 
         var force = d3.layout.force()
@@ -231,10 +229,8 @@ let NetworkView = Backbone.View.extend({
         var svg = d3.select(_self.el)
             .attr("width", 850)
             .attr("height", 600)
-            .attr('preserveAspectRatio', 'xMinYMin meet')
-            .attr('viewBox', ("0 0 850 900"))
-            .append("g")
-            .attr("transform", "translate(50,80)");
+            .attr('preserveAspectRatio', 'xMidYMin meet')
+            .attr('viewBox', ("-300 -300 2200 1200"));
 
         _self.udpate(svg, tip, force);
     },
@@ -407,6 +403,13 @@ let StatBarView = Backbone.View.extend({
 
     }
 });
+
+// util definition
+d3.selection.prototype.moveToFront = function() {
+    return this.each(function() {
+        this.parentNode.appendChild(this);
+    });
+};
 
 module.exports = {
     PolicyView: PolicyView,

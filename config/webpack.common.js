@@ -42,7 +42,8 @@ module.exports = {
             jQuery: 'jquery',
             _: 'lodash',
             d3: 'd3',
-            Backbone: 'backbone'
+            Backbone: 'backbone',
+            d3tip: 'd3-tip'
         })
 
     ]
