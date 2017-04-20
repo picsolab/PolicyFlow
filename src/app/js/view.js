@@ -164,7 +164,7 @@ let PolicyView = Backbone.View.extend({
                 element = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
                 year = e.target.classList[1];
             }
-            element.attr("fill", css_variables["--color-pop-up"]);
+            element.addClass("hovered-item");
 
             d3.select("#svg-cascade-view .y-axis").selectAll("tempTick")
                 .data([year])
@@ -187,7 +187,7 @@ let PolicyView = Backbone.View.extend({
                 element = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
                 year = e.target.classList[1];
             }
-            element.attr("fill", colorList[index]);
+            element.removeClass("hovered-item");
             $(".temp-tick").remove();
         });
     },
@@ -523,6 +523,8 @@ let StatBarView = Backbone.View.extend({
         let _self = this,
             data = _self.model.get("detail");
 
+        $(_self.el).empty();
+
         var tip = d3tip()
             .attr('class', 'd3-tip')
             .offset([-10, 0])
@@ -571,6 +573,10 @@ let StatBarView = Backbone.View.extend({
     }
 });
 
+let PolicyOptionsView = Backbone.View.extend({
+
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -581,5 +587,6 @@ d3.selection.prototype.moveToFront = function() {
 module.exports = {
     PolicyView: PolicyView,
     NetworkView: NetworkView,
-    StatBarView: StatBarView
+    StatBarView: StatBarView,
+    PolicyOptionsView: PolicyOptionsView
 };
