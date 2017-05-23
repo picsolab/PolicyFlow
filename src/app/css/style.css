@@ -18,6 +18,18 @@
 }
 
 
+/*arc view panel*/
+
+#svg-arc-view path {
+    fill: #505050;
+    fill-opacity: 0.2;
+}
+
+#svg-arc-view circle {
+    stroke-width: 1;
+}
+
+
 /*policy network panel*/
 
 #policy-network-wrapper {

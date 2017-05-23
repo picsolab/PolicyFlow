@@ -25,6 +25,19 @@ const GraphSettings = {
             yMaxTick: 10
         }
     },
+    // arc view settings
+    a: {
+        size: {
+            width: 960,
+            height: 500
+        },
+        margin: {
+            margin: 20,
+            spacing: 11,
+        },
+        transitionTime: 2500,
+        nodeY: 380,
+    },
 
     // bar view settings
     b: {

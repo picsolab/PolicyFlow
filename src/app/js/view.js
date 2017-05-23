@@ -577,6 +577,184 @@ let PolicyOptionsView = Backbone.View.extend({
 
 });
 
+let ArcView = Backbone.View.extend({
+    el: "#svg-arc-view",
+    render(sortMethod) {
+        let _self = this,
+            i,
+            path,
+            nodes = this.model.get("nodes"),
+            links = this.model.get("links"),
+            colors = d3.scale.category20(),
+            τ = 2 * Math.PI; // http://tauday.com/tau-manifesto
+
+        let svg = d3.select(_self.el)
+            .attr("width", gs.a.size.width)
+            .attr("height", gs.a.size.height);
+
+        // Set each node's value to the sum of all incoming and outgoing link values
+        let nodeValMin = 100000000,
+            nodeValMax = 0;
+        for (i = 0; i < nodes.length; i++) {
+            nodes[i].value = 0;
+            nodes[i].displayOrder = i;
+        }
+        for (i = 0; i < links.length; i++) {
+            let link = links[i];
+            value = link.value;
+            nodes[link.source].value += link.value;
+            nodes[link.target].value += link.value;
+        }
+        for (i = 0; i < nodes.length; i++) {
+            nodeValMin = Math.min(nodeValMin, nodes[i].value);
+            nodeValMax = Math.max(nodeValMax, nodes[i].value);
+        }
+
+        let arcBuilder = d3.svg.arc()
+            .startAngle(-τ / 4)
+            .endAngle(τ / 4);
+
+        arcBuilder.setRadii = function(d) {
+            let arcHeight = 0.5 * Math.abs(d.x2 - d.x1);
+            this.innerRadius(arcHeight - d.thickness / 2)
+                .outerRadius(arcHeight + d.thickness / 2);
+        };
+
+        nodes = this.doSort(nodes, sortMethod);
+
+        // DATA JOIN
+        path = svg.selectAll("path")
+            .data(links);
+        // UPDATE
+        path.transition()
+            .duration(gs.a.transitionTime)
+            .call(_self.pathTween, this, arcBuilder, nodes);
+        // ENTER
+        path.enter()
+            .append("path")
+            .attr("transform", (d, i) => {
+                d.x1 = _self.nodeDisplayX(nodes[d.target]);
+                d.x2 = _self.nodeDisplayX(nodes[d.source]);
+                return _self.arcTranslation(d);
+            })
+            .attr("d", (d, i) => {
+                d.thickness = 1 + d.value;
+                arcBuilder.setRadii(d);
+                return arcBuilder();
+            });
+
+        // DATA JOIN
+        let circle = svg.selectAll("circle")
+            .data(nodes);
+        // UPDATE
+        circle.transition()
+            .duration(gs.a.transitionTime)
+            .attr("cx", (d, i) => {
+                return _self.nodeDisplayX(d);
+            });
+        // ENTER
+        circle.enter()
+            .append("circle")
+            .attr("cy", gs.a.nodeY)
+            .attr("cx", (d, i) => {
+                return _self.nodeDisplayX(d);
+            })
+            .attr("r", (d, i) => {
+                return _self.mapRange(d.value, nodeValMin, nodeValMax, 2.5, 13);
+            })
+            .attr("fill", (d, i) => {
+                return colors(d.group);
+            })
+            .attr("stroke", (d, i) => {
+                return d3.rgb(colors(d.group)).darker(1);
+            });
+
+        // DATA JOIN
+        let text = svg.selectAll("text")
+            .data(nodes);
+        // UPDATE
+        text.transition()
+            .duration(gs.a.transitionTime)
+            .attr("x", (d, i) => { return _self.nodeDisplayX(d) - 5; })
+            .attr("transform", (d, i) => { return _self.textTransform(d); });
+        // ENTER
+        text.enter()
+            .append("text")
+            .attr("y", gs.a.nodeY + 12)
+            .attr("x", (d, i) => { return _self.nodeDisplayX(d) - 5; })
+            .attr("transform", (d, i) => { return _self.textTransform(d); })
+            .attr("font-size", "10px")
+            .text((d, i) => { return d.nodeName; });
+    },
+    mapRange(value, inMin, inMax, outMin, outMax) {
+        let inVal = Math.min(Math.max(value, inMin), inMax);
+        return outMin + (outMax - outMin) * ((inVal - inMin) / (inMax - inMin));
+    },
+    arcTranslation(d) {
+        return "translate(" + (d.x1 + d.x2) / 2 + "," + gs.a.nodeY + ")";
+    },
+    nodeDisplayX(node) {
+        return node.displayOrder * gs.a.margin.spacing + gs.a.margin.margin;
+    },
+    textTransform(node) {
+        return ("rotate(90 " + (this.nodeDisplayX(node) - 5) + " " + (gs.a.nodeY + 12) + ")");
+    },
+    pathTween(transition, _self, arcBuilder, nodes) {
+        transition.attrTween("d", (d) => {
+            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target]));
+            let interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
+            return function(t) {
+                d.x1 = interpolateX1(t);
+                d.x2 = interpolateX2(t);
+                arcBuilder.setRadii(d);
+                return arcBuilder();
+            };
+        });
+
+        transition.attrTween("transform", function(d) {
+            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target]));
+            let interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
+            return function(t) {
+                d.x1 = interpolateX1(t);
+                d.x2 = interpolateX2(t);
+                return _self.arcTranslation(d);
+            };
+        });
+    },
+    doSort(nodes, sortMethod) {
+        let nodeMap = [],
+            sortFunciton;
+
+        for (i = 0; i < nodes.length; i++) {
+            let node = $.extend({ index: i }, nodes[i]); // Shallow copy
+            nodeMap.push(node);
+        }
+
+        if (sortMethod == 0) {
+            // GROUP
+            sortFunction = function(a, b) {
+                return b.group - a.group;
+            };
+        } else if (sortMethod == 1) {
+            // FREQUENCY
+            sortFunction = function(a, b) {
+                return b.value - a.value;
+            };
+        } else if (sortMethod == 2) {
+            // ALPHABETICAL
+            sortFunction = function(a, b) {
+                return a.nodeName.localeCompare(b.nodeName)
+            };
+        }
+
+        nodeMap.sort(sortFunction);
+        for (i = 0; i < nodeMap.length; i++) {
+            nodes[nodeMap[i].index].displayOrder = i;
+        }
+        return nodes;
+    }
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -588,5 +766,6 @@ module.exports = {
     PolicyView: PolicyView,
     NetworkView: NetworkView,
     StatBarView: StatBarView,
+    ArcView: ArcView,
     PolicyOptionsView: PolicyOptionsView
 };

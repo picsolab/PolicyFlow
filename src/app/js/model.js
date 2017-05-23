@@ -52,11 +52,16 @@ let StateModel = Backbone.Model.extend({
     }
 });
 
+let ArcModel = Backbone.Model.extend({
+    defaults: conf.mock.miserables
+});
+
 
 module.exports = {
     Conditions: Conditions,
     PolicyModel: PolicyModel,
     PolicyOptionsModel: PolicyOptionsModel,
     NetworkModel: NetworkModel,
+    ArcModel: ArcModel,
     StateModel: StateModel
 };

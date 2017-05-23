@@ -12,6 +12,7 @@ let conditions = new Model.Conditions(),
     policyModel = new Model.PolicyModel(),
     networkModel = new Model.NetworkModel(),
     stateModel = new Model.StateModel(),
+    arcModel = new Model.ArcModel(),
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
         model: policyModel
@@ -21,6 +22,9 @@ let policyView = new View.PolicyView({
     }),
     statBarView = new View.StatBarView({
         model: stateModel
+    }),
+    arcView = new View.ArcView({
+        model: arcModel
     }),
     policyOptionsView = new View.PolicyOptionsView({
         model: policyOptionsModel
@@ -58,6 +62,7 @@ function initRendering() {
     // stateModel.fetch();
     policyModel.fetch();
     networkModel.fetch();
+    arcView.render(0);
 }
 
 function bindEvents() {
@@ -105,7 +110,11 @@ function bindEvents() {
             default:
                 break;
         }
-    })
+    });
+
+    $("#selectSort").on("change", (event) => {
+        arcView.render(event.target.selectedIndex);
+    });
 }
 
 function initDom() {
