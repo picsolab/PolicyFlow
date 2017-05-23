@@ -53,21 +53,34 @@
                     </label>
                 </div>
             </div>
+            <div class="nav nav-sidebar" id="view-selection-wrapper">
+                <ol class="breadcrumb">
+                    <li class="active">
+                        <h4>View</h4>
+                    </li>
+                </ol>
+                <div id="view-selection-radio" class="select-wrapper btn-group-vertical" role="group" data-toggle="buttons" aria-label="...">
+                    <label class="btn btn-default active">
+                        <input type="radio" name="view-selection" id="option-arc-view" value="arc" autocomplete="off" checked> Arc view
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="view-selection" id="option-network-view" value="network" autocomplete="off"> Network view
+                    </label>
+                </div>
+            </div>
+
         </div>
         <div class="col-sm-10 col-sm-offset-2 col-md-10 col-md-offset-2 main row">
             <div class="page-header">
                 <h2 id="page-header"></h2>
             </div>
-            <div id="stat-bar-wrapper" class="col-sm-12 col-md-12 col-lg-12">
-                <svg id="svg-stat-bar-view"></svg>
-            </div>
             <div id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
-                <svg id="svg-network-view"></svg>
+                <svg id="svg-network-view" style="display:none"></svg>
+                <svg id="svg-arc-view"></svg>
             </div>
             <div id="policy-cascade-wrapper" class="col-sm-12 col-md-3 col-lg-3">
                 <svg id="svg-cascade-view"></svg>
             </div>
-
         </div>
     </div>
 </div>

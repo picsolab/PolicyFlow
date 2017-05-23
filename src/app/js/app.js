@@ -32,9 +32,9 @@ $(document).ready(() => {
         policyView.render();
     });
 
-    stateModel.on('change', () => {
-        statBarView.render();
-    });
+    // stateModel.on('change', () => {
+    //     statBarView.render();
+    // });
 
     networkModel.on('change', () => {
         networkView.render();
@@ -55,7 +55,7 @@ $(document).ready(() => {
 });
 
 function initRendering() {
-    stateModel.fetch();
+    // stateModel.fetch();
     policyModel.fetch();
     networkModel.fetch();
 }
@@ -69,7 +69,7 @@ function bindEvents() {
             pipe = policyOptionsModel.get("pipe");
 
         conditions.set('subject', subjectList[clickedIndex - 1], { silent: true });
-        stateModel.populate(conditions);
+        // stateModel.populate(conditions);
 
         // reload policy select drop down
         $('#policy-select option.policy-option').remove();
@@ -90,6 +90,22 @@ function bindEvents() {
     $("#metadata-radio label").click((event) => {
         conditions.set("metadata", $(event.target).find('input').val());
     });
+
+    // select view
+    $("#view-selection-wrapper label").click((event) => {
+        _svgArc = $("#svg-arc-view").hide();
+        _svgNetwork = $("#svg-network-view").hide();
+        switch ($(event.target).find('input').val()) {
+            case "arc":
+                _svgArc.show();
+                break;
+            case "network":
+                _svgNetwork.show();
+                break;
+            default:
+                break;
+        }
+    })
 }
 
 function initDom() {
