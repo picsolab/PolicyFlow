@@ -20,13 +20,26 @@
 
 /*arc view panel*/
 
-#svg-arc-view path {
+#svg-arc-view circle {
+    stroke-width: 1;
+}
+
+#svg-arc-view .labels text {
+    font-size: 10px;
+}
+
+.follow-the-rule {
     fill: #505050;
     fill-opacity: 0.2;
 }
 
-#svg-arc-view circle {
-    stroke-width: 1;
+.violate-the-rule {
+    fill: red;
+    fill-opacity: 0.2;
+}
+
+.invalid-arc {
+    fill-opacity: 0;
 }
 
 

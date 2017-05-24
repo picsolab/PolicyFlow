@@ -21,6 +21,7 @@ let PolicyView = Backbone.View.extend({
 
         // compute color list based on length of year list
         colorList = utils.generateColor(css_variables["--color-trans-out"], css_variables["--color-trans-in"], yearList.length);
+        colorMap = {};
         yearList.forEach((year, index) => {
             colorMap[year] = colorList[index];
         });
@@ -580,36 +581,33 @@ let PolicyOptionsView = Backbone.View.extend({
 let ArcView = Backbone.View.extend({
     el: "#svg-arc-view",
     render(sortMethod) {
+        // console.log("rendering arc: " + sortMethod);
         let _self = this,
-            i,
-            path,
             nodes = this.model.get("nodes"),
             links = this.model.get("links"),
             colors = d3.scale.category20(),
             τ = 2 * Math.PI; // http://tauday.com/tau-manifesto
+        links = conf.static.edges;
 
         let svg = d3.select(_self.el)
             .attr("width", gs.a.size.width)
-            .attr("height", gs.a.size.height);
+            .attr("height", gs.a.size.height)
+            .attr('preserveAspectRatio', 'xMidYMin meet')
+            .attr('viewBox', ("0 0 " + gs.a.size.width + " " + gs.a.size.height + ""))
+            .classed('svg-content-responsive', true);
 
         // Set each node's value to the sum of all incoming and outgoing link values
         let nodeValMin = 100000000,
             nodeValMax = 0;
         for (i = 0; i < nodes.length; i++) {
-            nodes[i].value = 0;
             nodes[i].displayOrder = i;
         }
-        for (i = 0; i < links.length; i++) {
-            let link = links[i];
-            value = link.value;
-            nodes[link.source].value += link.value;
-            nodes[link.target].value += link.value;
-        }
         for (i = 0; i < nodes.length; i++) {
-            nodeValMin = Math.min(nodeValMin, nodes[i].value);
-            nodeValMax = Math.max(nodeValMax, nodes[i].value);
+            nodeValMin = Math.min(nodeValMin, nodes[i].metadata);
+            nodeValMax = Math.max(nodeValMax, nodes[i].metadata);
         }
 
+        // define arc builder
         let arcBuilder = d3.svg.arc()
             .startAngle(-τ / 4)
             .endAngle(τ / 4);
@@ -622,69 +620,142 @@ let ArcView = Backbone.View.extend({
 
         nodes = this.doSort(nodes, sortMethod);
 
+        let pathG = svg.select('.arcs'),
+            circleG = svg.select('.circles'),
+            labelG = svg.select('.labels');
+
         // DATA JOIN
-        path = svg.selectAll("path")
+        let path = pathG.selectAll("path")
             .data(links);
+
         // UPDATE
         path.transition()
             .duration(gs.a.transitionTime)
             .call(_self.pathTween, this, arcBuilder, nodes);
+
         // ENTER
         path.enter()
             .append("path")
-            .attr("transform", (d, i) => {
-                d.x1 = _self.nodeDisplayX(nodes[d.target]);
-                d.x2 = _self.nodeDisplayX(nodes[d.source]);
-                return _self.arcTranslation(d);
-            })
-            .attr("d", (d, i) => {
-                d.thickness = 1 + d.value;
-                arcBuilder.setRadii(d);
-                return arcBuilder();
+            .attr({
+                "transform": (d, i) => {
+                    d.x1 = _self.nodeDisplayX(nodes[d.target]);
+                    d.x2 = _self.nodeDisplayX(nodes[d.source]);
+                    return _self.arcTranslation(d);
+                },
+                "d": (d, i) => {
+                    d.thickness = gs.a.margin.arcThickness;
+                    arcBuilder.setRadii(d);
+                    return arcBuilder();
+                },
+                class: (d, i) => {
+                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
+                        isFollowingNetworkRule = +nodes[d.source].adoptedYear < +nodes[d.target].adoptedYear;
+                    if (isValid) {
+                        if (isFollowingNetworkRule) {
+                            return "follow-the-rule";
+                        } else {
+                            return "violate-the-rule";
+                        }
+                    } else {
+                        return "invalid-arc";
+                    }
+                }
             });
 
         // DATA JOIN
-        let circle = svg.selectAll("circle")
+        let circle = circleG.selectAll("circle")
             .data(nodes);
+
         // UPDATE
         circle.transition()
             .duration(gs.a.transitionTime)
-            .attr("cx", (d, i) => {
-                return _self.nodeDisplayX(d);
-            });
+            .attr("cx", (d, i) => _self.nodeDisplayX(d));
+
         // ENTER
         circle.enter()
             .append("circle")
-            .attr("cy", gs.a.nodeY)
-            .attr("cx", (d, i) => {
-                return _self.nodeDisplayX(d);
-            })
-            .attr("r", (d, i) => {
-                return _self.mapRange(d.value, nodeValMin, nodeValMax, 2.5, 13);
-            })
-            .attr("fill", (d, i) => {
-                return colors(d.group);
-            })
-            .attr("stroke", (d, i) => {
-                return d3.rgb(colors(d.group)).darker(1);
+            .attr({
+                cy: gs.a.nodeY,
+                cx: (d, i) => _self.nodeDisplayX(d),
+                r: (d, i) => _self.mapRange(d.metadata, nodeValMin, nodeValMax, gs.a.multiplier.outMin, gs.a.multiplier.outMax),
+                fill: (d, i) => d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"],
+                stroke: (d, i) => d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1)
             });
 
         // DATA JOIN
-        let text = svg.selectAll("text")
+        let text = labelG.selectAll("text")
             .data(nodes);
         // UPDATE
         text.transition()
             .duration(gs.a.transitionTime)
-            .attr("x", (d, i) => { return _self.nodeDisplayX(d) - 5; })
-            .attr("transform", (d, i) => { return _self.textTransform(d); });
+            .attr({
+                x: (d, i) => _self.nodeDisplayX(d),
+                transform: (d, i) => _self.textTransform(d)
+            });
         // ENTER
         text.enter()
             .append("text")
-            .attr("y", gs.a.nodeY + 12)
-            .attr("x", (d, i) => { return _self.nodeDisplayX(d) - 5; })
-            .attr("transform", (d, i) => { return _self.textTransform(d); })
-            .attr("font-size", "10px")
-            .text((d, i) => { return d.nodeName; });
+            .attr({
+                y: gs.a.nodeY + gs.a.margin.textYShift,
+                x: (d, i) => _self.nodeDisplayX(d),
+                transform: (d, i) => _self.textTransform(d)
+            })
+            .text((d, i) => d.stateName);
+
+    },
+    pathTween(transition, _self, arcBuilder, nodes) {
+        transition.attrTween("d", (d) => {
+            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target])),
+                interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
+            return function(t) {
+                d.x1 = interpolateX1(t);
+                d.x2 = interpolateX2(t);
+                arcBuilder.setRadii(d);
+                return arcBuilder();
+            };
+        });
+
+        transition.attrTween("transform", (d) => {
+            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target]));
+            let interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
+            return function(t) {
+                d.x1 = interpolateX1(t);
+                d.x2 = interpolateX2(t);
+                return _self.arcTranslation(d);
+            };
+        });
+    },
+    doSort(nodes, sortMethod) {
+        let nodeMap = [],
+            sortFunciton;
+
+        nodes.forEach((node, i) => {
+            nodeMap.push($.extend({ index: i }, node));
+        });
+
+        if (sortMethod == 0) {
+            // ADOPTION YEAR
+            sortFunction = (a, b) => {
+                return b.adoptedYear - a.adoptedYear;
+            };
+        } else if (sortMethod == 1) {
+            // METADATA
+            sortFunction = (a, b) => {
+                return b.metadata - a.metadata;
+            };
+        } else if (sortMethod == 2) {
+            // NAME
+            sortFunction = (a, b) => {
+                return a.stateName.localeCompare(b.stateName)
+            };
+        }
+
+        nodeMap.sort(sortFunction);
+        nodeMap.forEach((node, i) => {
+            nodes[node.index].displayOrder = i;
+        });
+
+        return nodes;
     },
     mapRange(value, inMin, inMax, outMin, outMax) {
         let inVal = Math.min(Math.max(value, inMin), inMax);
@@ -699,59 +770,16 @@ let ArcView = Backbone.View.extend({
     textTransform(node) {
         return ("rotate(90 " + (this.nodeDisplayX(node) - 5) + " " + (gs.a.nodeY + 12) + ")");
     },
-    pathTween(transition, _self, arcBuilder, nodes) {
-        transition.attrTween("d", (d) => {
-            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target]));
-            let interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
-            return function(t) {
-                d.x1 = interpolateX1(t);
-                d.x2 = interpolateX2(t);
-                arcBuilder.setRadii(d);
-                return arcBuilder();
-            };
-        });
-
-        transition.attrTween("transform", function(d) {
-            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target]));
-            let interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
-            return function(t) {
-                d.x1 = interpolateX1(t);
-                d.x2 = interpolateX2(t);
-                return _self.arcTranslation(d);
-            };
-        });
-    },
-    doSort(nodes, sortMethod) {
-        let nodeMap = [],
-            sortFunciton;
-
-        for (i = 0; i < nodes.length; i++) {
-            let node = $.extend({ index: i }, nodes[i]); // Shallow copy
-            nodeMap.push(node);
-        }
-
-        if (sortMethod == 0) {
-            // GROUP
-            sortFunction = function(a, b) {
-                return b.group - a.group;
-            };
-        } else if (sortMethod == 1) {
-            // FREQUENCY
-            sortFunction = function(a, b) {
-                return b.value - a.value;
-            };
-        } else if (sortMethod == 2) {
-            // ALPHABETICAL
-            sortFunction = function(a, b) {
-                return a.nodeName.localeCompare(b.nodeName)
-            };
-        }
-
-        nodeMap.sort(sortFunction);
-        for (i = 0; i < nodeMap.length; i++) {
-            nodes[nodeMap[i].index].displayOrder = i;
-        }
-        return nodes;
+    empty() {
+        this.$el.empty();
+        let _self = this,
+            svg = d3.select(_self.el);
+        svg.append('g')
+            .attr('class', 'arcs');
+        svg.append('g')
+            .attr('class', 'circles');
+        svg.append('g')
+            .attr('class', 'labels');
     }
 });
 

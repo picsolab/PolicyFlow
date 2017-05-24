@@ -126,6 +126,7 @@ class NetworkDao(BaseDao):
         min_year = 9999
         min_meta = 9999
         max_meta = 0
+        ne_adopt_year = 0
         pipe = {
             "perCapitaIncome": "state_pci",
             "minorityDiversity": "state_md",
@@ -170,6 +171,8 @@ class NetworkDao(BaseDao):
         # - without time limitations
         result_full = super(NetworkDao, self).get_cascade_by_policy_id(policy_id)
         for item in result_full:
+            if item.stateId == "NE":
+                ne_adopt_year = item.adoptedYear
             if item.stateId not in meta_set:
                 meta_noshow_set[item.stateId] = 0
                 year_noshow_set[item.stateId] = item.adoptedYear
@@ -205,7 +208,7 @@ class NetworkDao(BaseDao):
                 temp_object["metadata"] = -1
                 temp_object["normalizedMetadata"] = -1
                 temp_object["dataYear"] = -1
-                temp_object["adoptedYear"] = -1
+                temp_object["adoptedYear"] = ne_adopt_year
             elif stateId in meta_unadopted_set:
                 temp_object["valid"] = False
                 temp_object["metadata"] = meta_unadopted_set[stateId]

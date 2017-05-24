@@ -28,12 +28,18 @@ const GraphSettings = {
     // arc view settings
     a: {
         size: {
-            width: 960,
-            height: 500
+            width: 850,
+            height: 600
         },
         margin: {
             margin: 20,
-            spacing: 11,
+            spacing: 16,
+            arcThickness: 1.5,
+            textYShift: 15
+        },
+        multiplier: {
+            outMin: 2.5,
+            outMax: 13
         },
         transitionTime: 2500,
         nodeY: 380,

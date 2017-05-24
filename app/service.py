@@ -88,6 +88,13 @@ class NetworkService(Service):
         query_result = network_dao.get_parameterized_network(meta_flag, policy_id)
         return json.dumps({"detail": query_result}, cls=DecimalEncoder)
 
+    @staticmethod
+    @app.route("/api/arc/<meta_flag>/<policy_id>")
+    def get_specified_arc_by(meta_flag, policy_id):
+        """get_specified_arc_by meta_flag and policy_id"""
+        query_result = network_dao.get_parameterized_network(meta_flag, policy_id)
+        return json.dumps({"nodes": query_result}, cls=DecimalEncoder)
+
 class ServiceUtils():
     """service utils"""
     pass

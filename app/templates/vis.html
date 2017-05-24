@@ -75,13 +75,17 @@
                 <h2 id="page-header"></h2>
             </div>
             <div id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
-                <select id="selectSort">
-                    <option value="Group">by Cluster</option>
-                    <option value="Frequency">by Frequency</option>
-                    <option value="Name">by Name</option>
+                <select id="select-sort">
+                    <option value="year">by Adoption Year</option>
+                    <option value="metadata">by Metadata</option>
+                    <option value="name">by Name</option>
                 </select>
                 <svg id="svg-network-view" style="display:none"></svg>
-                <svg id="svg-arc-view"></svg>
+                <svg id="svg-arc-view">
+                    <g class="arcs"></g>
+                    <g class="circles"></g>
+                    <g class="labels"></g>
+                </svg>
             </div>
             <div id="policy-cascade-wrapper" class="col-sm-12 col-md-3 col-lg-3">
                 <svg id="svg-cascade-view"></svg>

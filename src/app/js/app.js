@@ -41,8 +41,18 @@ $(document).ready(() => {
     // });
 
     networkModel.on('change', () => {
-        networkView.render();
-    })
+        let arcViewSelected = $($("#view-selection-radio label")[0]).hasClass("active");
+        if (arcViewSelected) {
+            arcModel.set("nodes", networkModel.get("detail"));
+        } else {
+            networkView.render();
+        }
+    });
+
+    arcModel.on("change", () => {
+        arcView.empty();
+        arcView.render(conf.pipe.sortMethodId[$("#select-sort").val()]);
+    });
 
     conditions.on('change', () => {
         updateHeader();
@@ -62,7 +72,6 @@ function initRendering() {
     // stateModel.fetch();
     policyModel.fetch();
     networkModel.fetch();
-    arcView.render(0);
 }
 
 function bindEvents() {
@@ -102,9 +111,14 @@ function bindEvents() {
         _svgNetwork = $("#svg-network-view").hide();
         switch ($(event.target).find('input').val()) {
             case "arc":
+                arcView.empty();
+                arcView.render(conf.pipe.sortMethodId[$("#select-sort").val()]);
                 _svgArc.show();
+                $("#select-sort").show();
                 break;
             case "network":
+                $("#select-sort").hide();
+                networkView.render();
                 _svgNetwork.show();
                 break;
             default:
@@ -112,7 +126,7 @@ function bindEvents() {
         }
     });
 
-    $("#selectSort").on("change", (event) => {
+    $("#select-sort").on("change", (event) => {
         arcView.render(event.target.selectedIndex);
     });
 }

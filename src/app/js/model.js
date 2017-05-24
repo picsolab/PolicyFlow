@@ -53,7 +53,18 @@ let StateModel = Backbone.Model.extend({
 });
 
 let ArcModel = Backbone.Model.extend({
-    defaults: conf.mock.miserables
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.arcBase;
+        this.url = this.urlRoot + conf.models.conditions.defaults.metadata + "/" + conf.models.conditions.defaults.policy;
+    },
+    populate(conditions) {
+        let _self = this;
+        this.url = this.urlRoot + conditions.get("metadata") + "/" + conditions.get("policy");
+        $.getJSON(_self.url).done((data) => {
+            // console.log(_self.url);
+            _self.set(data);
+        });
+    }
 });
 
 
