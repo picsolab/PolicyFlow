@@ -765,10 +765,10 @@ let ArcView = Backbone.View.extend({
     bindTriggers(nodes) {
         let _self = this,
             _arrow = d3.select(_self.el).append('g').attr("class", "arrow"),
-            _indicator = d3.svg.symbol().type('triangle-down');
+            _indicator = d3.svg.symbol().type('triangle-down'),
+            nodeMap = {};
         $("#svg-arc-view .arcs path").on("mouseover", (event) => {
             if (!$(event.target).hasClass("invalid-arc")) {
-                console.log(event.target);
                 let x = _self.nodeDisplayX(nodes[+$(event.target).attr("target")]),
                     _sourceNode = $("#node_" + $(event.target).attr("source")),
                     _targetNode = $("#node_" + $(event.target).attr("target"));
@@ -789,6 +789,54 @@ let ArcView = Backbone.View.extend({
             _sourceNode.removeClass("hovered-item");
             _targetNode.removeClass("hovered-item");
         });
+
+        $("#svg-arc-view .circles circle").on("mouseover", (event) => {
+            let nodeId = event.target.id.split('_')[1],
+                _arcG = $("#svg-arc-view .arcs"),
+                _asSource = _arcG.find("path[source=" + nodeId + "]"),
+                _asTarget = _arcG.find("path[target=" + nodeId + "]");
+            nodeMap[nodeId] = true;
+            _asSource.each((i) => {
+                let arc = _asSource[i];
+                if (!$(arc).hasClass("invalid-arc")) {
+                    nodeMap[$(arc).attr("target")] = true;
+                    $(arc).addClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
+                }
+            });
+            _asTarget.each((i) => {
+                let arc = _asTarget[i];
+                if (!$(arc).hasClass("invalid-arc")) {
+                    nodeMap[$(arc).attr("source")] = true;
+                    $(arc).addClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
+                }
+            });
+            Object.keys(nodeMap).forEach((nodeId) => {
+                $("#node_" + nodeId).addClass("hovered-item");
+            })
+        });
+
+        $("#svg-arc-view .circles circle").on("mouseout", (event) => {
+            let nodeId = event.target.id.split('_')[1],
+                _arcG = $("#svg-arc-view .arcs"),
+                _asSource = _arcG.find("path[source=" + nodeId + "]"),
+                _asTarget = _arcG.find("path[target=" + nodeId + "]");
+            _asSource.each((i) => {
+                let arc = _asSource[i];
+                if (!$(arc).hasClass("invalid-arc")) {
+                    $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
+                }
+            });
+            _asTarget.each((i) => {
+                let arc = _asTarget[i];
+                if (!$(arc).hasClass("invalid-arc")) {
+                    $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
+                }
+            });
+            Object.keys(nodeMap).forEach((nodeId) => {
+                $("#node_" + nodeId).removeClass("hovered-item");
+            });
+        });
+
 
     },
     mapRange(value, inMin, inMax, outMin, outMax) {
