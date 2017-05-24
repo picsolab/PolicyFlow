@@ -659,7 +659,9 @@ let ArcView = Backbone.View.extend({
                     } else {
                         return "invalid-arc";
                     }
-                }
+                },
+                target: (d) => d.target,
+                source: (d) => d.source
             });
 
         // DATA JOIN
@@ -679,7 +681,8 @@ let ArcView = Backbone.View.extend({
                 cx: (d, i) => _self.nodeDisplayX(d),
                 r: (d, i) => _self.mapRange(d.metadata, nodeValMin, nodeValMax, gs.a.multiplier.outMin, gs.a.multiplier.outMax),
                 fill: (d, i) => d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"],
-                stroke: (d, i) => d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1)
+                stroke: (d, i) => d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1),
+                id: (d, i) => "node_" + i
             });
 
         // DATA JOIN
@@ -701,6 +704,8 @@ let ArcView = Backbone.View.extend({
                 transform: (d, i) => _self.textTransform(d)
             })
             .text((d, i) => d.stateName);
+
+        _self.bindTriggers(nodes);
 
     },
     pathTween(transition, _self, arcBuilder, nodes) {
@@ -756,6 +761,35 @@ let ArcView = Backbone.View.extend({
         });
 
         return nodes;
+    },
+    bindTriggers(nodes) {
+        let _self = this,
+            _arrow = d3.select(_self.el).append('g').attr("class", "arrow"),
+            _indicator = d3.svg.symbol().type('triangle-down');
+        $("#svg-arc-view .arcs path").on("mouseover", (event) => {
+            if (!$(event.target).hasClass("invalid-arc")) {
+                console.log(event.target);
+                let x = _self.nodeDisplayX(nodes[+$(event.target).attr("target")]),
+                    _sourceNode = $("#node_" + $(event.target).attr("source")),
+                    _targetNode = $("#node_" + $(event.target).attr("target"));
+                _arrow.append("path")
+                    .attr({
+                        d: _indicator,
+                        transform: "translate(" + x + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
+                        fill: $(event.target).hasClass("follow-the-rule") ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
+                    });
+                _sourceNode.addClass("hovered-item");
+                _targetNode.addClass("hovered-item");
+            }
+        });
+        $("#svg-arc-view .arcs path").on("mouseout", (event) => {
+            let _sourceNode = $("#node_" + $(event.target).attr("source")),
+                _targetNode = $("#node_" + $(event.target).attr("target"));
+            $("#svg-arc-view .arrow path").remove();
+            _sourceNode.removeClass("hovered-item");
+            _targetNode.removeClass("hovered-item");
+        });
+
     },
     mapRange(value, inMin, inMax, outMin, outMax) {
         let inVal = Math.min(Math.max(value, inMin), inMax);

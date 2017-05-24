@@ -35,7 +35,8 @@ const GraphSettings = {
             margin: 20,
             spacing: 16,
             arcThickness: 1.5,
-            textYShift: 15
+            textYShift: 15,
+            arrowYShift: 10
         },
         multiplier: {
             outMin: 2.5,

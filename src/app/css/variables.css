@@ -3,7 +3,8 @@
     --color-trans-in: #134F7F;
     --color-trans-out: #73C1FF;
     --color-pop-up: #666;
-    --color-bar-hover: lightblue;
+    --color-follow-the-rule: gray;
+    --color-violate-the-rule: red;
     --color-unadopted: lightgray;
     --color-hovered: #cc9900;
 }
