@@ -795,6 +795,7 @@ let ArcView = Backbone.View.extend({
                 _arcG = $("#svg-arc-view .arcs"),
                 _asSource = _arcG.find("path[source=" + nodeId + "]"),
                 _asTarget = _arcG.find("path[target=" + nodeId + "]");
+            nodeMap = {};
             nodeMap[nodeId] = true;
             _asSource.each((i) => {
                 let arc = _asSource[i];
