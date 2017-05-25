@@ -767,6 +767,7 @@ let ArcView = Backbone.View.extend({
             _arrow = d3.select(_self.el).append('g').attr("class", "arrow"),
             _indicator = d3.svg.symbol().type('triangle-down'),
             nodeMap = {};
+
         $("#svg-arc-view .arcs path").on("mouseover", (event) => {
             if (!$(event.target).hasClass("invalid-arc")) {
                 let x = _self.nodeDisplayX(nodes[+$(event.target).attr("target")]),
@@ -782,6 +783,7 @@ let ArcView = Backbone.View.extend({
                 _targetNode.addClass("hovered-item");
             }
         });
+
         $("#svg-arc-view .arcs path").on("mouseout", (event) => {
             let _sourceNode = $("#node_" + $(event.target).attr("source")),
                 _targetNode = $("#node_" + $(event.target).attr("target"));
@@ -796,24 +798,48 @@ let ArcView = Backbone.View.extend({
                 _asSource = _arcG.find("path[source=" + nodeId + "]"),
                 _asTarget = _arcG.find("path[target=" + nodeId + "]");
             nodeMap = {};
+            targetMap = {};
             nodeMap[nodeId] = true;
+
             _asSource.each((i) => {
                 let arc = _asSource[i];
                 if (!$(arc).hasClass("invalid-arc")) {
                     nodeMap[$(arc).attr("target")] = true;
                     $(arc).addClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
+
+                    let x = _self.nodeDisplayX(nodes[$(arc).attr("target")]);
+                    _arrow.append("path")
+                        .attr({
+                            d: _indicator,
+                            transform: "translate(" + x + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
+                            fill: $(arc).hasClass("follow-the-rule") ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
+                        });
                 }
             });
+
+            let existArcFollowTheRule = true;
+
             _asTarget.each((i) => {
                 let arc = _asTarget[i];
                 if (!$(arc).hasClass("invalid-arc")) {
                     nodeMap[$(arc).attr("source")] = true;
-                    $(arc).addClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
+                    existArcFollowTheRule = $(arc).hasClass("follow-the-rule");
+                    $(arc).addClass(existArcFollowTheRule ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
                 }
             });
+
+            if (_asTarget.length > 0 && !$(_asTarget[0]).hasClass("invalid-arc")) {
+                _arrow.append("path")
+                    .attr({
+                        d: _indicator,
+                        transform: "translate(" + _self.nodeDisplayX(nodes[nodeId]) + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
+                        fill: existArcFollowTheRule ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
+                    });
+            }
+
             Object.keys(nodeMap).forEach((nodeId) => {
                 $("#node_" + nodeId).addClass("hovered-item");
-            })
+            });
         });
 
         $("#svg-arc-view .circles circle").on("mouseout", (event) => {
@@ -821,18 +847,23 @@ let ArcView = Backbone.View.extend({
                 _arcG = $("#svg-arc-view .arcs"),
                 _asSource = _arcG.find("path[source=" + nodeId + "]"),
                 _asTarget = _arcG.find("path[target=" + nodeId + "]");
+
             _asSource.each((i) => {
                 let arc = _asSource[i];
                 if (!$(arc).hasClass("invalid-arc")) {
                     $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
                 }
             });
+
             _asTarget.each((i) => {
                 let arc = _asTarget[i];
                 if (!$(arc).hasClass("invalid-arc")) {
                     $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
                 }
             });
+
+            $("#svg-arc-view .arrow path").remove();
+
             Object.keys(nodeMap).forEach((nodeId) => {
                 $("#node_" + nodeId).removeClass("hovered-item");
             });

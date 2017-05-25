@@ -40,7 +40,7 @@ const GraphSettings = {
         },
         multiplier: {
             outMin: 2.5,
-            outMax: 13
+            outMax: 10
         },
         transitionTime: 2500,
         nodeY: 380,
