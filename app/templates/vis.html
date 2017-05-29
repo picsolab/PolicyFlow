@@ -23,34 +23,27 @@
                     </li>
                 </ol>
                 <div class="select-wrapper" id="policy-select-wrapper">
-                    <select name="subject-select" id="policy-select" class="selectpicker show-tick" data-live-search="true" data-container="body" title="Loading..." disabled></select>
+                    <select name="policy-select" id="policy-select" class="selectpicker show-tick" data-live-search="true" data-container="body" title="Loading..." disabled></select>
                 </div>
             </div>
-            <div class="nav nav-sidebar" id="meta-wrapper">
+            <div class="nav nav-sidebar" id="metadata-wrapper">
                 <ol class="breadcrumb">
                     <li class="active">
-                        <h4>Metadata</h4>
+                        <h4>y-sequence</h4>
                     </li>
                 </ol>
-                <div id="metadata-radio" class="select-wrapper btn-group-vertical" role="group" data-toggle="buttons" aria-label="...">
-                    <label class="btn btn-default active">
-                        <input type="radio" name="metadata" id="option-per-capita-income" value="perCapitaIncome" autocomplete="off" checked> Per Capita Income
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-minority-diversity" value="minorityDiversity" autocomplete="off"> Minority Diversity
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-legislative-professionalism" value="legislativeProfessionalism" autocomplete="off"> Legislative Professionalism
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-citizen-ideology" value="citizenIdeology" autocomplete="off"> Citizen Ideology
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-total-population" value="totalPopulation" autocomplete="off"> Total Population
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-population-density" value="populationDensity" autocomplete="off"> Population Density
-                    </label>
+                <div class="select-wrapper" id="metadata-select-wrapper">
+                    <select name="metadata-select" id="metadata-select" class="selectpicker show-tick" data-live-search="false" data-container="body" title="Loading..." disabled></select>
+                </div>
+            </div>
+            <div class="nav nav-sidebar" id="sequence-wrapper">
+                <ol class="breadcrumb">
+                    <li class="active">
+                        <h4>x-sequence</h4>
+                    </li>
+                </ol>
+                <div class="select-wrapper" id="sequence-select-wrapper">
+                    <select name="sequence-select" id="sequence-select" class="selectpicker show-tick" data-live-search="false" data-container="body" title="Loading..." disabled></select>
                 </div>
             </div>
             <div class="nav nav-sidebar" id="view-selection-wrapper">
@@ -88,7 +81,14 @@
                 </svg>
             </div>
             <div id="policy-cascade-wrapper" class="col-sm-12 col-md-3 col-lg-3">
-                <svg id="svg-cascade-view"></svg>
+                <p id="policy-unselected-notitication">
+                    Please select a policy.
+                </p>
+                <svg id="svg-cascade-view" style="display:none;"></svg>
+            </div>
+            <div id="diffusion-wrapper" class="col-sm-12 col-md-12 col-lg-12">
+                <p>here we go!</p>
+                <svg id="svg-diffusion-view"></svg>
             </div>
         </div>
     </div>

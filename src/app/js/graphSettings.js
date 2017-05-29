@@ -25,6 +25,28 @@ const GraphSettings = {
             yMaxTick: 10
         }
     },
+
+    // diffusion view settings
+    d: {
+        margin: {
+            top: 20,
+            left: 35,
+            right: 25,
+            bottom: 10
+        },
+        size: {
+            width: 850,
+            height: 600
+        },
+        multiplier: {
+
+        },
+        config: {
+
+        }
+
+    },
+
     // arc view settings
     a: {
         size: {

@@ -4,15 +4,60 @@ const Config = {
             default: "Administrative Organzation"
         },
         policy: {
-            default: 'adcom'
-        }
+            default: 'unselected',
+            description: '---'
+        },
+        yAttributeList: [
+            // the first element will be choosen as the default
+            {
+                id: "centrality",
+                domId: "option-centrality",
+                description: "Centrality"
+            },
+            {
+                id: "perCapitaIncome",
+                domId: "option-per-capita-income",
+                description: "Per Capita Income"
+            },
+            {
+                id: "minorityDiversity",
+                domId: "option-minority-diversity",
+                description: "Minority Diversity"
+            },
+            {
+                id: "legislativeProfessionalism",
+                domId: "option-citizen-ideology",
+                description: "Legislative Professionalism"
+            },
+            {
+                id: "citizenIdeology",
+                domId: "option-citizen-ideology",
+                description: "Citizen Ideology"
+            },
+            {
+                id: "totalPopulation",
+                domId: "option-total-population",
+                description: "Total Population"
+            },
+            {
+                id: "populationDensity",
+                domId: "option-population-density",
+                description: "Population Density"
+            }
+        ],
+        xAttributeList: [{
+            id: "centrality",
+            domId: "option-centrality",
+            description: "Centrality"
+        }]
     },
     models: {
         conditions: {
             defaults: {
                 subject: 'Administrative Organzation',
-                policy: 'adcom',
-                metadata: 'perCapitaIncome'
+                policy: 'unselected',
+                metadata: 'centrality',
+                sequence: 'centrality'
             }
         }
     },
@@ -20,7 +65,8 @@ const Config = {
         root: '/api/',
         policyBase: 'policy/',
         networkBase: 'network/',
-        arcBase: 'arc/'
+        arcBase: 'arc/',
+        diffusionBase: 'diffusion/'
     },
     pipe: {
         subjectToId: {
@@ -44,6 +90,14 @@ const Config = {
             "year": 0,
             "metadata": 1,
             "name": 2
+        },
+        idToMeta: {
+            "md": "minorityDiversity",
+            "ci": "citizenIdeology",
+            "lp": "legislativeProfessionalism",
+            "pci": "perCapitaIncome",
+            "pd": "populationDensity",
+            "pop": "totalPopulation"
         }
     },
     static: {

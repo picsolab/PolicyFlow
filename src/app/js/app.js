@@ -13,6 +13,7 @@ let conditions = new Model.Conditions(),
     networkModel = new Model.NetworkModel(),
     stateModel = new Model.StateModel(),
     arcModel = new Model.ArcModel(),
+    diffusionModel = new Model.DiffusionModel(),
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
         model: policyModel
@@ -25,6 +26,9 @@ let policyView = new View.PolicyView({
     }),
     arcView = new View.ArcView({
         model: arcModel
+    }),
+    diffusionView = new View.DiffusionView({
+        model: diffusionModel
     }),
     policyOptionsView = new View.PolicyOptionsView({
         model: policyOptionsModel
@@ -49,6 +53,10 @@ $(document).ready(() => {
         }
     });
 
+    diffusionModel.on("change", () => {
+        diffusionView.render(0);
+    });
+
     arcModel.on("change", () => {
         arcView.empty();
         arcView.render(conf.pipe.sortMethodId[$("#select-sort").val()]);
@@ -61,6 +69,7 @@ $(document).ready(() => {
         }
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata')) {
             networkModel.populate(conditions);
+            diffusionModel.populate(conditions);
         }
     });
 
@@ -70,8 +79,9 @@ $(document).ready(() => {
 
 function initRendering() {
     // stateModel.fetch();
-    policyModel.fetch();
+    policyModel.populate(conditions);
     networkModel.fetch();
+    // diffusionModel.fetch();
 }
 
 function bindEvents() {
@@ -87,22 +97,29 @@ function bindEvents() {
 
         // reload policy select drop down
         $('#policy-select option.policy-option').remove();
+        appendPolicyDefault();
         policies[selectedSubject].forEach(policyId => {
             $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
         });
         $('#policy-select').selectpicker('refresh');
-        $('#policy-select').selectpicker('val', policies[selectedSubject][0]);
-        conditions.set('policy', policies[selectedSubject][0]);
+        $('#policy-select').selectpicker('val', conf.bases.policy.default);
+        conditions.set('policy', conf.bases.policy.default);
     });
 
     // selected policy to conditions
     $('#policy-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        conditions.set('policy', policyOptionsModel.get("policies")[conditions.get("subject")][clickedIndex - 1]);
+        let selectedPolicy = clickedIndex == 1 ? conf.bases.policy.default : policyOptionsModel.get("policies")[conditions.get("subject")][clickedIndex - 2]
+        conditions.set('policy', selectedPolicy);
     });
 
     // selected metadata to conditions
-    $("#metadata-radio label").click((event) => {
-        conditions.set("metadata", $(event.target).find('input').val());
+    $('#metadata-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
+        conditions.set("metadata", conf.bases.yAttributeList[clickedIndex - 1].id);
+    });
+
+    // selected x-seq to conditions
+    $('#sequence-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
+        conditions.set("sequence", conf.bases.xAttributeList[clickedIndex - 1].id);
     });
 
     // select view
@@ -133,6 +150,12 @@ function bindEvents() {
 
 function initDom() {
 
+    // attributes select drop down
+    initDropdowns($('#metadata-select'), "metadata-option", conf.bases.yAttributeList);
+
+    // diffusion select drop down
+    initDropdowns($('#sequence-select'), "sequence-option", conf.bases.xAttributeList);
+
     policyOptionsModel.fetch({
         success(model, response, options) {
 
@@ -148,6 +171,7 @@ function initDom() {
             $('#subject-select').selectpicker('refresh');
 
             // policy select drop down
+            appendPolicyDefault();
             policies[conf.bases.subject.default].forEach(policyId => {
                 $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
             });
@@ -169,6 +193,21 @@ function initDom() {
 
 // Update page header when conditions change
 function updateHeader() {
-    let headerStr = policyOptionsModel.get("pipe")[conditions.get("policy")] + "&nbsp;<small>" + conditions.get("subject") + "</small>";
+    let headerStr = conditions.get("policy") === conf.bases.policy.default ?
+        "Select a policy to get started." :
+        policyOptionsModel.get("pipe")[conditions.get("policy")] + "&nbsp;<small>" + conditions.get("subject") + "</small>";
     $('#page-header').html(headerStr);
+}
+
+function appendPolicyDefault() {
+    $('#policy-select').append("<option class='policy-option' value='" + conf.bases.policy.default+"'>" + conf.bases.policy.description + "</option>");
+}
+
+function initDropdowns($element, className, attrList) {
+    attrList.forEach((attr, index) => {
+        $element.append("<option class='" + className + "' id='" + attr.domId + "' value='" + attr.id + "'>" + attr.description + "</option>");
+    });
+    $element.val(attrList[0].id);
+    $element.prop('disabled', false);
+    $element.selectpicker('refresh');
 }

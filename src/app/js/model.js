@@ -16,10 +16,14 @@ let PolicyModel = Backbone.Model.extend({
     },
     populate(conditions) {
         let _self = this;
-        this.url = this.urlRoot + conditions.get("policy");
-        $.getJSON(_self.url).done((data) => {
-            _self.set(data);
-        });
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            _self.set({ "message": conf.bases.policy.default });
+        } else {
+            this.url = this.urlRoot + conditions.get("policy");
+            $.getJSON(_self.url).done((data) => {
+                _self.set(data);
+            });
+        }
     }
 });
 
@@ -67,6 +71,24 @@ let ArcModel = Backbone.Model.extend({
     }
 });
 
+let DiffusionModel = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.diffusionBase;
+        this.url = this.urlRoot + conf.models.conditions.defaults.policy;
+    },
+    populate(conditions) {
+        let _self = this;
+        this.url = this.urlRoot + conditions.get("policy");
+        $.getJSON(_self.url).done((data) => {
+            // console.log(_self.url);
+            _self.set({
+                "nodes": data.nodes,
+                "stat": data.stat
+            });
+        });
+    }
+});
+
 
 module.exports = {
     Conditions: Conditions,
@@ -74,5 +96,6 @@ module.exports = {
     PolicyOptionsModel: PolicyOptionsModel,
     NetworkModel: NetworkModel,
     ArcModel: ArcModel,
+    DiffusionModel: DiffusionModel,
     StateModel: StateModel
 };

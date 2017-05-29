@@ -9,6 +9,17 @@ let colorList = [],
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
     render() {
+        if (this.model.get("message") !== "success") {
+            $("#policy-unselected-notitication").show();
+            this.$el.hide();
+        } else {
+            $("#policy-unselected-notitication").hide();
+            this.paint();
+            this.$el.show();
+        }
+        return this;
+    },
+    paint() {
         // prepare params
         // - use Jan 1st to represent the year.
         let _self = this,
@@ -100,8 +111,6 @@ let PolicyView = Backbone.View.extend({
             _self.renderPalette(paletteG, yearList, xScale, yScale);
             _self.bindTriggers(yScale);
         });
-
-        return this;
     },
     renderPalette(paletteG, yearList, xScale, yScale) {
         let _self = this;
@@ -584,10 +593,8 @@ let ArcView = Backbone.View.extend({
         // console.log("rendering arc: " + sortMethod);
         let _self = this,
             nodes = this.model.get("nodes"),
-            links = this.model.get("links"),
-            colors = d3.scale.category20(),
+            links = conf.static.edges,
             τ = 2 * Math.PI; // http://tauday.com/tau-manifesto
-        links = conf.static.edges;
 
         let svg = d3.select(_self.el)
             .attr("width", gs.a.size.width)
@@ -897,6 +904,49 @@ let ArcView = Backbone.View.extend({
     }
 });
 
+let DiffusionView = Backbone.View.extend({
+    el: "#svg-diffusion-view",
+    initialize() {
+        this._attrs = {};
+    },
+    render() {
+        // console.log("rendering diffusion: " + sortMethod);
+        let _self = this,
+            _ats = _self._attrs,
+            nodes = this.model.get("nodes"),
+            links = conf.static.edges;
+
+        let svg = _self._attrs.svg = d3.select(_self.el)
+            .attr("width", gs.d.size.width)
+            .attr("height", gs.d.size.height)
+            .attr('preserveAspectRatio', 'xMidYMin meet')
+            .attr('viewBox', ("0 0 " + gs.d.size.width + " " + gs.d.size.height + ""))
+            .classed('svg-content-responsive', true);
+
+        $.extend(_ats, {
+            pathG: svg.select('.paths'),
+            circleG: svg.select('.circles'),
+            xLabelG: svg.select('.x-labels'),
+            yLabelG: svg.select('.y-labels'),
+            barG: svg.select('.bars')
+        });
+
+
+
+
+
+        nodes.forEach((node, index) => {
+            node.displayOrder = index;
+        });
+
+        console.log(this);
+    },
+    configGroups() {
+
+    }
+
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -909,5 +959,6 @@ module.exports = {
     NetworkView: NetworkView,
     StatBarView: StatBarView,
     ArcView: ArcView,
+    DiffusionView: DiffusionView,
     PolicyOptionsView: PolicyOptionsView
 };
