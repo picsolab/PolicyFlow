@@ -13,8 +13,33 @@
  * Vis panels
  */
 
+
+/*shared style*/
+
 .hovered-item {
     fill: var(--color-hovered);
+}
+
+.follow-the-rule {
+    fill: var(--color-follow-the-rule);
+    opacity: 0.2;
+}
+
+.violate-the-rule {
+    fill: var(--color-violate-the-rule);
+    opacity: 0.2;
+}
+
+.invalid-arc {
+    opacity: 0;
+}
+
+
+/*diffusion view panel*/
+
+#diffusion-path-group path {
+    fill: black;
+    stroke: black;
 }
 
 
@@ -50,20 +75,6 @@
     stroke: var(--color-violate-the-rule);
     stroke-width: 1.5;
     stroke-linecap: "round";
-}
-
-#svg-arc-view .arcs .follow-the-rule {
-    fill: var(--color-follow-the-rule);
-    fill-opacity: 0.2;
-}
-
-#svg-arc-view .violate-the-rule {
-    fill: var(--color-violate-the-rule);
-    fill-opacity: 0.2;
-}
-
-#svg-arc-view .invalid-arc {
-    fill-opacity: 0;
 }
 
 

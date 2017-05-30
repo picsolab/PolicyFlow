@@ -4,57 +4,70 @@ const Config = {
             default: "Administrative Organzation"
         },
         policy: {
+            // [prod]
             default: 'unselected',
             description: '---'
+                // [dev]
+                // default: 'adcom',
+                // description: 'Advertising Commissions'
         },
         yAttributeList: [
             // the first element will be choosen as the default
+            // [prod]
             {
                 id: "centrality",
-                domId: "option-centrality",
+                domId: "y-option-centrality",
                 description: "Centrality"
             },
+            // [dev]
             {
                 id: "perCapitaIncome",
-                domId: "option-per-capita-income",
+                domId: "y-option-per-capita-income",
                 description: "Per Capita Income"
             },
             {
                 id: "minorityDiversity",
-                domId: "option-minority-diversity",
+                domId: "y-option-minority-diversity",
                 description: "Minority Diversity"
             },
             {
                 id: "legislativeProfessionalism",
-                domId: "option-citizen-ideology",
+                domId: "y-option-citizen-ideology",
                 description: "Legislative Professionalism"
             },
             {
                 id: "citizenIdeology",
-                domId: "option-citizen-ideology",
+                domId: "y-option-citizen-ideology",
                 description: "Citizen Ideology"
             },
             {
                 id: "totalPopulation",
-                domId: "option-total-population",
+                domId: "y-option-total-population",
                 description: "Total Population"
             },
             {
                 id: "populationDensity",
-                domId: "option-population-density",
+                domId: "y-option-population-density",
                 description: "Population Density"
             }
         ],
         xAttributeList: [{
-            id: "centrality",
-            domId: "option-centrality",
-            description: "Centrality"
+            // id: "centrality",
+            // domId: "x-option-centrality",
+            // description: "Centrality"
+            id: "perCapitaIncome",
+            domId: "x-option-per-capita-income",
+            description: "Per Capita Income"
         }]
     },
     models: {
         conditions: {
             defaults: {
                 subject: 'Administrative Organzation',
+                // [dev]
+                // policy: 'adcom',
+                // metadata: 'perCapitaIncome',
+                // [prod]
                 policy: 'unselected',
                 metadata: 'centrality',
                 sequence: 'centrality'
@@ -92,12 +105,22 @@ const Config = {
             "name": 2
         },
         idToMeta: {
+            "ce": "centrality",
             "md": "minorityDiversity",
             "ci": "citizenIdeology",
             "lp": "legislativeProfessionalism",
             "pci": "perCapitaIncome",
             "pd": "populationDensity",
             "pop": "totalPopulation"
+        },
+        metaToId: {
+            "centrality": "ce",
+            "minorityDiversity": "md",
+            "citizenIdeology": "ci",
+            "legislativeProfessionalism": "lp",
+            "perCapitaIncome": "pci",
+            "populationDensity": "pd",
+            "totalPopulation": "pop"
         }
     },
     static: {

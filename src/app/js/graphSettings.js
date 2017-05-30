@@ -29,14 +29,17 @@ const GraphSettings = {
     // diffusion view settings
     d: {
         margin: {
-            top: 20,
-            left: 35,
-            right: 25,
-            bottom: 10
+            top: 10,
+            left: 15
         },
         size: {
             width: 850,
-            height: 600
+            height: 600,
+            barWidth: 100,
+            pathWidth: 600,
+            circleHeight: 100,
+            thickness: [5, 10],
+            circle: [5, 10]
         },
         multiplier: {
 

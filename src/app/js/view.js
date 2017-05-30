@@ -907,39 +907,180 @@ let ArcView = Backbone.View.extend({
 let DiffusionView = Backbone.View.extend({
     el: "#svg-diffusion-view",
     initialize() {
-        this._attrs = {};
+        this._attr = {};
     },
     render() {
         // console.log("rendering diffusion: " + sortMethod);
         let _self = this,
-            _ats = _self._attrs,
-            nodes = this.model.get("nodes"),
-            links = conf.static.edges;
+            _attr = this._attr; // closure vars
 
-        let svg = _self._attrs.svg = d3.select(_self.el)
+        $(_self.el).empty();
+
+        let svg = _attr.svg = d3.select(_self.el)
             .attr("width", gs.d.size.width)
             .attr("height", gs.d.size.height)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .attr('viewBox', ("0 0 " + gs.d.size.width + " " + gs.d.size.height + ""))
             .classed('svg-content-responsive', true);
 
-        $.extend(_ats, {
-            pathG: svg.select('.paths'),
-            circleG: svg.select('.circles'),
-            xLabelG: svg.select('.x-labels'),
-            yLabelG: svg.select('.y-labels'),
-            barG: svg.select('.bars')
+        let pathG = svg.append('g').attr({
+                'id': 'diffusion-path-group',
+                'class': 'paths',
+                'transform': "translate(" + (gs.d.margin.left + gs.d.size.barWidth) + "," + (gs.d.margin.top) + ")"
+            }),
+            circleG = svg.append('g').attr({
+                'id': 'diffusion-circle-group',
+                'class': 'circles',
+                'transform': "translate(" + (gs.d.margin.left + gs.d.size.barWidth) + "," + (gs.d.margin.top + gs.d.size.height / 2) + ")"
+            }),
+            xLabelG = circleG.append('g').attr({
+                'id': 'diffusion-x-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (0) + "," + (0) + ")"
+            }),
+            barG = svg.append('g').attr({
+                'id': 'diffusion-bar-group',
+                'class': 'bars',
+                'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
+            }),
+            yLabelG = barG.append('g').attr({
+                'id': 'diffusion-y-label-group',
+                'class': 'y-labels',
+                'transform': "translate(" + (0) + "," + (0) + ")"
+            });
+
+        $.extend(_attr, {
+            pathG: pathG,
+            circleG: circleG,
+            xLabelG: xLabelG,
+            barG: barG,
+            yLabelG: yLabelG,
+            nodes: _self.model.get("nodes"),
+            links: conf.static.edges,
+            stat: _self.model.get("stat")
         });
 
+        // do init sort
+        _self.doInitSort();
 
+        _self.update();
 
+        return this;
+    },
+    update() {
+        let _self = this,
+            _attr = this._attr,
+            stat = this.model.get("stat"),
+            nodes = _attr.nodes,
+            links = _attr.links;
 
+        _attr.pathG.selectAll('path')
+            .data(links)
+            .enter()
+            .append('path')
+            .attr({
+                d: (d, i) => _self.linkBuilder(nodes, stat, d, i),
+                class: (d, i) => {
+                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
+                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
+                    if (isValid) {
+                        if (isFollowingNetworkRule) {
+                            return "follow-the-rule";
+                        } else {
+                            return "violate-the-rule";
+                        }
+                    } else {
+                        return "invalid-arc";
+                    }
+                }
+            })
 
-        nodes.forEach((node, index) => {
-            node.displayOrder = index;
+        return this;
+    },
+    linkBuilder(nodes, stat, d, i) {
+        const divider = 0.3,
+            yPartition1 = 0.25,
+            yPartition2 = 0.75,
+            xMinCo = gs.d.margin.left + gs.d.size.barWidth,
+            xMaxCo = xMinCo + gs.d.size.pathWidth,
+            ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
+            xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
+            yTopCo = gs.d.margin.top,
+            yMidCo = yTopCo + (gs.d.size.height - gs.d.margin.top) / 2,
+            yBottomCo = gs.d.size.height;
+
+        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
+
+        let xScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([xMinCo, xMaxCo]),
+            yTopScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([yTopCo, yMidCo]),
+            yBottomScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([yBottomCo, yMidCo]);
+
+        let x1 = nodes[d.source].xOrder,
+            x2 = nodes[d.target].xOrder,
+            y1 = nodes[d.source].yOrder,
+            y2 = nodes[d.target].yOrder,
+            xMid = x1 + (x2 - x1) * divider,
+            tan = (y2 - y1) / (x2 - x1),
+            ym1 = y1 + yPartition1 * (x2 - x1) * divider * tan,
+            ym2 = y1 + yPartition2 * (x2 - x1) * divider * tan,
+            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
+            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale;
+
+        return interpolate([
+            [xScale(x1), yScale(y1)],
+            [xScale(xMid), yScale(ym1)],
+            [xScale(x2), yScale(y2)],
+            [xScale(xMid), yScale(ym2)],
+            [xScale(x1), yScale(y1)]
+        ]);
+
+        // return interpolate([
+        //     [xScale(x1), yScale(y1)],
+        //     [xScale(x2), yScale(y2)]
+        // ]);
+    },
+    isFollowingNetworkRule(d) {
+        let nodes = this._attr.nodes;
+        return +nodes[d.source].adoptedYear <= +nodes[d.target].adoptedYear;
+    },
+    getScale(metaType, styleType) {
+        // one of seven metaType, 
+        // styleType is from either "thickness" or "circle", corrsponding to gs.d.size
+        let _attr = this._attr;
+        return d3.scale.linear()
+            .domain([_attr.stat.min[conf.pipe.metaToId[metaType]], _attr.stat.max[conf.pipe.metaToId[metaType]]])
+            .range([gs.d.size[styleType][0], gs.d.size[styleType][1]])
+    },
+    doInitSort() {
+        this.doSort("x");
+        this.doSort("y");
+    },
+    doSort(axis) {
+        let nodes = this._attr.nodes,
+            nodeMap = [],
+            identifier = axis + "Order",
+            selectedAttrId = (axis === "x" ?
+                conf.pipe.metaToId[$('#metadata-select').selectpicker('val')] :
+                conf.pipe.metaToId[$('#sequence-select').selectpicker('val')]);
+
+        nodes.forEach((node, i) => {
+            nodeMap.push($.extend({ index: i }, node));
         });
 
-        console.log(this);
+        nodeMap.sort((a, b) => (axis === "x" ?
+            b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId] :
+            a['metadata'][selectedAttrId] - b['metadata'][selectedAttrId]));
+        nodeMap.forEach((node, i) => {
+            nodes[node.index][identifier] = i;
+        });
+
+        return nodes;
     },
     configGroups() {
 
