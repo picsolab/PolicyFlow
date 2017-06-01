@@ -30,22 +30,31 @@ const GraphSettings = {
     d: {
         margin: {
             top: 10,
-            left: 15
+            left: 15,
+            bottom: 10,
+            right: 10
         },
         size: {
-            width: 850,
-            height: 600,
-            barWidth: 100,
-            pathWidth: 600,
+            // width: 850,
+            // height: 600,
+            barWidth: 70,
+            harHeight: 650,
+            pathWidth: 700,
+            pathHeight: 650,
+            labelWidth: 30,
+            labelHeight: 650,
+            circleWidth: 700,
             circleHeight: 100,
             thickness: [5, 10],
-            circle: [5, 10]
+            circle: [3, 10],
+            rect: [0, 70], // barWidth
+            rectHeight: 2
         },
         multiplier: {
 
         },
         config: {
-
+            thicknessDefault: "md"
         }
 
     },

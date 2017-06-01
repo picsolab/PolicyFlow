@@ -37,10 +37,7 @@
 
 /*diffusion view panel*/
 
-#diffusion-path-group path {
-    fill: black;
-    stroke: black;
-}
+#diffusion-path-group path {}
 
 
 /*arc view panel*/

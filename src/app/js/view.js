@@ -916,27 +916,35 @@ let DiffusionView = Backbone.View.extend({
 
         $(_self.el).empty();
 
+        let _height = gs.d.margin.top + gs.d.size.pathHeight + gs.d.margin.bottom,
+            _width = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
+            pathXShift = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth, // min x of pathG
+            pathYMid = gs.d.margin.top,
+            circleXShift = pathXShift,
+            circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
+            yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
+
         let svg = _attr.svg = d3.select(_self.el)
-            .attr("width", gs.d.size.width)
-            .attr("height", gs.d.size.height)
+            .attr("width", _width)
+            .attr("height", _height)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("0 0 " + gs.d.size.width + " " + gs.d.size.height + ""))
+            .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
             .classed('svg-content-responsive', true);
 
         let pathG = svg.append('g').attr({
                 'id': 'diffusion-path-group',
                 'class': 'paths',
-                'transform': "translate(" + (gs.d.margin.left + gs.d.size.barWidth) + "," + (gs.d.margin.top) + ")"
+                'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
             }),
             circleG = svg.append('g').attr({
                 'id': 'diffusion-circle-group',
                 'class': 'circles',
-                'transform': "translate(" + (gs.d.margin.left + gs.d.size.barWidth) + "," + (gs.d.margin.top + gs.d.size.height / 2) + ")"
+                'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
             }),
             xLabelG = circleG.append('g').attr({
                 'id': 'diffusion-x-label-group',
                 'class': 'x-labels',
-                'transform': "translate(" + (0) + "," + (0) + ")"
+                'transform': "translate(" + (pathXShift) + "," + (circleYShift) + ")"
             }),
             barG = svg.append('g').attr({
                 'id': 'diffusion-bar-group',
@@ -946,8 +954,19 @@ let DiffusionView = Backbone.View.extend({
             yLabelG = barG.append('g').attr({
                 'id': 'diffusion-y-label-group',
                 'class': 'y-labels',
-                'transform': "translate(" + (0) + "," + (0) + ")"
-            });
+                'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
+            }),
+            defs = svg.append('defs');
+
+        let xScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([0, gs.d.size.pathWidth]),
+            yTopScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([0, gs.d.size.pathHeight / 2]),
+            yBottomScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([gs.d.size.pathHeight, gs.d.size.pathHeight / 2]);
 
         $.extend(_attr, {
             pathG: pathG,
@@ -957,15 +976,17 @@ let DiffusionView = Backbone.View.extend({
             yLabelG: yLabelG,
             nodes: _self.model.get("nodes"),
             links: conf.static.edges,
-            stat: _self.model.get("stat")
+            stat: _self.model.get("stat"),
+            xScale: xScale,
+            yTopScale: yTopScale,
+            yBottomScale: yBottomScale,
+            defs: defs
         });
 
         // do init sort
         _self.doInitSort();
 
-        _self.update();
-
-        return this;
+        return _self.update();
     },
     update() {
         let _self = this,
@@ -974,9 +995,25 @@ let DiffusionView = Backbone.View.extend({
             nodes = _attr.nodes,
             links = _attr.links;
 
-        _attr.pathG.selectAll('path')
-            .data(links)
-            .enter()
+        // data join
+        let paths = _attr.pathG.selectAll('path')
+            .data(links),
+            circles = _attr.circleG.selectAll('circle')
+            .data(nodes),
+            bars = _attr.barG.selectAll('rect')
+            .data(nodes);
+
+        // define radius scale for circles
+        let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
+            ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
+            radiusScale = d3.scale.linear()
+            .domain([stat.min[xSeq], stat.max[xSeq]])
+            .range(gs.d.size.circle);
+
+        _self.processGradient();
+
+        // enter
+        paths.enter()
             .append('path')
             .attr({
                 d: (d, i) => _self.linkBuilder(nodes, stat, d, i),
@@ -994,32 +1031,144 @@ let DiffusionView = Backbone.View.extend({
                     }
                 }
             })
+            .style({
+                fill: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
+                stroke: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
+                opacity: 0.6
+            });
+
+        circles.enter()
+            .append('circle')
+            .attr({
+                cy: 0,
+                cx: (d) => _attr.xScale(d.xOrder),
+                r: (d) => {
+                    let meta = d.metadata[xSeq];
+                    if (typeof meta === "undefined") {
+                        return gs.d.size.circle[0];
+                    }
+                    return radiusScale(meta);
+                },
+                fill: (d) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                    } else {
+                        return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+                    }
+                },
+                stroke: (d, i) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(2);
+                    } else {
+                        return d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                    }
+                },
+                id: (d, i) => "diffusion_node_" + i
+            });
+
+        _self.barBuilder(bars, ySeq, "up");
+        _self.barBuilder(bars, ySeq, "bottom");
 
         return this;
+    },
+    barBuilder(bars, ySeq, section) {
+        let _attr = this._attr,
+            stat = this.model.get("stat"),
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale,
+            rectScale = d3.scale.linear()
+            .domain([stat.min[ySeq], stat.max[ySeq]])
+            .range(gs.d.size.rect);
+
+        bars.enter()
+            .append('rect')
+            .attr({
+                width: (d) => {
+                    let meta = d.metadata[ySeq];
+                    if (typeof meta === "undefined") {
+                        return gs.d.size.rect[0];
+                    }
+                    return rectScale(meta);
+                },
+                height: gs.d.size.rectHeight,
+                x: (d) => {
+                    let meta = d.metadata[ySeq],
+                        pad = typeof meta === "undefined" ? gs.d.size.rect[0] : rectScale(meta);
+                    return gs.d.size.barWidth - pad;
+                },
+                y: (d) => {
+                    return section === "up" ? _attr.yTopScale(d.yOrder) : _attr.yBottomScale(d.yOrder);
+                },
+                fill: (d) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                    } else {
+                        return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+                    }
+                }
+            });
+    },
+    processGradient() {
+        let yearList = Object.keys(colorMap);
+
+        yearList.forEach((year, index) => {
+            for (loop = index + 1; loop < yearList.length; loop++) {
+                let curr = this._attr.defs.append("linearGradient")
+                    .attr({
+                        id: "gradient-".concat(year, yearList[loop]),
+                        x1: "0%",
+                        y1: "0%",
+                        x2: "100%",
+                        y2: "100%",
+                        spreadMethod: "pad"
+                    });
+
+                curr.append("stop")
+                    .attr("offset", "0%")
+                    .attr("stop-color", colorMap[year])
+                    .attr("stop-opacity", 1);
+
+                curr.append("stop")
+                    .attr("offset", "100%")
+                    .attr("stop-color", colorMap[yearList[loop]])
+                    .attr("stop-opacity", 1);
+
+                let reverse = this._attr.defs.append("linearGradient")
+                    .attr({
+                        id: "gradient-".concat(yearList[loop], year),
+                        x1: "0%",
+                        y1: "0%",
+                        x2: "100%",
+                        y2: "100%",
+                        spreadMethod: "pad"
+                    });
+
+                reverse.append("stop")
+                    .attr("offset", "0%")
+                    .attr("stop-color", colorMap[yearList[loop]])
+                    .attr("stop-opacity", 1);
+
+                reverse.append("stop")
+                    .attr("offset", "100%")
+                    .attr("stop-color", colorMap[year])
+                    .attr("stop-opacity", 1);
+            }
+        });
     },
     linkBuilder(nodes, stat, d, i) {
         const divider = 0.3,
             yPartition1 = 0.25,
             yPartition2 = 0.75,
-            xMinCo = gs.d.margin.left + gs.d.size.barWidth,
-            xMaxCo = xMinCo + gs.d.size.pathWidth,
+            thicknessParam = nodes[d.source].metadata[gs.d.config.thicknessDefault],
+            standardizedThickness = this.standardized(thicknessParam, stat.min[gs.d.config.thicknessDefault], stat.max[gs.d.config.thicknessDefault]),
             ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
             xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
-            yTopCo = gs.d.margin.top,
-            yMidCo = yTopCo + (gs.d.size.height - gs.d.margin.top) / 2,
-            yBottomCo = gs.d.size.height;
+            _attr = this._attr,
+            xScale = _attr.xScale,
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale;
 
         let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
-
-        let xScale = d3.scale.linear()
-            .domain([0, 49])
-            .range([xMinCo, xMaxCo]),
-            yTopScale = d3.scale.linear()
-            .domain([0, 49])
-            .range([yTopCo, yMidCo]),
-            yBottomScale = d3.scale.linear()
-            .domain([0, 49])
-            .range([yBottomCo, yMidCo]);
 
         let x1 = nodes[d.source].xOrder,
             x2 = nodes[d.target].xOrder,
@@ -1028,7 +1177,7 @@ let DiffusionView = Backbone.View.extend({
             xMid = x1 + (x2 - x1) * divider,
             tan = (y2 - y1) / (x2 - x1),
             ym1 = y1 + yPartition1 * (x2 - x1) * divider * tan,
-            ym2 = y1 + yPartition2 * (x2 - x1) * divider * tan,
+            ym2 = y1 + yPartition2 * (x2 - x1) * divider * tan * standardizedThickness,
             isFollowingNetworkRule = this.isFollowingNetworkRule(d),
             yScale = isFollowingNetworkRule ? yTopScale : yBottomScale;
 
@@ -1039,23 +1188,13 @@ let DiffusionView = Backbone.View.extend({
             [xScale(xMid), yScale(ym2)],
             [xScale(x1), yScale(y1)]
         ]);
-
-        // return interpolate([
-        //     [xScale(x1), yScale(y1)],
-        //     [xScale(x2), yScale(y2)]
-        // ]);
     },
     isFollowingNetworkRule(d) {
         let nodes = this._attr.nodes;
         return +nodes[d.source].adoptedYear <= +nodes[d.target].adoptedYear;
     },
-    getScale(metaType, styleType) {
-        // one of seven metaType, 
-        // styleType is from either "thickness" or "circle", corrsponding to gs.d.size
-        let _attr = this._attr;
-        return d3.scale.linear()
-            .domain([_attr.stat.min[conf.pipe.metaToId[metaType]], _attr.stat.max[conf.pipe.metaToId[metaType]]])
-            .range([gs.d.size[styleType][0], gs.d.size[styleType][1]])
+    standardized(curr, min, max) {
+        return (curr - min) / (max - min);
     },
     doInitSort() {
         this.doSort("x");
@@ -1073,9 +1212,8 @@ let DiffusionView = Backbone.View.extend({
             nodeMap.push($.extend({ index: i }, node));
         });
 
-        nodeMap.sort((a, b) => (axis === "x" ?
-            b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId] :
-            a['metadata'][selectedAttrId] - b['metadata'][selectedAttrId]));
+        nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
+
         nodeMap.forEach((node, i) => {
             nodes[node.index][identifier] = i;
         });
