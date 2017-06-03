@@ -12,7 +12,6 @@ let conditions = new Model.Conditions(),
     policyModel = new Model.PolicyModel(),
     networkModel = new Model.NetworkModel(),
     stateModel = new Model.StateModel(),
-    arcModel = new Model.ArcModel(),
     diffusionModel = new Model.DiffusionModel(),
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
@@ -23,9 +22,6 @@ let policyView = new View.PolicyView({
     }),
     statBarView = new View.StatBarView({
         model: stateModel
-    }),
-    arcView = new View.ArcView({
-        model: arcModel
     }),
     diffusionView = new View.DiffusionView({
         model: diffusionModel
@@ -40,26 +36,12 @@ $(document).ready(() => {
         policyView.render();
     });
 
-    // stateModel.on('change', () => {
-    //     statBarView.render();
-    // });
-
     networkModel.on('change', () => {
-        let arcViewSelected = $($("#view-selection-radio label")[0]).hasClass("active");
-        if (arcViewSelected) {
-            arcModel.set("nodes", networkModel.get("detail"));
-        } else {
-            networkView.render();
-        }
+        networkView.render();
     });
 
     diffusionModel.on("change", () => {
         diffusionView.render();
-    });
-
-    arcModel.on("change", () => {
-        arcView.empty();
-        arcView.render(conf.pipe.sortMethodId[$("#select-sort").val()]);
     });
 
     conditions.on('change', () => {
@@ -128,27 +110,6 @@ function bindEvents() {
     // selected x-seq to conditions
     $('#sequence-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
         conditions.set("sequence", conf.bases.xAttributeList[clickedIndex - 1].id);
-    });
-
-    // select view
-    $("#view-selection-wrapper label").click((event) => {
-        _svgArc = $("#svg-arc-view").hide();
-        _svgNetwork = $("#svg-network-view").hide();
-        switch ($(event.target).find('input').val()) {
-            case "arc":
-                arcView.empty();
-                arcView.render(conf.pipe.sortMethodId[$("#select-sort").val()]);
-                _svgArc.show();
-                $("#select-sort").show();
-                break;
-            case "network":
-                $("#select-sort").hide();
-                networkView.render();
-                _svgNetwork.show();
-                break;
-            default:
-                break;
-        }
     });
 
     $("#select-sort").on("change", (event) => {

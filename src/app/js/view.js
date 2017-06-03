@@ -526,6 +526,7 @@ let NetworkView = Backbone.View.extend({
 
 });
 
+// @Deprecated
 let StatBarView = Backbone.View.extend({
     el: '#svg-stat-bar-view',
     render() {
@@ -587,6 +588,7 @@ let PolicyOptionsView = Backbone.View.extend({
 
 });
 
+// @Deprecated
 let ArcView = Backbone.View.extend({
     el: "#svg-arc-view",
     render(sortMethod) {

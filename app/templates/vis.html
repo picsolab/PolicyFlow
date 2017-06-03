@@ -46,21 +46,6 @@
                     <select name="sequence-select" id="sequence-select" class="selectpicker show-tick" data-live-search="false" data-container="body" title="Loading..." disabled></select>
                 </div>
             </div>
-            <div class="nav nav-sidebar" id="view-selection-wrapper">
-                <ol class="breadcrumb">
-                    <li class="active">
-                        <h4>View</h4>
-                    </li>
-                </ol>
-                <div id="view-selection-radio" class="select-wrapper btn-group-vertical" role="group" data-toggle="buttons" aria-label="...">
-                    <label class="btn btn-default active">
-                        <input type="radio" name="view-selection" id="option-arc-view" value="arc" autocomplete="off" checked> Arc view
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="view-selection" id="option-network-view" value="network" autocomplete="off"> Network view
-                    </label>
-                </div>
-            </div>
 
         </div>
         <div class="col-sm-10 col-sm-offset-2 col-md-10 col-md-offset-2 main row">
@@ -68,17 +53,7 @@
                 <h2 id="page-header"></h2>
             </div>
             <div id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
-                <select id="select-sort">
-                    <option value="year">by Adoption Year</option>
-                    <option value="metadata">by Metadata</option>
-                    <option value="name">by Name</option>
-                </select>
-                <svg id="svg-network-view" style="display:none"></svg>
-                <svg id="svg-arc-view">
-                    <g class="arcs"></g>
-                    <g class="circles"></g>
-                    <g class="labels"></g>
-                </svg>
+                <svg id="svg-network-view"></svg>
             </div>
             <div id="policy-cascade-wrapper" class="col-sm-12 col-md-3 col-lg-3">
                 <p id="policy-unselected-notitication">
@@ -87,7 +62,6 @@
                 <svg id="svg-cascade-view" style="display:none;"></svg>
             </div>
             <div id="diffusion-wrapper" class="col-sm-12 col-md-12 col-lg-12">
-                <p>here we go!</p>
                 <svg id="svg-diffusion-view"></svg>
             </div>
         </div>
