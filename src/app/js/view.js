@@ -910,7 +910,7 @@ let DiffusionView = Backbone.View.extend({
         this._attr = {};
     },
     render() {
-        // console.log("rendering diffusion: " + sortMethod);
+        // console.log("rendering diffusion...");
         let _self = this,
             _attr = this._attr; // closure vars
 
@@ -946,12 +946,17 @@ let DiffusionView = Backbone.View.extend({
                 'class': 'x-labels',
                 'transform': "translate(" + (pathXShift) + "," + (circleYShift) + ")"
             }),
-            barG = svg.append('g').attr({
-                'id': 'diffusion-bar-group',
+            upBarG = svg.append('g').attr({
+                'id': 'diffusion-up-bar-group',
                 'class': 'bars',
                 'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
             }),
-            yLabelG = barG.append('g').attr({
+            bottomBarG = svg.append('g').attr({
+                'id': 'diffusion-bottom-bar-group',
+                'class': 'bars',
+                'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
+            }),
+            yLabelG = svg.append('g').attr({
                 'id': 'diffusion-y-label-group',
                 'class': 'y-labels',
                 'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
@@ -968,20 +973,32 @@ let DiffusionView = Backbone.View.extend({
             .domain([0, 49])
             .range([gs.d.size.pathHeight, gs.d.size.pathHeight / 2]);
 
+
+        // data join
+        let nodes = _self.model.get("nodes"),
+            links = conf.static.edges,
+            stat = _self.model.get("stat");
+
+
+
         $.extend(_attr, {
             pathG: pathG,
             circleG: circleG,
             xLabelG: xLabelG,
-            barG: barG,
+            upBarG: upBarG,
+            bottomBarG: bottomBarG,
             yLabelG: yLabelG,
-            nodes: _self.model.get("nodes"),
-            links: conf.static.edges,
-            stat: _self.model.get("stat"),
+            nodes: nodes,
+            links: links,
+            stat: stat,
             xScale: xScale,
             yTopScale: yTopScale,
             yBottomScale: yBottomScale,
             defs: defs
         });
+
+        // generate gradient
+        _self.processGradient();
 
         // do init sort
         _self.doInitSort();
@@ -989,34 +1006,62 @@ let DiffusionView = Backbone.View.extend({
         return _self.update();
     },
     update() {
+        // console.log("updating diffusion...");
         let _self = this,
             _attr = this._attr,
             stat = this.model.get("stat"),
             nodes = _attr.nodes,
             links = _attr.links;
 
-        // data join
-        let paths = _attr.pathG.selectAll('path')
-            .data(links),
-            circles = _attr.circleG.selectAll('circle')
-            .data(nodes),
-            bars = _attr.barG.selectAll('rect')
-            .data(nodes);
-
         // define radius scale for circles
         let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
-            ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
             radiusScale = d3.scale.linear()
             .domain([stat.min[xSeq], stat.max[xSeq]])
             .range(gs.d.size.circle);
 
-        _self.processGradient();
+        let paths = _attr.pathG.selectAll('path')
+            .data(links),
+            circles = _attr.circleG.selectAll('circle')
+            .data(nodes),
+            upBars = _attr.upBarG.selectAll('rect')
+            .data(nodes),
+            bottomBars = _attr.bottomBarG.selectAll('rect')
+            .data(nodes);
+
+        paths.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("d", (d, i) => {
+                let c = d.coords,
+                    n = _self.processCoordinates(nodes, stat, d, i),
+                    interpolateX1 = d3.interpolate(c.x1, n.x1),
+                    interpolateX2 = d3.interpolate(c.x2, n.x2),
+                    interpolateXMid = d3.interpolate(c.xMid, n.xMid),
+                    interpolateY1 = d3.interpolate(c.y1, n.y1),
+                    interpolateY2 = d3.interpolate(c.y2, n.y2),
+                    interpolateYM1 = d3.interpolate(c.ym1, n.ym1),
+                    interpolateYM2 = d3.interpolate(c.ym2, n.ym2);
+
+                return function(t) {
+                    d.coords.x1 = interpolateX1(t);
+                    d.coords.x2 = interpolateX2(t);
+                    d.coords.xMid = interpolateXMid(t);
+                    d.coords.y1 = interpolateY1(t);
+                    d.coords.y2 = interpolateY2(t);
+                    d.coords.ym1 = interpolateYM1(t);
+                    d.coords.ym2 = interpolateYM2(t);
+
+                    return _self.linkBuilder(d);
+                }
+            });
 
         // enter
         paths.enter()
             .append('path')
             .attr({
-                d: (d, i) => _self.linkBuilder(nodes, stat, d, i),
+                d: (d, i) => {
+                    d.coords = _self.processCoordinates(nodes, stat, d, i);
+                    return _self.linkBuilder(d);
+                },
                 class: (d, i) => {
                     let isValid = nodes[d.source].valid && nodes[d.target].valid,
                         isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
@@ -1041,7 +1086,7 @@ let DiffusionView = Backbone.View.extend({
             .append('circle')
             .attr({
                 cy: 0,
-                cx: (d) => _attr.xScale(d.xOrder),
+                cx: (d) => _attr.xScale(d.sequenceOrder),
                 r: (d) => {
                     let meta = d.metadata[xSeq];
                     if (typeof meta === "undefined") {
@@ -1066,16 +1111,24 @@ let DiffusionView = Backbone.View.extend({
                 id: (d, i) => "diffusion_node_" + i
             });
 
-        _self.barBuilder(bars, ySeq, "up");
-        _self.barBuilder(bars, ySeq, "bottom");
+        upBars.transition()
+            .duration(gs.d.config.transitionTime)
+            .call(_self.barTween, _attr, "up");
+        _self.createBars(upBars, "up");
+
+        bottomBars.transition()
+            .duration(gs.d.config.transitionTime)
+            .call(_self.barTween, _attr, "bottom");
+        _self.createBars(bottomBars, "bottom");
 
         return this;
     },
-    barBuilder(bars, ySeq, section) {
+    createBars(bars, section) {
         let _attr = this._attr,
             stat = this.model.get("stat"),
             yTopScale = _attr.yTopScale,
             yBottomScale = _attr.yBottomScale,
+            ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
             rectScale = d3.scale.linear()
             .domain([stat.min[ySeq], stat.max[ySeq]])
             .range(gs.d.size.rect);
@@ -1084,26 +1137,80 @@ let DiffusionView = Backbone.View.extend({
             .append('rect')
             .attr({
                 width: (d) => {
-                    let meta = d.metadata[ySeq];
-                    if (typeof meta === "undefined") {
-                        return gs.d.size.rect[0];
-                    }
-                    return rectScale(meta);
+                    d.meta = d.metadata[ySeq];
+                    d.width = typeof d.meta === "undefined" ?
+                        gs.d.size.rect[0] :
+                        rectScale(d.meta);
+                    return d.width;
                 },
                 height: gs.d.size.rectHeight,
                 x: (d) => {
-                    let meta = d.metadata[ySeq],
-                        pad = typeof meta === "undefined" ? gs.d.size.rect[0] : rectScale(meta);
-                    return gs.d.size.barWidth - pad;
+                    d.pad = typeof d.meta === "undefined" ?
+                        gs.d.size.rect[0] :
+                        rectScale(d.meta);
+                    return gs.d.size.barWidth - d.pad;
                 },
                 y: (d) => {
-                    return section === "up" ? _attr.yTopScale(d.yOrder) : _attr.yBottomScale(d.yOrder);
+                    if (section === "up") {
+                        d.upY = _attr.yTopScale(d.metadataOrder);
+                        return d.upY;
+                    } else {
+                        d.bottomY = _attr.yBottomScale(d.metadataOrder);
+                        return d.bottomY;
+                    }
                 },
                 fill: (d) => {
                     if (d.stateId === "NE") {
                         return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     } else {
-                        return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+                        return d.valid ?
+                            colorMap[d.adoptedYear] :
+                            css_variables["--color-unadopted"];
+                    }
+                }
+            });
+    },
+    barTween(transition, _attr, section) {
+        transition.attrTween("width", (d) => {
+                let ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')];
+                d.meta = d.metadata[ySeq];
+
+                d.rectScale = d3.scale.linear()
+                    .domain([_attr.stat.min[ySeq], _attr.stat.max[ySeq]])
+                    .range(gs.d.size.rect);
+                let newWidth = typeof d.meta === "undefined" ?
+                    gs.d.size.rect[0] :
+                    d.rectScale(d.meta),
+                    interpolateWidth = d3.interpolate(d.width, newWidth);
+                return function(t) {
+                    d.width = interpolateWidth(t);
+                    return d.width;
+                }
+            })
+            .attrTween("x", (d) => {
+                let newPad = (typeof d.meta === "undefined" ?
+                        gs.d.size.rect[0] :
+                        d.rectScale(d.meta)),
+                    interpolatePad = d3.interpolate(d.pad, newPad);
+
+                return function(t) {
+                    d.pad = interpolatePad(t);
+                    return gs.d.size.barWidth - d.pad;
+                }
+            })
+            .attrTween("y", (d) => {
+                let interpolateY;
+                if (section === "up") {
+                    interpolateY = d3.interpolate(d.upY, _attr.yTopScale(d.metadataOrder));
+                    return function(t) {
+                        d.upY = interpolateY(t);
+                        return d.upY;
+                    }
+                } else {
+                    interpolateY = d3.interpolate(d.bottomY, _attr.yBottomScale(d.metadataOrder));
+                    return function(t) {
+                        d.bottomY = interpolateY(t);
+                        return d.bottomY;
                     }
                 }
             });
@@ -1155,39 +1262,53 @@ let DiffusionView = Backbone.View.extend({
             }
         });
     },
-    linkBuilder(nodes, stat, d, i) {
+    linkBuilder(d) {
+        let _attr = this._attr,
+            xScale = _attr.xScale,
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale,
+            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
+            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale,
+            c = d.coords;
+
+        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
+
+        return interpolate([
+            [xScale(c.x1), yScale(c.y1)],
+            [xScale(c.xMid), yScale(c.ym1)],
+            [xScale(c.x2), yScale(c.y2)],
+            [xScale(c.xMid), yScale(c.ym2)],
+            [xScale(c.x1), yScale(c.y1)]
+        ]);
+    },
+    processCoordinates(nodes, stat, d, i) {
         const divider = 0.3,
             yPartition1 = 0.25,
             yPartition2 = 0.75,
             thicknessParam = nodes[d.source].metadata[gs.d.config.thicknessDefault],
             standardizedThickness = this.standardized(thicknessParam, stat.min[gs.d.config.thicknessDefault], stat.max[gs.d.config.thicknessDefault]),
             ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
-            xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
-            _attr = this._attr,
-            xScale = _attr.xScale,
-            yTopScale = _attr.yTopScale,
-            yBottomScale = _attr.yBottomScale;
+            xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')];
 
-        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
 
-        let x1 = nodes[d.source].xOrder,
-            x2 = nodes[d.target].xOrder,
-            y1 = nodes[d.source].yOrder,
-            y2 = nodes[d.target].yOrder,
+        let x1 = nodes[d.source].sequenceOrder,
+            x2 = nodes[d.target].sequenceOrder,
+            y1 = nodes[d.source].metadataOrder,
+            y2 = nodes[d.target].metadataOrder,
             xMid = x1 + (x2 - x1) * divider,
             tan = (y2 - y1) / (x2 - x1),
             ym1 = y1 + yPartition1 * (x2 - x1) * divider * tan,
-            ym2 = y1 + yPartition2 * (x2 - x1) * divider * tan * standardizedThickness,
-            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
-            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale;
+            ym2 = y1 + yPartition2 * (x2 - x1) * divider * tan * standardizedThickness;
 
-        return interpolate([
-            [xScale(x1), yScale(y1)],
-            [xScale(xMid), yScale(ym1)],
-            [xScale(x2), yScale(y2)],
-            [xScale(xMid), yScale(ym2)],
-            [xScale(x1), yScale(y1)]
-        ]);
+        return {
+            x1: x1,
+            x2: x2,
+            xMid: xMid,
+            y1: y1,
+            y2: y2,
+            ym1: ym1,
+            ym2: ym2
+        }
     },
     isFollowingNetworkRule(d) {
         let nodes = this._attr.nodes;
@@ -1197,14 +1318,14 @@ let DiffusionView = Backbone.View.extend({
         return (curr - min) / (max - min);
     },
     doInitSort() {
-        this.doSort("x");
-        this.doSort("y");
+        this.doSort("metadata");
+        this.doSort("sequence");
     },
     doSort(axis) {
         let nodes = this._attr.nodes,
             nodeMap = [],
             identifier = axis + "Order",
-            selectedAttrId = (axis === "x" ?
+            selectedAttrId = (axis === "metadata" ?
                 conf.pipe.metaToId[$('#metadata-select').selectpicker('val')] :
                 conf.pipe.metaToId[$('#sequence-select').selectpicker('val')]);
 

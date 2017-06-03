@@ -54,7 +54,7 @@ $(document).ready(() => {
     });
 
     diffusionModel.on("change", () => {
-        diffusionView.render(0);
+        diffusionView.render();
     });
 
     arcModel.on("change", () => {
@@ -66,10 +66,18 @@ $(document).ready(() => {
         updateHeader();
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
+            diffusionModel.populate(conditions);
         }
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata')) {
             networkModel.populate(conditions);
-            diffusionModel.populate(conditions);
+        }
+        if (conditions.hasChanged('metadata')) {
+            diffusionView.doSort("metadata");
+            diffusionView.update();
+        }
+        if (conditions.hasChanged('sequence')) {
+            diffusionView.doSort("sequence");
+            diffusionView.update();
         }
     });
 
@@ -81,7 +89,7 @@ function initRendering() {
     // stateModel.fetch();
     policyModel.populate(conditions);
     networkModel.fetch();
-    // diffusionModel.fetch();
+    diffusionModel.populate(conditions);
 }
 
 function bindEvents() {

@@ -54,7 +54,8 @@ const GraphSettings = {
 
         },
         config: {
-            thicknessDefault: "md"
+            thicknessDefault: "pci",
+            transitionTime: 2500
         }
 
     },
