@@ -17,7 +17,8 @@
 /*shared style*/
 
 .hovered-item {
-    fill: var(--color-hovered);
+    fill: var(--color-hovered) !important;
+    stroke: var(--color-hovered) !important;
 }
 
 .follow-the-rule {
@@ -32,6 +33,11 @@
 
 .invalid-arc {
     opacity: 0;
+}
+
+.reference-line {
+    stroke-dasharray: 5;
+    stroke: lightslategray;
 }
 
 

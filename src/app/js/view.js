@@ -228,7 +228,7 @@ let NetworkView = Backbone.View.extend({
             .attr('class', 'd3-tip-network')
             .offset([-10, 0])
             .html(function(d) {
-                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>" + d.metaName + ": <span style='color:white'>" + d.metadata + "</span></p ><p>Adopted year: <span style='color:white'>" + (d.adoptedYear > 0 ? d.adoptedYear : "Haven't adopted") + "</span></p >";
+                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>" + d.metaName + ": <span style='color:white'>" + d.metadata + "</span></p ><p>Adopted year: <span style='color:white'>" + (d.adoptedYear < 9999 ? d.adoptedYear : "Haven't adopted") + "</span></p >";
             });
 
         var force = d3.layout.force()
@@ -311,7 +311,7 @@ let NetworkView = Backbone.View.extend({
                         .append("svg:path")
                         .attr("d", "M0,-5L10,0L0,5");
 
-                    if (results[i][0].adoptedYear != -1 && results[i][results[i].length - 1].adoptedYear != -1) {
+                    if (results[i][0].adoptedYear != 9999 && results[i][results[i].length - 1].adoptedYear != 9999) {
                         svg.append("path")
                             .attr("d", d3line(results[i]))
                             .attr("id", String(i))
@@ -946,7 +946,7 @@ let DiffusionView = Backbone.View.extend({
             xLabelG = circleG.append('g').attr({
                 'id': 'diffusion-x-label-group',
                 'class': 'x-labels',
-                'transform': "translate(" + (pathXShift) + "," + (circleYShift) + ")"
+                'transform': "translate(" + (0) + "," + (0) + ")"
             }),
             upBarG = svg.append('g').attr({
                 'id': 'diffusion-up-bar-group',
@@ -963,6 +963,11 @@ let DiffusionView = Backbone.View.extend({
                 'class': 'y-labels',
                 'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
             }),
+            refLineG = pathG.append('g').attr({
+                'id': 'diffusion-ref-line-group',
+                'class': 'refs',
+                'transform': "translate(" + (0) + "," + (0) + ")"
+            }),
             defs = svg.append('defs');
 
         let xScale = d3.scale.linear()
@@ -975,13 +980,10 @@ let DiffusionView = Backbone.View.extend({
             .domain([0, 49])
             .range([gs.d.size.pathHeight, gs.d.size.pathHeight / 2]);
 
-
         // data join
         let nodes = _self.model.get("nodes"),
             links = conf.static.edges,
             stat = _self.model.get("stat");
-
-
 
         $.extend(_attr, {
             pathG: pathG,
@@ -990,13 +992,14 @@ let DiffusionView = Backbone.View.extend({
             upBarG: upBarG,
             bottomBarG: bottomBarG,
             yLabelG: yLabelG,
+            refLineG: refLineG,
+            defs: defs,
             nodes: nodes,
             links: links,
             stat: stat,
             xScale: xScale,
             yTopScale: yTopScale,
-            yBottomScale: yBottomScale,
-            defs: defs
+            yBottomScale: yBottomScale
         });
 
         // generate gradient
@@ -1005,7 +1008,11 @@ let DiffusionView = Backbone.View.extend({
         // do init sort
         _self.doInitSort();
 
-        return _self.update();
+        _self.update();
+
+        _self.bindTriggers();
+
+        return this;
     },
     update() {
         // console.log("updating diffusion...");
@@ -1017,6 +1024,7 @@ let DiffusionView = Backbone.View.extend({
 
         // define radius scale for circles
         let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
+            // let xSeq = gs.d.config.radiusDefault,
             radiusScale = d3.scale.linear()
             .domain([stat.min[xSeq], stat.max[xSeq]])
             .range(gs.d.size.circle);
@@ -1024,6 +1032,8 @@ let DiffusionView = Backbone.View.extend({
         let paths = _attr.pathG.selectAll('path')
             .data(links),
             circles = _attr.circleG.selectAll('circle')
+            .data(nodes),
+            xlabels = _attr.xLabelG.selectAll('text')
             .data(nodes),
             upBars = _attr.upBarG.selectAll('rect')
             .data(nodes),
@@ -1056,39 +1066,24 @@ let DiffusionView = Backbone.View.extend({
                 }
             });
 
-        // enter
-        paths.enter()
-            .append('path')
-            .attr({
-                d: (d, i) => {
-                    d.coords = _self.processCoordinates(nodes, stat, d, i);
-                    return _self.linkBuilder(d);
-                },
-                class: (d, i) => {
-                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
-                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
-                    if (isValid) {
-                        if (isFollowingNetworkRule) {
-                            return "follow-the-rule";
-                        } else {
-                            return "violate-the-rule";
-                        }
-                    } else {
-                        return "invalid-arc";
-                    }
+        circles.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("cx", (d, i) => {
+                let interpolateX = d3.interpolate(d.circleX, _attr.xScale(d.sequenceOrder));
+                return function(t) {
+                    return d.circleX = interpolateX(t);
                 }
             })
-            .style({
-                fill: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
-                stroke: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
-                opacity: 0.6
-            });
 
+        // enter
         circles.enter()
             .append('circle')
             .attr({
                 cy: 0,
-                cx: (d) => _attr.xScale(d.sequenceOrder),
+                cx: (d) => {
+                    d.circleX = _attr.xScale(d.sequenceOrder);
+                    return d.circleX;
+                },
                 r: (d) => {
                     let meta = d.metadata[xSeq];
                     if (typeof meta === "undefined") {
@@ -1113,6 +1108,74 @@ let DiffusionView = Backbone.View.extend({
                 id: (d, i) => "diffusion_node_" + i
             });
 
+        xlabels.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("transform", (d) => {
+                let interpolateX = d3.interpolate(d.labelX, _attr.xScale(d.sequenceOrder) - gs.d.size.circle[0]);
+                return function(t) {
+                    d.labelX = interpolateX(t);
+                    return "translate(" + d.labelX + "," + d.labelY + ") rotate(90)";
+                }
+            })
+
+        xlabels.enter()
+            .append('text')
+            .attr({
+                class: "text-tip"
+            })
+            .text((d) => " - " + d.stateId)
+            .attr({
+                transform: (d) => {
+                    d.labelX = _attr.xScale(d.sequenceOrder) - gs.d.size.circle[0];
+                    d.labelY = gs.d.size.circle[1];
+                    return "translate(" + d.labelX + "," + d.labelY + ") rotate(90)";
+                }
+            })
+            .style({
+                opacity: 0.5
+            });
+
+        paths.enter()
+            .append('path')
+            .attr({
+                d: (d, i) => {
+                    d.coords = _self.processCoordinates(nodes, stat, d, i);
+                    return _self.linkBuilder(d);
+                },
+                class: (d, i) => {
+                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
+                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
+
+                    console.groupCollapsed("Source: node-" + d.source + "\t" + nodes[d.source].stateId, "Target: node-" + d.target + "\t" + nodes[d.target].stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
+                    if (isValid) {
+                        console.log("Both valid.");
+                    } else {
+                        console.log("Source " + (nodes[d.source].valid ? "valid." : "invalid."));
+                        console.log("Target " + (nodes[d.target].valid ? "valid." : "invalid."));
+                    }
+                    console.log((isFollowingNetworkRule ? "Following " : "Violating ") + "rule.");
+                    console.groupEnd();
+
+                    if (isValid) {
+                        if (isFollowingNetworkRule) {
+                            return "follow-the-rule";
+                        } else {
+                            return "violate-the-rule";
+                        }
+                    } else {
+                        return "invalid-arc";
+                    }
+                },
+                source: (d) => d.source,
+                target: (d) => d.target,
+                id: (d, i) => "diffusion_path_" + i
+            })
+            .style({
+                fill: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
+                stroke: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
+                opacity: 0.6
+            });
+
         upBars.transition()
             .duration(gs.d.config.transitionTime)
             .call(_self.barTween, _attr, "up");
@@ -1128,8 +1191,6 @@ let DiffusionView = Backbone.View.extend({
     createBars(bars, section) {
         let _attr = this._attr,
             stat = this.model.get("stat"),
-            yTopScale = _attr.yTopScale,
-            yBottomScale = _attr.yBottomScale,
             ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
             rectScale = d3.scale.linear()
             .domain([stat.min[ySeq], stat.max[ySeq]])
@@ -1169,7 +1230,8 @@ let DiffusionView = Backbone.View.extend({
                             colorMap[d.adoptedYear] :
                             css_variables["--color-unadopted"];
                     }
-                }
+                },
+                class: (d, i) => "bar-" + i
             });
     },
     barTween(transition, _attr, section) {
@@ -1301,6 +1363,9 @@ let DiffusionView = Backbone.View.extend({
             tan = (y2 - y1) / (x2 - x1),
             ym1 = y1 + yPartition1 * (x2 - x1) * divider * tan,
             ym2 = y1 + yPartition2 * (x2 - x1) * divider * tan * standardizedThickness;
+        // unitGap = gs.d.size.labelHeight / 100,
+        // ym1 = y1,
+        // ym2 = y1 + tan / Math.abs(tan) * unitGap * standardizedThickness;
 
         return {
             x1: x1,
@@ -1311,6 +1376,123 @@ let DiffusionView = Backbone.View.extend({
             ym1: ym1,
             ym2: ym2
         }
+    },
+    bindTriggers() {
+        let _self = this,
+            _attr = this._attr;
+
+        let pathOverHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target),
+                    pathId = _curr.attr("id"),
+                    className = _curr.attr("class"),
+                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+                if (isValidPath) {
+                    // why does it firing twice ???????
+                    // console.log(e);
+                    // console.log(e.type);
+                    // console.log(className);
+
+                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                        // add ref lines
+                        _self.drawRefLines(+nodeId, className);
+
+                        // light up bars
+                        switch (className) {
+                            case "follow-the-rule":
+                                $(_attr.upBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
+                                break;
+                            case "violate-the-rule":
+                                $(_attr.bottomBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
+                                break;
+
+                        }
+
+                        // light up circles
+                        $("#diffusion_node_" + nodeId).addClass("hovered-item");
+
+                        // move mouseovered nodes to front
+                        d3.select("#diffusion_node_" + nodeId).moveToFront();
+                    });
+
+                    // light up mouseovered path
+                    _curr.addClass("hovered-item");
+
+                    // move mouseovered to front
+                    d3.select("#" + pathId).moveToFront();
+
+                }
+            },
+            pathOutHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target),
+                    className = _curr.attr("class"),
+                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+                if (isValidPath) {
+                    let _curr = $(e.target);
+
+                    // remove ref lines
+                    $("#diffusion-ref-line-group").empty();
+
+                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+
+                        // recover lighted bars
+                        $(".bar-" + nodeId).removeClass("hovered-item");
+
+                        // recover up circles
+                        $("#diffusion_node_" + nodeId).removeClass("hovered-item");
+                    });
+
+                    // recover lighted path
+                    _curr.removeClass("hovered-item");
+
+                }
+            };
+
+        this.el.removeEventListener('mouseover', pathOverHandler, false);
+        this.el.removeEventListener('mouseout', pathOutHandler, false);
+
+        // mouseover paths
+        this.el.addEventListener('mouseover', pathOverHandler, false);
+
+        // mouseout paths
+        this.el.addEventListener('mouseout', pathOutHandler, false);
+
+    },
+    drawRefLines(nodeId, className) {
+
+        let _self = this,
+            _attr = this._attr,
+            nodes = _attr.nodes,
+            xScale = _attr.xScale,
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale,
+            refLineG = _attr.refLineG;
+
+        let y = (className.includes("follow-the-rule") ?
+            yTopScale(nodes[nodeId].metadataOrder) :
+            yBottomScale(nodes[nodeId].metadataOrder));
+
+        refLineG.append('line')
+            .attr({
+                x1: xScale(nodes[nodeId].sequenceOrder),
+                y1: gs.d.size.pathHeight / 2,
+                x2: xScale(nodes[nodeId].sequenceOrder),
+                y2: y,
+                class: "reference-line vertical"
+            });
+
+        refLineG.append('line')
+            .attr({
+                x1: xScale(nodes[nodeId].sequenceOrder),
+                y1: y,
+                x2: 0,
+                y2: y,
+                class: "reference-line horizontal"
+            });
+
     },
     isFollowingNetworkRule(d) {
         let nodes = this._attr.nodes;
@@ -1326,16 +1508,41 @@ let DiffusionView = Backbone.View.extend({
     doSort(axis) {
         let nodes = this._attr.nodes,
             nodeMap = [],
-            identifier = axis + "Order",
-            selectedAttrId = (axis === "metadata" ?
-                conf.pipe.metaToId[$('#metadata-select').selectpicker('val')] :
-                conf.pipe.metaToId[$('#sequence-select').selectpicker('val')]);
+            identifier = axis + "Order";
 
         nodes.forEach((node, i) => {
             nodeMap.push($.extend({ index: i }, node));
         });
 
-        nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
+        if (axis === "metadata") {
+            let selectedAttrId = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')];
+            nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
+        } else {
+            let selectedAttr = $('#sequence-select').selectpicker('val');
+            switch (selectedAttr) {
+                case "adoptionYear":
+                    nodeMap.sort((a, b) => {
+                        let diff = a.adoptedYear - b.adoptedYear;
+                        if (diff !== 0) {
+                            return diff;
+                        } else {
+                            return a.stateName.localeCompare(b.stateName);
+                        }
+                    });
+                    break;
+                default:
+                    let selectedAttrId = conf.pipe.metaToId[selectedAttr];
+                    nodeMap.sort((a, b) => {
+                        let diff = b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId];
+                        if (diff !== 0) {
+                            return diff;
+                        } else {
+                            return a.stateName.localeCompare(b.stateName);
+                        }
+                    });
+                    break;
+            }
+        }
 
         nodeMap.forEach((node, i) => {
             nodes[node.index][identifier] = i;

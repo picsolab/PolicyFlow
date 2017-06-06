@@ -208,14 +208,14 @@ class NetworkDao(BaseDao):
                 temp_object["valid"] = False if stateId in meta_unadopted_set else True
                 temp_object["metadata"] = -1
                 temp_object["normalizedMetadata"] = -1
-                temp_object["dataYear"] = -1
+                temp_object["dataYear"] = 9999
                 temp_object["adoptedYear"] = ne_adopt_year
             elif stateId in meta_unadopted_set:
                 temp_object["valid"] = False
                 temp_object["metadata"] = meta_unadopted_set[stateId]
                 temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_unadopted_set[stateId], min_meta, max_meta)
                 temp_object["dataYear"] = min_year
-                temp_object["adoptedYear"] = -1
+                temp_object["adoptedYear"] = 9999
             else:
                 temp_object["valid"] = True
                 if stateId in meta_set:
@@ -349,7 +349,7 @@ class DiffusionDao(BaseDao):
                 for obj in pipe:
                     temp_meta_set[obj] = meta_unadopted_set[obj][stateId]
                 temp_object["dataYear"] = min_year
-                temp_object["adoptedYear"] = -1
+                temp_object["adoptedYear"] = 9999
             else:
                 temp_object["valid"] = True
                 if stateId in meta_set["md"]:

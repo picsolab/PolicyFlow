@@ -77,13 +77,26 @@ let DiffusionModel = Backbone.Model.extend({
         this.url = this.urlRoot + conf.models.conditions.defaults.policy;
     },
     populate(conditions) {
-        let _self = this;
+        let _self = this,
+            centrality = conf.static.centrality.outdegree;
         this.url = this.urlRoot + conditions.get("policy");
         $.getJSON(_self.url).done((data) => {
             // console.log(_self.url);
+            let nodes = data.nodes,
+                stat = data.stat,
+                min = 9999,
+                max = 0;
+            nodes.forEach((node, i) => {
+                let curr = centrality[node.stateId];
+                min = Math.min(curr, min);
+                max = Math.max(curr, max);
+                nodes[i].metadata["ce"] = curr;
+            });
+            stat.min["ce"] = min;
+            stat.max["ce"] = max;
             _self.set({
-                "nodes": data.nodes,
-                "stat": data.stat
+                "nodes": nodes,
+                "stat": stat
             });
         });
     }

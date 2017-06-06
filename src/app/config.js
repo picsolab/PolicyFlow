@@ -52,13 +52,19 @@ const Config = {
             }
         ],
         xAttributeList: [{
-            // id: "centrality",
-            // domId: "x-option-centrality",
-            // description: "Centrality"
-            id: "perCapitaIncome",
-            domId: "x-option-per-capita-income",
-            description: "Per Capita Income"
-        }]
+                id: "centrality",
+                domId: "x-option-centrality",
+                description: "Centrality"
+                    // id: "perCapitaIncome",
+                    // domId: "x-option-per-capita-income",
+                    // description: "Per Capita Income"
+            },
+            {
+                id: "adoptionYear",
+                domId: "x-option-adoption-year",
+                description: "Adoption Year"
+            }
+        ]
     },
     models: {
         conditions: {
@@ -124,6 +130,60 @@ const Config = {
         }
     },
     static: {
+        centrality: {
+            outdegree: {
+                "AK": 0,
+                "AL": 0,
+                "AR": 0,
+                "AZ": 0,
+                "CA": 17,
+                "CO": 3,
+                "CT": 7,
+                "DE": 0,
+                "FL": 1,
+                "GA": 0,
+                "HI": 0,
+                "IA": 0,
+                "ID": 0,
+                "IL": 3,
+                "IN": 0,
+                "KS": 0,
+                "KY": 0,
+                "LA": 1,
+                "MA": 1,
+                "MD": 0,
+                "ME": 0,
+                "MI": 0,
+                "MN": 1,
+                "MO": 0,
+                "MS": 0,
+                "MT": 0,
+                "NC": 1,
+                "ND": 0,
+                "NE": 0,
+                "NH": 0,
+                "NJ": 2,
+                "NM": 0,
+                "NV": 0,
+                "NY": 5,
+                "OH": 0,
+                "OK": 0,
+                "OR": 4,
+                "PA": 0,
+                "RI": 0,
+                "SC": 0,
+                "SD": 0,
+                "TN": 0,
+                "TX": 0,
+                "UT": 0,
+                "VA": 1,
+                "VT": 0,
+                "WA": 3,
+                "WI": 0,
+                "WV": 0,
+                "WY": 0
+            }
+        },
         edges: [{
                 "source": 36,
                 "target": 1
