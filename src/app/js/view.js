@@ -1413,14 +1413,14 @@ let DiffusionView = Backbone.View.extend({
                         $("#diffusion_node_" + nodeId).addClass("hovered-item");
 
                         // move mouseovered nodes to front
-                        d3.select("#diffusion_node_" + nodeId).moveToFront();
+                        // d3.select("#diffusion_node_" + nodeId).moveToFront();
                     });
 
                     // light up mouseovered path
                     _curr.addClass("hovered-item");
 
                     // move mouseovered to front
-                    d3.select("#" + pathId).moveToFront();
+                    // d3.select("#" + pathId).moveToFront();
 
                 }
             },
