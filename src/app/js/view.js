@@ -1023,8 +1023,8 @@ let DiffusionView = Backbone.View.extend({
             links = _attr.links;
 
         // define radius scale for circles
-        let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
-            // let xSeq = gs.d.config.radiusDefault,
+        // let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
+        let xSeq = gs.d.config.radiusDefault,
             radiusScale = d3.scale.linear()
             .domain([stat.min[xSeq], stat.max[xSeq]])
             .range(gs.d.size.circle);
@@ -1086,6 +1086,7 @@ let DiffusionView = Backbone.View.extend({
                 },
                 r: (d) => {
                     let meta = d.metadata[xSeq];
+                    console.log(meta);
                     if (typeof meta === "undefined") {
                         return gs.d.size.circle[0];
                     }
