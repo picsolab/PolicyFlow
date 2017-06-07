@@ -1284,7 +1284,7 @@ let DiffusionView = Backbone.View.extend({
         let yearList = Object.keys(colorMap);
 
         yearList.forEach((year, index) => {
-            for (loop = index + 1; loop < yearList.length; loop++) {
+            for (loop = index; loop < yearList.length; loop++) {
                 let curr = this._attr.defs.append("linearGradient")
                     .attr({
                         id: "gradient-".concat(year, yearList[loop]),
