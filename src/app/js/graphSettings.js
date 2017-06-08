@@ -54,8 +54,6 @@ const GraphSettings = {
 
         },
         config: {
-            thicknessDefault: "ce",
-            radiusDefault: "ce",
             transitionTime: 2500
         }
 

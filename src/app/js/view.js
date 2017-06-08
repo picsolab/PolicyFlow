@@ -2,7 +2,8 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
-const eedges = conf.static.edges;
+const eedges = conf.static.edges,
+    printDiagnoseInfo = false;
 
 let colorList = [],
     colorMap = {};
@@ -983,7 +984,8 @@ let DiffusionView = Backbone.View.extend({
         // data join
         let nodes = _self.model.get("nodes"),
             links = conf.static.edges,
-            stat = _self.model.get("stat");
+            stat = _self.model.get("stat"),
+            cstat = _self.model.get("cstat");
 
         $.extend(_attr, {
             pathG: pathG,
@@ -997,6 +999,7 @@ let DiffusionView = Backbone.View.extend({
             nodes: nodes,
             links: links,
             stat: stat,
+            cstat: cstat,
             xScale: xScale,
             yTopScale: yTopScale,
             yBottomScale: yBottomScale
@@ -1019,14 +1022,15 @@ let DiffusionView = Backbone.View.extend({
         let _self = this,
             _attr = this._attr,
             stat = this.model.get("stat"),
+            cstat = this.model.get("cstat"),
             nodes = _attr.nodes,
             links = _attr.links;
 
         // define radius scale for circles
         // let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
-        let xSeq = gs.d.config.radiusDefault,
+        let xSeq = $("#centrality-select").selectpicker('val'),
             radiusScale = d3.scale.linear()
-            .domain([stat.min[xSeq], stat.max[xSeq]])
+            .domain([cstat.min[xSeq], cstat.max[xSeq]])
             .range(gs.d.size.circle);
 
         let paths = _attr.pathG.selectAll('path')
@@ -1044,7 +1048,7 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .attrTween("d", (d, i) => {
                 let c = d.coords,
-                    n = _self.processCoordinates(nodes, stat, d, i),
+                    n = _self.processCoordinates(nodes, cstat, d, i),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1074,6 +1078,12 @@ let DiffusionView = Backbone.View.extend({
                     return d.circleX = interpolateX(t);
                 }
             })
+            .attrTween("r", (d, i) => {
+                let interpolateR = d3.interpolate(d.circleR, radiusScale(d.centralities[xSeq]));
+                return function(t) {
+                    return d.circleR = interpolateR(t);
+                }
+            });
 
         // enter
         circles.enter()
@@ -1085,12 +1095,8 @@ let DiffusionView = Backbone.View.extend({
                     return d.circleX;
                 },
                 r: (d) => {
-                    let meta = d.metadata[xSeq];
-                    console.log(meta);
-                    if (typeof meta === "undefined") {
-                        return gs.d.size.circle[0];
-                    }
-                    return radiusScale(meta);
+                    d.circleR = radiusScale(d.centralities[xSeq]);
+                    return d.circleR;
                 },
                 fill: (d) => {
                     if (d.stateId === "NE") {
@@ -1106,7 +1112,7 @@ let DiffusionView = Backbone.View.extend({
                         return d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     }
                 },
-                id: (d, i) => "diffusion_node_" + i
+                id: (d, i) => "diffusion-node-" + i
             });
 
         xlabels.transition()
@@ -1140,22 +1146,24 @@ let DiffusionView = Backbone.View.extend({
             .append('path')
             .attr({
                 d: (d, i) => {
-                    d.coords = _self.processCoordinates(nodes, stat, d, i);
+                    d.coords = _self.processCoordinates(nodes, cstat, d, i);
                     return _self.linkBuilder(d);
                 },
                 class: (d, i) => {
                     let isValid = nodes[d.source].valid && nodes[d.target].valid,
                         isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
 
-                    console.groupCollapsed("Source: node-" + d.source + "\t" + nodes[d.source].stateId, "Target: node-" + d.target + "\t" + nodes[d.target].stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
-                    if (isValid) {
-                        console.log("Both valid.");
-                    } else {
-                        console.log("Source " + (nodes[d.source].valid ? "valid." : "invalid."));
-                        console.log("Target " + (nodes[d.target].valid ? "valid." : "invalid."));
+                    if (printDiagnoseInfo) {
+                        console.groupCollapsed("Source: node-" + d.source + "\t" + nodes[d.source].stateId, "Target: node-" + d.target + "\t" + nodes[d.target].stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
+                        if (isValid) {
+                            console.log("Both valid.");
+                        } else {
+                            console.log("Source " + (nodes[d.source].valid ? "valid." : "invalid."));
+                            console.log("Target " + (nodes[d.target].valid ? "valid." : "invalid."));
+                        }
+                        console.log((isFollowingNetworkRule ? "Following " : "Violating ") + "rule.");
+                        console.groupEnd();
                     }
-                    console.log((isFollowingNetworkRule ? "Following " : "Violating ") + "rule.");
-                    console.groupEnd();
 
                     if (isValid) {
                         if (isFollowingNetworkRule) {
@@ -1169,7 +1177,7 @@ let DiffusionView = Backbone.View.extend({
                 },
                 source: (d) => d.source,
                 target: (d) => d.target,
-                id: (d, i) => "diffusion_path_" + i
+                id: (d, i) => "diffusion-path-" + i
             })
             .style({
                 fill: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
@@ -1192,16 +1200,23 @@ let DiffusionView = Backbone.View.extend({
     createBars(bars, section) {
         let _attr = this._attr,
             stat = this.model.get("stat"),
-            ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
+            cstat = this.model.get("cstat"),
+            isSortingByCentrality = $('#metadata-select').selectpicker('val') === "centrality",
+            actualStat = isSortingByCentrality ? cstat : stat,
+            ySeq = (isSortingByCentrality ?
+                $('#centrality-select').selectpicker('val') :
+                conf.pipe.metaToId[$('#metadata-select').selectpicker('val')]),
             rectScale = d3.scale.linear()
-            .domain([stat.min[ySeq], stat.max[ySeq]])
+            .domain([actualStat.min[ySeq], actualStat.max[ySeq]])
             .range(gs.d.size.rect);
 
         bars.enter()
             .append('rect')
             .attr({
                 width: (d) => {
-                    d.meta = d.metadata[ySeq];
+                    d.meta = (isSortingByCentrality ?
+                        d.centralities[ySeq] :
+                        d.metadata[ySeq]);
                     d.width = typeof d.meta === "undefined" ?
                         gs.d.size.rect[0] :
                         rectScale(d.meta);
@@ -1237,11 +1252,20 @@ let DiffusionView = Backbone.View.extend({
     },
     barTween(transition, _attr, section) {
         transition.attrTween("width", (d) => {
-                let ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')];
-                d.meta = d.metadata[ySeq];
+                let stat = _attr.stat,
+                    cstat = _attr.cstat,
+                    isSortingByCentrality = $('#metadata-select').selectpicker('val') === "centrality",
+                    actualStat = isSortingByCentrality ? cstat : stat,
+                    ySeq = (isSortingByCentrality ?
+                        $('#centrality-select').selectpicker('val') :
+                        conf.pipe.metaToId[$('#metadata-select').selectpicker('val')]);
+
+                d.meta = (isSortingByCentrality ?
+                    d.centralities[ySeq] :
+                    d.metadata[ySeq]);
 
                 d.rectScale = d3.scale.linear()
-                    .domain([_attr.stat.min[ySeq], _attr.stat.max[ySeq]])
+                    .domain([actualStat.min[ySeq], actualStat.max[ySeq]])
                     .range(gs.d.size.rect);
                 let newWidth = typeof d.meta === "undefined" ?
                     gs.d.size.rect[0] :
@@ -1346,12 +1370,13 @@ let DiffusionView = Backbone.View.extend({
             [xScale(c.x1), yScale(c.y1)]
         ]);
     },
-    processCoordinates(nodes, stat, d, i) {
+    processCoordinates(nodes, cstat, d, i) {
         const divider = 0.3,
             yPartition1 = 0.25,
             yPartition2 = 0.75,
-            thicknessParam = nodes[d.source].metadata[gs.d.config.thicknessDefault],
-            standardizedThickness = this.standardized(thicknessParam, stat.min[gs.d.config.thicknessDefault], stat.max[gs.d.config.thicknessDefault]),
+            centralityType = $('#centrality-select').selectpicker('val'),
+            thicknessParam = nodes[d.source].centralities[centralityType],
+            standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]),
             ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
             xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')];
 
@@ -1411,10 +1436,10 @@ let DiffusionView = Backbone.View.extend({
                         }
 
                         // light up circles
-                        $("#diffusion_node_" + nodeId).addClass("hovered-item");
+                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
 
                         // move mouseovered nodes to front
-                        // d3.select("#diffusion_node_" + nodeId).moveToFront();
+                        // d3.select("#diffusion-node-" + nodeId).moveToFront();
                     });
 
                     // light up mouseovered path
@@ -1443,7 +1468,7 @@ let DiffusionView = Backbone.View.extend({
                         $(".bar-" + nodeId).removeClass("hovered-item");
 
                         // recover up circles
-                        $("#diffusion_node_" + nodeId).removeClass("hovered-item");
+                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
                     });
 
                     // recover lighted path
@@ -1509,37 +1534,40 @@ let DiffusionView = Backbone.View.extend({
     doSort(axis) {
         let nodes = this._attr.nodes,
             nodeMap = [],
-            identifier = axis + "Order";
+            identifier = axis + "Order",
+            isSortingByCentrality = $("#" + axis + "-select").selectpicker('val') === "centrality";
 
         nodes.forEach((node, i) => {
             nodeMap.push($.extend({ index: i }, node));
         });
 
         if (axis === "metadata") {
-            let selectedAttrId = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')];
-            nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
+            let selectedAttrId = (isSortingByCentrality ?
+                $("#centrality-select").selectpicker('val') :
+                conf.pipe.metaToId[$('#metadata-select').selectpicker('val')]);
+            if (isSortingByCentrality) {
+                nodeMap.sort((a, b) => b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId]);
+            } else {
+                nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
+            }
         } else {
             let selectedAttr = $('#sequence-select').selectpicker('val');
             switch (selectedAttr) {
                 case "adoptionYear":
                     nodeMap.sort((a, b) => {
                         let diff = a.adoptedYear - b.adoptedYear;
-                        if (diff !== 0) {
-                            return diff;
-                        } else {
-                            return a.stateName.localeCompare(b.stateName);
-                        }
+                        return (diff !== 0 ?
+                            diff :
+                            a.stateName.localeCompare(b.stateName));
                     });
                     break;
                 default:
-                    let selectedAttrId = conf.pipe.metaToId[selectedAttr];
+                    let selectedAttrId = $("#centrality-select").selectpicker('val');
                     nodeMap.sort((a, b) => {
-                        let diff = b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId];
-                        if (diff !== 0) {
-                            return diff;
-                        } else {
-                            return a.stateName.localeCompare(b.stateName);
-                        }
+                        let diff = b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId];
+                        return (diff !== 0 ?
+                            diff :
+                            a.stateName.localeCompare(b.stateName));
                     });
                     break;
             }
@@ -1550,11 +1578,7 @@ let DiffusionView = Backbone.View.extend({
         });
 
         return nodes;
-    },
-    configGroups() {
-
     }
-
 });
 
 // util definition

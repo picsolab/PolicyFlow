@@ -2,7 +2,11 @@ let conf = require('../config.js');
 
 let Conditions = Backbone.Model.extend({
     defaults: conf.models.conditions.defaults,
-    initialize: () => {}
+    initialize: () => {},
+    setupCentralityValidity() {
+        let validity = this.get("metadata") === "centrality" || this.get("sequence") === "centrality";
+        this.set("cvalidity", validity);
+    }
 });
 
 let PolicyOptionsModel = Backbone.Model.extend({
@@ -78,25 +82,19 @@ let DiffusionModel = Backbone.Model.extend({
     },
     populate(conditions) {
         let _self = this,
-            centrality = conf.static.centrality.outdegree;
+            centralities = conf.static.centrality.centralities,
+            centralityStat = conf.static.centrality.stat;
         this.url = this.urlRoot + conditions.get("policy");
         $.getJSON(_self.url).done((data) => {
             // console.log(_self.url);
-            let nodes = data.nodes,
-                stat = data.stat,
-                min = 9999,
-                max = 0;
+            let nodes = data.nodes;
             nodes.forEach((node, i) => {
-                let curr = centrality[node.stateId];
-                min = Math.min(curr, min);
-                max = Math.max(curr, max);
-                nodes[i].metadata["ce"] = curr;
+                nodes[i]["centralities"] = centralities[node.stateId];
             });
-            stat.min["ce"] = min;
-            stat.max["ce"] = max;
             _self.set({
                 "nodes": nodes,
-                "stat": stat
+                "stat": data.stat,
+                "cstat": centralityStat
             });
         });
     }

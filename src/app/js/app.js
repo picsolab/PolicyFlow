@@ -61,6 +61,18 @@ $(document).ready(() => {
             diffusionView.doSort("sequence");
             diffusionView.update();
         }
+        if (conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
+            setupCentralityDropdown();
+        }
+        if (conditions.hasChanged('centrality')) {
+            if (conditions.get('metadata') === "centrality") {
+                diffusionView.doSort("metadata");
+            }
+            if (conditions.get('sequence') === "centrality") {
+                diffusionView.doSort("sequence");
+            }
+            diffusionView.update();
+        }
     });
 
     initDom();
@@ -112,6 +124,11 @@ function bindEvents() {
         conditions.set("sequence", conf.bases.xAttributeList[clickedIndex - 1].id);
     });
 
+    // selected centrality type to condition
+    $('#centrality-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
+        conditions.set("centrality", conf.bases.centralityList[clickedIndex - 1].id);
+    });
+
     $("#select-sort").on("change", (event) => {
         arcView.render(event.target.selectedIndex);
     });
@@ -124,6 +141,10 @@ function initDom() {
 
     // diffusion select drop down
     initDropdowns($('#sequence-select'), "sequence-option", conf.bases.xAttributeList);
+
+    // centrality select drop down
+    initDropdowns($("#centrality-select"), "centrality-option", conf.bases.centralityList);
+    setupCentralityDropdown();
 
     policyOptionsModel.fetch({
         success(model, response, options) {
@@ -179,4 +200,11 @@ function initDropdowns($element, className, attrList) {
     $element.val(attrList[0].id);
     $element.prop('disabled', false);
     $element.selectpicker('refresh');
+}
+
+function setupCentralityDropdown() {
+    conditions.setupCentralityValidity();
+    let eitherCentralitySelected = conditions.get("cvalidity")
+    $('#centrality-select').prop('disabled', !eitherCentralitySelected);
+    $('#centrality-select').selectpicker('refresh');
 }
