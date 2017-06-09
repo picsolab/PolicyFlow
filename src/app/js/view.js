@@ -1329,25 +1329,27 @@ let DiffusionView = Backbone.View.extend({
                     .attr("stop-color", colorMap[yearList[loop]])
                     .attr("stop-opacity", 1);
 
-                let reverse = this._attr.defs.append("linearGradient")
-                    .attr({
-                        id: "gradient-".concat(yearList[loop], year),
-                        x1: "0%",
-                        y1: "0%",
-                        x2: "100%",
-                        y2: "100%",
-                        spreadMethod: "pad"
-                    });
+                if (year !== yearList[loop]) {
+                    let reverse = this._attr.defs.append("linearGradient")
+                        .attr({
+                            id: "gradient-".concat(yearList[loop], year),
+                            x1: "0%",
+                            y1: "0%",
+                            x2: "100%",
+                            y2: "100%",
+                            spreadMethod: "pad"
+                        });
 
-                reverse.append("stop")
-                    .attr("offset", "0%")
-                    .attr("stop-color", colorMap[yearList[loop]])
-                    .attr("stop-opacity", 1);
+                    reverse.append("stop")
+                        .attr("offset", "0%")
+                        .attr("stop-color", colorMap[yearList[loop]])
+                        .attr("stop-opacity", 1);
 
-                reverse.append("stop")
-                    .attr("offset", "100%")
-                    .attr("stop-color", colorMap[year])
-                    .attr("stop-opacity", 1);
+                    reverse.append("stop")
+                        .attr("offset", "100%")
+                        .attr("stop-color", colorMap[year])
+                        .attr("stop-opacity", 1);
+                }
             }
         });
     },
