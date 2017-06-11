@@ -20,7 +20,7 @@ let PolicyModel = Backbone.Model.extend({
     },
     populate(conditions) {
         let _self = this;
-        if (conditions.get("policy") === 'centrality') {
+        if (conditions.get("policy") === 'unselected') {
             _self.set({ "message": conf.bases.policy.default });
         } else {
             this.url = this.urlRoot + conditions.get("policy");
