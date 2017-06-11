@@ -255,7 +255,7 @@ class DiffusionDao(BaseDao):
             "pd": "populationDensity",
             "pop": "totalPopulation"
         }
-        ne_adopt_year = -1
+        ne_adopt_year = 9999
 
         stmt = text("SELECT s.state_id AS stateId, \
                       m.year AS year, \
@@ -345,7 +345,7 @@ class DiffusionDao(BaseDao):
                 temp_object["dataYear"] = -1
                 temp_object["adoptedYear"] = ne_adopt_year
             elif stateId in meta_unadopted_set["md"]:
-                temp_object["valid"] = False
+                temp_object["valid"] = False if policy_id != "unselected" else True
                 for obj in pipe:
                     temp_meta_set[obj] = meta_unadopted_set[obj][stateId]
                 temp_object["dataYear"] = min_year

@@ -53,6 +53,9 @@ $(document).ready(() => {
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata')) {
             networkModel.populate(conditions);
         }
+        if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
+            setupCentralityDropdown();
+        }
         if (conditions.hasChanged('metadata')) {
             diffusionView.doSort("metadata");
             diffusionView.update();
@@ -60,9 +63,6 @@ $(document).ready(() => {
         if (conditions.hasChanged('sequence')) {
             diffusionView.doSort("sequence");
             diffusionView.update();
-        }
-        if (conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
-            setupCentralityDropdown();
         }
         if (conditions.hasChanged('centrality')) {
             if (conditions.get('metadata') === "centrality") {
@@ -203,8 +203,18 @@ function initDropdowns($element, className, attrList) {
 }
 
 function setupCentralityDropdown() {
-    conditions.setupCentralityValidity();
-    let eitherCentralitySelected = conditions.get("cvalidity")
-    $('#centrality-select').prop('disabled', !eitherCentralitySelected);
-    $('#centrality-select').selectpicker('refresh');
+    let isPolicyUnselected = conditions.get("policy") === "unselected";
+    if (isPolicyUnselected) {
+        if ($('#sequence-select').selectpicker('val') !== "centrality") {
+            $('#sequence-select').val("centrality");
+            conditions.set('sequence', "centrality");
+        }
+    } else {
+        conditions.setupCentralityValidity();
+        let eitherCentralitySelected = conditions.get("cvalidity");
+        $('#centrality-select').prop('disabled', !eitherCentralitySelected);
+        $('#centrality-select').selectpicker('refresh');
+    }
+    $('#sequence-select').prop('disabled', isPolicyUnselected);
+    $('#sequence-select').selectpicker('refresh');
 }

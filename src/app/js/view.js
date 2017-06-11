@@ -1098,21 +1098,31 @@ let DiffusionView = Backbone.View.extend({
                     d.circleR = radiusScale(d.centralities[xSeq]);
                     return d.circleR;
                 },
+                id: (d, i) => "diffusion-node-" + i
+            })
+            .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
                         return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     } else {
-                        return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+                        if (_self.isNodeDefault(d)) {
+                            return css_variables["--color-unadopted"];
+                        } else {
+                            return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+                        }
                     }
                 },
                 stroke: (d, i) => {
                     if (d.stateId === "NE") {
                         return d3.rgb(css_variables["--color-unadopted"]).darker(2);
                     } else {
-                        return d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        if (_self.isNodeDefault(d)) {
+                            return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        } else {
+                            return d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        }
                     }
-                },
-                id: (d, i) => "diffusion-node-" + i
+                }
             });
 
         xlabels.transition()
@@ -1123,7 +1133,7 @@ let DiffusionView = Backbone.View.extend({
                     d.labelX = interpolateX(t);
                     return "translate(" + d.labelX + "," + d.labelY + ") rotate(90)";
                 }
-            })
+            });
 
         xlabels.enter()
             .append('text')
@@ -1180,9 +1190,11 @@ let DiffusionView = Backbone.View.extend({
                 id: (d, i) => "diffusion-path-" + i
             })
             .style({
-                fill: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
-                stroke: (d) => "url(#gradient-".concat(nodes[d.source].adoptedYear, nodes[d.target].adoptedYear, ")"),
-                opacity: 0.6
+                fill: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
+                stroke: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
+                opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.source]) ?
+                    0.25 :
+                    0.6)
             });
 
         upBars.transition()
@@ -1196,6 +1208,16 @@ let DiffusionView = Backbone.View.extend({
         _self.createBars(bottomBars, "bottom");
 
         return this;
+    },
+    getPathColor(source, target) {
+        if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
+            return css_variables["--color-default-black"];
+        } else {
+            return "url(#gradient-".concat(source.adoptedYear, target.adoptedYear, ")")
+        }
+    },
+    isNodeDefault(node) {
+        return node.valid && node.adoptedYear === 9999;
     },
     createBars(bars, section) {
         let _attr = this._attr,
@@ -1238,16 +1260,22 @@ let DiffusionView = Backbone.View.extend({
                         return d.bottomY;
                     }
                 },
+                class: (d, i) => "bar-" + i
+            })
+            .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
                         return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     } else {
-                        return d.valid ?
-                            colorMap[d.adoptedYear] :
-                            css_variables["--color-unadopted"];
+                        if (this.isNodeDefault(d)) {
+                            return css_variables["--color-unadopted"];
+                        } else {
+                            return d.valid ?
+                                colorMap[d.adoptedYear] :
+                                css_variables["--color-unadopted"];
+                        }
                     }
-                },
-                class: (d, i) => "bar-" + i
+                }
             });
     },
     barTween(transition, _attr, section) {

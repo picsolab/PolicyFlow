@@ -6,5 +6,6 @@
     --color-follow-the-rule: gray;
     --color-violate-the-rule: red;
     --color-unadopted: lightgray;
+    --color-default-black: #333;
     --color-hovered: #cc9900;
 }
