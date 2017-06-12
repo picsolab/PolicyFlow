@@ -20,11 +20,11 @@ with open(rel_path('raw_centralities.json'), 'r') as raw_centralities, \
         open(rel_path('centralities_by_state.json'), 'w') as output_file:
     centralities = json.load(raw_centralities)
     output = {"centralities":{}, "stat":{}}
-    max_cen = {"outdegree": 0, "pageRank": 0, "betweenness": 0,"hit": 0 }
-    min_cen = {"outdegree": 9999, "pageRank": 9999, "betweenness": 9999, "hit": 9999}
+    max_cen = {"outdegree": 0, "pageRank": 0, "betweenness": 0,"hit": 0,"close":0 }
+    min_cen = {"outdegree": 9999, "pageRank": 9999, "betweenness": 9999, "hit": 9999, "close":9999}
     for state_id in centralities["outdegree"].keys():
         temp_centrality_obj = {}
-        for centrality_type in ["outdegree", "pageRank", "betweenness", "hit"]:
+        for centrality_type in ["outdegree", "pageRank", "betweenness", "hit", "close"]:
             curr_val = 0
             if _is_simulating:
                 curr_val = round(random.uniform(0, 20), 2)

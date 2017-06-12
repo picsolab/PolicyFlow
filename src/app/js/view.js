@@ -1350,14 +1350,15 @@ let DiffusionView = Backbone.View.extend({
             });
     },
     processGradient() {
-        let _self = this;
-        let yearList = Object.keys(colorMap);
+        let _self = this,
+            yearList = Object.keys(colorMap),
+            prefix = _self._attr.getPrefix();
 
         yearList.forEach((year, index) => {
             for (loop = index; loop < yearList.length; loop++) {
                 let curr = this._attr.defs.append("linearGradient")
                     .attr({
-                        id: _self._attr.getPrefix() + "gradient-".concat(year, yearList[loop]),
+                        id: prefix + "gradient-".concat(year, yearList[loop]),
                         x1: "0%",
                         y1: "0%",
                         x2: "100%",
@@ -1378,7 +1379,7 @@ let DiffusionView = Backbone.View.extend({
                 if (year !== yearList[loop]) {
                     let reverse = this._attr.defs.append("linearGradient")
                         .attr({
-                            id: _self._attr.getPrefix() + "gradient-".concat(yearList[loop], year),
+                            id: prefix + "gradient-".concat(yearList[loop], year),
                             x1: "0%",
                             y1: "0%",
                             x2: "100%",
@@ -1428,19 +1429,18 @@ let DiffusionView = Backbone.View.extend({
             ySeq = conf.pipe.metaToId[c.get("metadata")],
             xSeq = conf.pipe.metaToId[c.get("sequence")];
 
-
         let x1 = nodes[d.source].sequenceOrder,
             x2 = nodes[d.target].sequenceOrder,
             y1 = nodes[d.source].metadataOrder,
             y2 = nodes[d.target].metadataOrder,
             xMid = x1 + (x2 - x1) * divider,
-            tan = (y2 - y1) / (x2 - x1),
-            fullShift = (x2 - x1) * divider * tan,
-            ym1 = y1 + yPartition1 * fullShift,
-            ym2 = ym1 + standardizedThickness * (yPartition2 - yPartition1) * fullShift;
-        // unitGap = gs.d.size.labelHeight / 100,
-        // ym1 = y1,
-        // ym2 = y1 + tan / Math.abs(tan) * unitGap * standardizedThickness;
+            // tan = (y2 - y1) / (x2 - x1),
+            // fullShift = (x2 - x1) * divider * tan,
+            // ym1 = y1 + yPartition1 * fullShift,
+            // ym2 = ym1 + standardizedThickness * (yPartition2 - yPartition1) * fullShift;
+            unitGap = gs.d.size.labelHeight / 150,
+            ym1 = y1,
+            ym2 = ym1 + (y1 > y2 ? -1 : 1) * unitGap * standardizedThickness;
 
         return {
             x1: x1,
