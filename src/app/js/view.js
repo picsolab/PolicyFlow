@@ -912,10 +912,11 @@ let DiffusionView = Backbone.View.extend({
     initialize() {
         this._attr = {};
     },
-    render() {
+    render(conditions) {
         // console.log("rendering diffusion...");
         let _self = this,
-            _attr = this._attr; // closure vars
+            _attr = this._attr, // closure vars
+            isSnapshot = arguments.length !== 1;
 
         $(_self.el).empty();
 
@@ -927,45 +928,54 @@ let DiffusionView = Backbone.View.extend({
             circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
             yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
 
+        let __width = _width,
+            __height = _height;
+
+        if (isSnapshot) {
+            __width /= gs.d.multiplier.snapshot;
+            __height /= gs.d.multiplier.snapshot;
+        }
+
         let svg = _attr.svg = d3.select(_self.el)
-            .attr("width", _width)
-            .attr("height", _height)
+            .attr("width", __width)
+            .attr("height", __height)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
             .classed('svg-content-responsive', true);
 
-        let pathG = svg.append('g').attr({
-                'id': 'diffusion-path-group',
+        let idPrefix = isSnapshot ? Math.random().toString(36).substr(2, 8) + "-" : '',
+            pathG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-path-group',
                 'class': 'paths',
                 'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
             }),
             circleG = svg.append('g').attr({
-                'id': 'diffusion-circle-group',
+                'id': idPrefix + 'diffusion-circle-group',
                 'class': 'circles',
                 'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
             }),
             xLabelG = circleG.append('g').attr({
-                'id': 'diffusion-x-label-group',
+                'id': idPrefix + 'diffusion-x-label-group',
                 'class': 'x-labels',
                 'transform': "translate(" + (0) + "," + (0) + ")"
             }),
             upBarG = svg.append('g').attr({
-                'id': 'diffusion-up-bar-group',
+                'id': idPrefix + 'diffusion-up-bar-group',
                 'class': 'bars',
                 'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
             }),
             bottomBarG = svg.append('g').attr({
-                'id': 'diffusion-bottom-bar-group',
+                'id': idPrefix + 'diffusion-bottom-bar-group',
                 'class': 'bars',
                 'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
             }),
             yLabelG = svg.append('g').attr({
-                'id': 'diffusion-y-label-group',
+                'id': idPrefix + 'diffusion-y-label-group',
                 'class': 'y-labels',
                 'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
             }),
             refLineG = pathG.append('g').attr({
-                'id': 'diffusion-ref-line-group',
+                'id': idPrefix + 'diffusion-ref-line-group',
                 'class': 'refs',
                 'transform': "translate(" + (0) + "," + (0) + ")"
             }),
@@ -988,6 +998,10 @@ let DiffusionView = Backbone.View.extend({
             cstat = _self.model.get("cstat");
 
         $.extend(_attr, {
+            getPrefix: () => {
+                return (isSnapshot ? idPrefix : "");
+            },
+            isSnapshot: isSnapshot,
             pathG: pathG,
             circleG: circleG,
             xLabelG: xLabelG,
@@ -1002,7 +1016,8 @@ let DiffusionView = Backbone.View.extend({
             cstat: cstat,
             xScale: xScale,
             yTopScale: yTopScale,
-            yBottomScale: yBottomScale
+            yBottomScale: yBottomScale,
+            c: conditions
         });
 
         // generate gradient
@@ -1013,7 +1028,9 @@ let DiffusionView = Backbone.View.extend({
 
         _self.update();
 
-        _self.bindTriggers();
+        if (!isSnapshot) {
+            _self.bindTriggers();
+        }
 
         return this;
     },
@@ -1028,7 +1045,7 @@ let DiffusionView = Backbone.View.extend({
 
         // define radius scale for circles
         // let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
-        let xSeq = $("#centrality-select").selectpicker('val'),
+        let xSeq = _attr.c.get("centrality"),
             radiusScale = d3.scale.linear()
             .domain([cstat.min[xSeq], cstat.max[xSeq]])
             .range(gs.d.size.circle);
@@ -1048,7 +1065,7 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .attrTween("d", (d, i) => {
                 let c = d.coords,
-                    n = _self.processCoordinates(nodes, cstat, d, i),
+                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1098,7 +1115,7 @@ let DiffusionView = Backbone.View.extend({
                     d.circleR = radiusScale(d.centralities[xSeq]);
                     return d.circleR;
                 },
-                id: (d, i) => "diffusion-node-" + i
+                id: (d, i) => _attr.getPrefix() + "diffusion-node-" + i
             })
             .style({
                 fill: (d) => {
@@ -1156,7 +1173,7 @@ let DiffusionView = Backbone.View.extend({
             .append('path')
             .attr({
                 d: (d, i) => {
-                    d.coords = _self.processCoordinates(nodes, cstat, d, i);
+                    d.coords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
                     return _self.linkBuilder(d);
                 },
                 class: (d, i) => {
@@ -1187,7 +1204,7 @@ let DiffusionView = Backbone.View.extend({
                 },
                 source: (d) => d.source,
                 target: (d) => d.target,
-                id: (d, i) => "diffusion-path-" + i
+                id: (d, i) => _attr.getPrefix() + "diffusion-path-" + i
             })
             .style({
                 fill: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
@@ -1213,7 +1230,7 @@ let DiffusionView = Backbone.View.extend({
         if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
             return css_variables["--color-default-black"];
         } else {
-            return "url(#gradient-".concat(source.adoptedYear, target.adoptedYear, ")")
+            return "url(#" + this._attr.getPrefix() + "gradient-".concat(source.adoptedYear, target.adoptedYear, ")")
         }
     },
     isNodeDefault(node) {
@@ -1223,11 +1240,11 @@ let DiffusionView = Backbone.View.extend({
         let _attr = this._attr,
             stat = this.model.get("stat"),
             cstat = this.model.get("cstat"),
-            isSortingByCentrality = $('#metadata-select').selectpicker('val') === "centrality",
+            isSortingByCentrality = (_attr.c.get('metadata') === "centrality"),
             actualStat = isSortingByCentrality ? cstat : stat,
             ySeq = (isSortingByCentrality ?
-                $('#centrality-select').selectpicker('val') :
-                conf.pipe.metaToId[$('#metadata-select').selectpicker('val')]),
+                _attr.c.get('centrality') :
+                conf.pipe.metaToId[_attr.c.get('metadata')]),
             rectScale = d3.scale.linear()
             .domain([actualStat.min[ySeq], actualStat.max[ySeq]])
             .range(gs.d.size.rect);
@@ -1282,11 +1299,11 @@ let DiffusionView = Backbone.View.extend({
         transition.attrTween("width", (d) => {
                 let stat = _attr.stat,
                     cstat = _attr.cstat,
-                    isSortingByCentrality = $('#metadata-select').selectpicker('val') === "centrality",
+                    isSortingByCentrality = (_attr.c.get("metadata") === "centrality"),
                     actualStat = isSortingByCentrality ? cstat : stat,
                     ySeq = (isSortingByCentrality ?
-                        $('#centrality-select').selectpicker('val') :
-                        conf.pipe.metaToId[$('#metadata-select').selectpicker('val')]);
+                        _attr.c.get("centrality") :
+                        conf.pipe.metaToId[_attr.c.get("metadata")]);
 
                 d.meta = (isSortingByCentrality ?
                     d.centralities[ySeq] :
@@ -1333,13 +1350,14 @@ let DiffusionView = Backbone.View.extend({
             });
     },
     processGradient() {
+        let _self = this;
         let yearList = Object.keys(colorMap);
 
         yearList.forEach((year, index) => {
             for (loop = index; loop < yearList.length; loop++) {
                 let curr = this._attr.defs.append("linearGradient")
                     .attr({
-                        id: "gradient-".concat(year, yearList[loop]),
+                        id: _self._attr.getPrefix() + "gradient-".concat(year, yearList[loop]),
                         x1: "0%",
                         y1: "0%",
                         x2: "100%",
@@ -1360,7 +1378,7 @@ let DiffusionView = Backbone.View.extend({
                 if (year !== yearList[loop]) {
                     let reverse = this._attr.defs.append("linearGradient")
                         .attr({
-                            id: "gradient-".concat(yearList[loop], year),
+                            id: _self._attr.getPrefix() + "gradient-".concat(yearList[loop], year),
                             x1: "0%",
                             y1: "0%",
                             x2: "100%",
@@ -1400,15 +1418,15 @@ let DiffusionView = Backbone.View.extend({
             [xScale(c.x1), yScale(c.y1)]
         ]);
     },
-    processCoordinates(nodes, cstat, d, i) {
+    processCoordinates(nodes, cstat, c, d, i) {
         const divider = 0.3,
             yPartition1 = 0.25,
             yPartition2 = 0.75,
-            centralityType = $('#centrality-select').selectpicker('val'),
+            centralityType = c.get("centrality"),
             thicknessParam = nodes[d.source].centralities[centralityType],
             standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]),
-            ySeq = conf.pipe.metaToId[$('#metadata-select').selectpicker('val')],
-            xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')];
+            ySeq = conf.pipe.metaToId[c.get("metadata")],
+            xSeq = conf.pipe.metaToId[c.get("sequence")];
 
 
         let x1 = nodes[d.source].sequenceOrder,
@@ -1564,9 +1582,10 @@ let DiffusionView = Backbone.View.extend({
     },
     doSort(axis) {
         let nodes = this._attr.nodes,
+            c = this._attr.c,
             nodeMap = [],
             identifier = axis + "Order",
-            isSortingByCentrality = $("#" + axis + "-select").selectpicker('val') === "centrality";
+            isSortingByCentrality = c.get(axis) === "centrality";
 
         nodes.forEach((node, i) => {
             nodeMap.push($.extend({ index: i }, node));
@@ -1574,15 +1593,15 @@ let DiffusionView = Backbone.View.extend({
 
         if (axis === "metadata") {
             let selectedAttrId = (isSortingByCentrality ?
-                $("#centrality-select").selectpicker('val') :
-                conf.pipe.metaToId[$('#metadata-select').selectpicker('val')]);
+                c.get("centrality") :
+                conf.pipe.metaToId[c.get("metadata")]);
             if (isSortingByCentrality) {
                 nodeMap.sort((a, b) => b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId]);
             } else {
                 nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
             }
         } else {
-            let selectedAttr = $('#sequence-select').selectpicker('val');
+            let selectedAttr = c.get("sequence");
             switch (selectedAttr) {
                 case "adoptionYear":
                     nodeMap.sort((a, b) => {
@@ -1593,7 +1612,7 @@ let DiffusionView = Backbone.View.extend({
                     });
                     break;
                 default:
-                    let selectedAttrId = $("#centrality-select").selectpicker('val');
+                    let selectedAttrId = c.get("centrality");
                     nodeMap.sort((a, b) => {
                         let diff = b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId];
                         return (diff !== 0 ?

@@ -51,7 +51,7 @@ const GraphSettings = {
             rectHeight: 2
         },
         multiplier: {
-
+            snapshot: 4
         },
         config: {
             transitionTime: 2500

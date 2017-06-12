@@ -5,6 +5,7 @@ let utils = require('./utils.js');
 
 let View = require('./view.js');
 let Model = require('./model.js');
+let Collection = require('./collection.js');
 let Router = require('./router.js');
 
 let conditions = new Model.Conditions(),
@@ -13,6 +14,7 @@ let conditions = new Model.Conditions(),
     networkModel = new Model.NetworkModel(),
     stateModel = new Model.StateModel(),
     diffusionModel = new Model.DiffusionModel(),
+    sc = Collection.SnapshotCollection,
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
         model: policyModel
@@ -40,8 +42,8 @@ $(document).ready(() => {
         networkView.render();
     });
 
-    diffusionModel.on("change", () => {
-        diffusionView.render();
+    diffusionModel.on("change", function() {
+        diffusionView.render(conditions);
     });
 
     conditions.on('change', () => {
@@ -76,6 +78,7 @@ $(document).ready(() => {
     });
 
     initDom();
+
     initRendering();
 });
 
@@ -83,7 +86,7 @@ function initRendering() {
     // stateModel.fetch();
     policyModel.populate(conditions);
     networkModel.fetch();
-    diffusionModel.populate(conditions);
+    let fetching = diffusionModel.populate(conditions);
 }
 
 function bindEvents() {
@@ -131,6 +134,10 @@ function bindEvents() {
 
     $("#select-sort").on("change", (event) => {
         arcView.render(event.target.selectedIndex);
+    });
+
+    $("#add-snapshot").on("click", (event) => {
+        sc.add(diffusionView, conditions);
     });
 }
 

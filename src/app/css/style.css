@@ -14,6 +14,13 @@
  */
 
 
+/*snapshot panel*/
+
+#snapshot-wrapper {
+    overflow-x: scroll;
+}
+
+
 /*shared style*/
 
 .hovered-item {
@@ -45,7 +52,7 @@
 
 #diffusion-path-group path {}
 
-#diffusion-x-label-group text {
+.text-tip {
     -webkit-user-select: none;
     /* Chrome all / Safari all */
     -moz-user-select: none;

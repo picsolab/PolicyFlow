@@ -85,7 +85,7 @@ let DiffusionModel = Backbone.Model.extend({
             centralities = conf.static.centrality.centralities,
             centralityStat = conf.static.centrality.stat;
         this.url = this.urlRoot + conditions.get("policy");
-        $.getJSON(_self.url).done((data) => {
+        return $.getJSON(_self.url).done((data) => {
             // console.log(_self.url);
             let nodes = data.nodes;
             nodes.forEach((node, i) => {
