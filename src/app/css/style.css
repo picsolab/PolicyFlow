@@ -17,7 +17,8 @@
 /*snapshot panel*/
 
 #snapshot-wrapper {
-    overflow-x: scroll;
+    overflow: scroll;
+    height: 180px;
 }
 
 
