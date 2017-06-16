@@ -1026,9 +1026,6 @@ let DiffusionView = Backbone.View.extend({
             c: conditions
         });
 
-        // generate gradient
-        _self.processGradient();
-
         // do init sort
         _self.doInitSort();
 
@@ -1091,6 +1088,20 @@ let DiffusionView = Backbone.View.extend({
                     d.coords.ym1 = interpolateYM1(t);
                     d.coords.ym2 = interpolateYM2(t);
 
+                    if (nodes[d.source].valid && nodes[d.target].valid) {
+                        let x = d.coords.x1 < d.coords.x2,
+                            y = d.coords.y1 < d.coords.y2,
+                            x1 = x ? "0" : "1",
+                            x2 = x ? "1" : "0",
+                            y1 = y ? "0" : "1",
+                            y2 = y ? "1" : "0",
+                            gradientIdentifier = _attr.getPrefix() + "gradient-" + nodes[d.source].stateId + nodes[d.target].stateId;
+
+                        $("#" + gradientIdentifier).attr("x1", x1);
+                        $("#" + gradientIdentifier).attr("x2", x2);
+                        $("#" + gradientIdentifier).attr("y1", y1);
+                        $("#" + gradientIdentifier).attr("y2", y2);
+                    }
                     return _self.linkBuilder(d);
                 }
             });
@@ -1211,22 +1222,26 @@ let DiffusionView = Backbone.View.extend({
                     return _self.linkBuilder(d);
                 },
                 class: (d, i) => {
-                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
+                    let source = nodes[d.source],
+                        target = nodes[d.target],
                         isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
 
+                    d.isValid = source.valid && target.valid;
+
                     if (printDiagnoseInfo) {
-                        console.groupCollapsed("Source: node-" + d.source + "\t" + nodes[d.source].stateId, "Target: node-" + d.target + "\t" + nodes[d.target].stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
+                        console.groupCollapsed("Source: node-" + d.source + "\t" + source.stateId, "Target: node-" + d.target + "\t" + target.stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
                         if (isValid) {
                             console.log("Both valid.");
                         } else {
-                            console.log("Source " + (nodes[d.source].valid ? "valid." : "invalid."));
-                            console.log("Target " + (nodes[d.target].valid ? "valid." : "invalid."));
+                            console.log("Source " + (source.valid ? "valid." : "invalid."));
+                            console.log("Target " + (target.valid ? "valid." : "invalid."));
                         }
                         console.log((isFollowingNetworkRule ? "Following " : "Violating ") + "rule.");
                         console.groupEnd();
                     }
 
-                    if (isValid) {
+                    if (d.isValid) {
+                        _self.createGradient(source, target);
                         if (isFollowingNetworkRule) {
                             return "diffusion-strokes follow-the-rule";
                         } else {
@@ -1287,7 +1302,8 @@ let DiffusionView = Backbone.View.extend({
         if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
             return css_variables["--color-default-black"];
         } else {
-            return "url(#" + this._attr.getPrefix() + "gradient-".concat(source.adoptedYear, target.adoptedYear, ")")
+            let gradientIdentifier = this._attr.getPrefix() + "gradient-" + source.stateId + target.stateId;
+            return "url(#" + gradientIdentifier + ")";
         }
     },
     isNodeDefault(node) {
@@ -1406,56 +1422,40 @@ let DiffusionView = Backbone.View.extend({
                 }
             });
     },
-    processGradient() {
+    createGradient(source, target) {
         let _self = this,
-            yearList = Object.keys(colorMap),
+            isFollowingNetworkRule = +source.adoptedYear <= +target.adoptedYear,
+            x = source.sequenceOrder < target.sequenceOrder,
+            y = (isFollowingNetworkRule ?
+                source.metadataOrder < target.metadataOrder :
+                source.metadataOrder > target.metadataOrder),
+            x1 = x ? "0" : "1",
+            x2 = x ? "1" : "0",
+            y1 = y ? "0" : "1",
+            y2 = y ? "1" : "0",
             prefix = _self._attr.getPrefix();
 
-        yearList.forEach((year, index) => {
-            for (loop = index; loop < yearList.length; loop++) {
-                let curr = this._attr.defs.append("linearGradient")
-                    .attr({
-                        id: prefix + "gradient-".concat(year, yearList[loop]),
-                        x1: "0%",
-                        y1: "0%",
-                        x2: "100%",
-                        y2: "100%",
-                        spreadMethod: "pad"
-                    });
+        let grad = this._attr.defs.append("linearGradient")
+            .attr({
+                id: prefix + "gradient-".concat(source.stateId, target.stateId),
+                x1: x1,
+                x2: x2,
+                y1: y1,
+                y2: y2,
+                spreadMethod: "pad"
+            });
 
-                curr.append("stop")
-                    .attr("offset", "0%")
-                    .attr("stop-color", colorMap[year])
-                    .attr("stop-opacity", 1);
+        grad.append("stop")
+            .attr("offset", "5%")
+            .attr("stop-color", colorMap[source.adoptedYear])
+            .attr("stop-opacity", 1);
 
-                curr.append("stop")
-                    .attr("offset", "100%")
-                    .attr("stop-color", colorMap[yearList[loop]])
-                    .attr("stop-opacity", 1);
+        grad.append("stop")
+            .attr("offset", "95%")
+            .attr("stop-color", colorMap[target.adoptedYear])
+            .attr("stop-opacity", 1);
 
-                if (year !== yearList[loop]) {
-                    let reverse = this._attr.defs.append("linearGradient")
-                        .attr({
-                            id: prefix + "gradient-".concat(yearList[loop], year),
-                            x1: "0%",
-                            y1: "0%",
-                            x2: "100%",
-                            y2: "100%",
-                            spreadMethod: "pad"
-                        });
-
-                    reverse.append("stop")
-                        .attr("offset", "0%")
-                        .attr("stop-color", colorMap[yearList[loop]])
-                        .attr("stop-opacity", 1);
-
-                    reverse.append("stop")
-                        .attr("offset", "100%")
-                        .attr("stop-color", colorMap[year])
-                        .attr("stop-opacity", 1);
-                }
-            }
-        });
+        return grad;
     },
     guidanceBuilder(d) {
         let _attr = this._attr,

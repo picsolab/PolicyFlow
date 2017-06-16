@@ -29,9 +29,9 @@ const GraphSettings = {
     // diffusion view settings
     d: {
         margin: {
-            top: 10,
+            top: 25,
             left: 15,
-            bottom: 10,
+            bottom: 25,
             right: 10
         },
         size: {
@@ -54,7 +54,7 @@ const GraphSettings = {
             snapshot: 4
         },
         config: {
-            transitionTime: 2500
+            transitionTime: 1500
         }
 
     },

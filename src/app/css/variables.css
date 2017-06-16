@@ -1,11 +1,18 @@
 :root {
     --color-sidebar-bg: #f5f5f5;
-    --color-trans-in: #134F7F;
-    --color-trans-out: #73C1FF;
+    /*purple*/
+    --color-trans-in: #311B92;
+    --color-trans-out: #B39DDB;
+    /*yellow*/
+    /*--color-trans-in: #FF6D00;
+    --color-trans-out: #FFD180;*/
+    /*green*/
+    /*--color-trans-in: #004D40;
+    --color-trans-out: #E0F2F1;*/
     --color-pop-up: #666;
     --color-follow-the-rule: gray;
     --color-violate-the-rule: red;
     --color-unadopted: lightgray;
-    --color-default-black: #333;
+    --color-default-black: #311B92;
     --color-hovered: #cc9900;
 }
