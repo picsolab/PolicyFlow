@@ -256,6 +256,7 @@ class DiffusionDao(BaseDao):
             "pop": "totalPopulation"
         }
         ne_adopt_year = 9999
+        ne_validity = False
 
         stmt = text("SELECT s.state_id AS stateId, \
                       m.year AS year, \
@@ -311,6 +312,7 @@ class DiffusionDao(BaseDao):
         for item in result_full:
             if item.stateId == "NE":
                 ne_adopt_year = item.adoptedYear
+                ne_validity = True
             elif item.stateId not in meta_set["md"]:
                 for obj in pipe:
                     meta_noshow_set[obj][item.stateId] = 0
@@ -341,7 +343,7 @@ class DiffusionDao(BaseDao):
             temp_object["stateName"] = state.stateName
             temp_meta_set = {}
             if stateId == "NE":
-                temp_object["valid"] = False if stateId in meta_unadopted_set["md"] else True
+                temp_object["valid"] = ne_validity
                 temp_object["dataYear"] = -1
                 temp_object["adoptedYear"] = ne_adopt_year
             elif stateId in meta_unadopted_set["md"]:

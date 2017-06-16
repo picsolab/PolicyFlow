@@ -31,16 +31,16 @@
 
 .follow-the-rule {
     fill: var(--color-follow-the-rule);
-    opacity: 0.2;
+    opacity: 0.6;
 }
 
 .violate-the-rule {
     fill: var(--color-violate-the-rule);
-    opacity: 0.2;
+    opacity: 0.6;
 }
 
 .invalid-arc {
-    opacity: 0;
+    opacity: 0 !important;
 }
 
 .reference-line {
@@ -52,6 +52,12 @@
 /*diffusion view panel*/
 
 #diffusion-path-group path {}
+
+#diffusion-guidance-line-group path {
+    fill: none;
+    stroke: var(--color-default-black);
+    opacity: 0.3;
+}
 
 .text-tip {
     -webkit-user-select: none;

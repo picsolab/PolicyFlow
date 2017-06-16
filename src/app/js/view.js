@@ -944,15 +944,20 @@ let DiffusionView = Backbone.View.extend({
             .classed('svg-content-responsive', true);
 
         let idPrefix = isSnapshot ? Math.random().toString(36).substr(2, 8) + "-" : '',
-            pathG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-path-group',
-                'class': 'paths',
+            guidanceLineG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-guidance-line-group',
+                'class': 'guidances',
                 'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
             }),
             circleG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-circle-group',
                 'class': 'circles',
                 'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
+            }),
+            pathG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-path-group',
+                'class': 'paths',
+                'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
             }),
             xLabelG = circleG.append('g').attr({
                 'id': idPrefix + 'diffusion-x-label-group',
@@ -1009,6 +1014,7 @@ let DiffusionView = Backbone.View.extend({
             bottomBarG: bottomBarG,
             yLabelG: yLabelG,
             refLineG: refLineG,
+            guidanceLineG: guidanceLineG,
             defs: defs,
             nodes: nodes,
             links: links,
@@ -1052,6 +1058,8 @@ let DiffusionView = Backbone.View.extend({
 
         let paths = _attr.pathG.selectAll('path')
             .data(links),
+            guids = _attr.guidanceLineG.selectAll('path')
+            .data(links),
             circles = _attr.circleG.selectAll('circle')
             .data(nodes),
             xlabels = _attr.xLabelG.selectAll('text')
@@ -1087,6 +1095,30 @@ let DiffusionView = Backbone.View.extend({
                 }
             });
 
+        guids.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("d", (d, i) => {
+                let c = d.gcoords,
+                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
+                    interpolateX1 = d3.interpolate(c.x1, n.x1),
+                    interpolateX2 = d3.interpolate(c.x2, n.x2),
+                    interpolateXMid = d3.interpolate(c.xMid, n.xMid),
+                    interpolateY1 = d3.interpolate(c.y1, n.y1),
+                    interpolateY2 = d3.interpolate(c.y2, n.y2),
+                    interpolateYM1 = d3.interpolate(c.ym1, n.ym1);
+
+                return function(t) {
+                    d.gcoords.x1 = interpolateX1(t);
+                    d.gcoords.x2 = interpolateX2(t);
+                    d.gcoords.xMid = interpolateXMid(t);
+                    d.gcoords.y1 = interpolateY1(t);
+                    d.gcoords.y2 = interpolateY2(t);
+                    d.gcoords.ym1 = interpolateYM1(t);
+
+                    return _self.guidanceBuilder(d);
+                }
+            });
+
         circles.transition()
             .duration(gs.d.config.transitionTime)
             .attrTween("cx", (d, i) => {
@@ -1115,7 +1147,9 @@ let DiffusionView = Backbone.View.extend({
                     d.circleR = radiusScale(d.centralities[xSeq]);
                     return d.circleR;
                 },
-                id: (d, i) => _attr.getPrefix() + "diffusion-node-" + i
+                class: "diffusion-circles",
+                id: (d, i) => _attr.getPrefix() + "diffusion-node-" + i,
+                nodeId: (d, i) => i
             })
             .style({
                 fill: (d) => {
@@ -1194,12 +1228,12 @@ let DiffusionView = Backbone.View.extend({
 
                     if (isValid) {
                         if (isFollowingNetworkRule) {
-                            return "follow-the-rule";
+                            return "diffusion-strokes follow-the-rule";
                         } else {
-                            return "violate-the-rule";
+                            return "diffusion-strokes violate-the-rule";
                         }
                     } else {
-                        return "invalid-arc";
+                        return "diffusion-strokes invalid-arc";
                     }
                 },
                 source: (d) => d.source,
@@ -1212,6 +1246,29 @@ let DiffusionView = Backbone.View.extend({
                 opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.source]) ?
                     0.25 :
                     0.6)
+            });
+
+        guids.enter()
+            .append('path')
+            .attr({
+                d: (d, i) => {
+                    d.gcoords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
+                    return _self.guidanceBuilder(d);
+                },
+                class: (d, i) => {
+                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
+                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
+
+                    if (isValid) {
+                        if (isFollowingNetworkRule) {
+                            return "diffusion-guidances follow-the-rule";
+                        } else {
+                            return "diffusion-guidances violate-the-rule";
+                        }
+                    } else {
+                        return "diffusion-guidances invalid-arc";
+                    }
+                }
             });
 
         upBars.transition()
@@ -1400,6 +1457,23 @@ let DiffusionView = Backbone.View.extend({
             }
         });
     },
+    guidanceBuilder(d) {
+        let _attr = this._attr,
+            xScale = _attr.xScale,
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale,
+            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
+            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale,
+            c = d.gcoords;
+
+        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
+
+        return interpolate([
+            [xScale(c.x1), yScale(c.y1)],
+            [xScale(c.xMid), yScale(c.ym1)],
+            [xScale(c.x2), yScale(c.y2)]
+        ]);
+    },
     linkBuilder(d) {
         let _attr = this._attr,
             xScale = _attr.xScale,
@@ -1452,91 +1526,214 @@ let DiffusionView = Backbone.View.extend({
             ym2: ym2
         }
     },
+    lightUpBars(validityCategory, nodeId) {
+        switch (validityCategory) {
+            case "follow-the-rule":
+                $(this._attr.upBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
+                break;
+            case "violate-the-rule":
+                $(this._attr.bottomBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
+                break;
+            default:
+                console.log("Congrats on seeing a bug!");
+                break;
+        }
+    },
     bindTriggers() {
         let _self = this,
             _attr = this._attr;
 
-        let pathOverHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    pathId = _curr.attr("id"),
-                    className = _curr.attr("class"),
-                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+        pathOverHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                pathId = _curr.attr("id"),
+                className = _curr.attr("class"),
+                classNameList = className.split(' '),
+                isStroke = (classNameList[0] === 'diffusion-strokes'),
+                isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
 
-                if (isValidPath) {
-                    // why does it firing twice ???????
-                    // console.log(e);
-                    // console.log(e.type);
-                    // console.log(className);
+            if (isStroke && isValidPath) {
+                // why does it firing twice ???????
+                // console.log(e);
+                // console.log(e.type);
+                // console.log(className);
+                let validityCategory = classNameList[1];
 
-                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-                        // add ref lines
-                        _self.drawRefLines(+nodeId, className);
+                [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                    // add ref lines
+                    _self.drawRefLines(+nodeId, validityCategory);
 
-                        // light up bars
-                        switch (className) {
-                            case "follow-the-rule":
-                                $(_attr.upBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
-                                break;
-                            case "violate-the-rule":
-                                $(_attr.bottomBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
-                                break;
+                    // light up bars
+                    _self.lightUpBars(validityCategory, nodeId);
 
-                        }
+                    // light up circles
+                    $("#diffusion-node-" + nodeId).addClass("hovered-item");
 
-                        // light up circles
-                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
+                    // move mouseovered nodes to front
+                    // d3.select("#diffusion-node-" + nodeId).moveToFront();
+                });
 
-                        // move mouseovered nodes to front
-                        // d3.select("#diffusion-node-" + nodeId).moveToFront();
-                    });
+                // light up mouseovered path
+                _curr.addClass("hovered-item");
 
-                    // light up mouseovered path
-                    _curr.addClass("hovered-item");
+                // move mouseovered to front
+                // d3.select("#" + pathId).moveToFront();
 
-                    // move mouseovered to front
-                    // d3.select("#" + pathId).moveToFront();
+            }
+        }
+        pathOutHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                className = _curr.attr("class"),
+                classNameList = className.split(' '),
+                isStroke = (classNameList[0] === 'diffusion-strokes'),
+                isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
 
-                }
-            },
-            pathOutHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+            if (isStroke && isValidPath) {
+                let _curr = $(e.target);
 
-                if (isValidPath) {
-                    let _curr = $(e.target);
+                // remove ref lines
+                $("#diffusion-ref-line-group").empty();
 
-                    // remove ref lines
-                    $("#diffusion-ref-line-group").empty();
+                [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
 
-                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                    // recover lighted bars
+                    $(".bar-" + nodeId).removeClass("hovered-item");
 
+                    // recover up circles
+                    $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+                });
+
+                // recover lighted path
+                _curr.removeClass("hovered-item");
+
+            }
+        }
+
+        circleOverHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                className = _curr.attr("class"),
+                isCircle = (className === "diffusion-circles");
+            if (isCircle) {
+                let nodeId = _curr.attr("nodeId"),
+                    _pathG = $("#diffusion-path-group"),
+                    _asSource = _pathG.find("path[source=" + nodeId + "]"),
+                    _asTarget = _pathG.find("path[target=" + nodeId + "]");
+
+                let nodeMap = {},
+                    targetMap = {};
+                nodeMap[nodeId] = true;
+
+                _asSource.each((i) => {
+                    let _theStroke = $(_asSource[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("target")] = true;
+                        _theStroke.addClass("hovered-item");
+
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            let validityCategory = _theStroke.attr("class").split(' ')[1];
+                            // add ref lines
+                            _self.drawRefLines(+nodeId, validityCategory);
+                            // light up bars
+                            _self.lightUpBars(validityCategory, nodeId);
+                        });
+                    }
+                });
+
+                _asTarget.each((i) => {
+                    let _theStroke = $(_asTarget[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("source")] = true;
+                        _theStroke.addClass("hovered-item");
+
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            let validityCategory = _theStroke.attr("class").split(' ')[1];
+                            // add ref lines
+                            _self.drawRefLines(+nodeId, validityCategory);
+                            // light up bars
+                            _self.lightUpBars(validityCategory, nodeId);
+                        });
+                    }
+                });
+
+                Object.keys(nodeMap).forEach((nodeId) => {
+                    $("#diffusion-node-" + nodeId).addClass("hovered-item");
+                });
+            }
+        };
+        circleOutHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                className = _curr.attr("class"),
+                classNameList = className.split(' '),
+                isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
+
+            if (isCircle) {
+                let nodeId = _curr.attr("nodeId"),
+                    _pathG = $("#diffusion-path-group"),
+                    _asSource = _pathG.find("path[source=" + nodeId + "]"),
+                    _asTarget = _pathG.find("path[target=" + nodeId + "]");
+
+                let nodeMap = {},
+                    targetMap = {};
+                nodeMap[nodeId] = true;
+
+                _asSource.each((i) => {
+                    let _theStroke = $(_asSource[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("target")] = true;
+                        _theStroke.removeClass("hovered-item");
                         // recover lighted bars
-                        $(".bar-" + nodeId).removeClass("hovered-item");
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            $(".bar-" + nodeId).removeClass("hovered-item");
+                        });
+                    }
+                });
 
-                        // recover up circles
-                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-                    });
+                _asTarget.each((i) => {
+                    let _theStroke = $(_asTarget[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("source")] = true;
+                        _theStroke.removeClass("hovered-item");
+                        // recover lighted bars
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            $(".bar-" + nodeId).removeClass("hovered-item");
+                        });
+                    }
+                });
 
-                    // recover lighted path
-                    _curr.removeClass("hovered-item");
+                // remove ref lines
+                $("#diffusion-ref-line-group").empty();
 
-                }
-            };
+                Object.keys(nodeMap).forEach((nodeId) => {
+                    $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+                });
+            }
+        };
+
+        barOverHandler = function(notATypo) {
+
+        }
+        barOutHandler = function(aTypo) {
+
+        }
 
         this.el.removeEventListener('mouseover', pathOverHandler, false);
         this.el.removeEventListener('mouseout', pathOutHandler, false);
+        this.el.removeEventListener('mouseover', circleOverHandler, false);
+        this.el.removeEventListener('mouseout', circleOutHandler, false);
 
-        // mouseover paths
+        // mouseover events
         this.el.addEventListener('mouseover', pathOverHandler, false);
+        this.el.addEventListener('mouseover', circleOverHandler, false);
 
-        // mouseout paths
+        // mouseout events
         this.el.addEventListener('mouseout', pathOutHandler, false);
+        this.el.addEventListener('mouseout', circleOutHandler, false);
 
     },
-    drawRefLines(nodeId, className) {
+    drawRefLines(nodeId, validityCategory) {
 
         let _self = this,
             _attr = this._attr,
@@ -1546,7 +1743,7 @@ let DiffusionView = Backbone.View.extend({
             yBottomScale = _attr.yBottomScale,
             refLineG = _attr.refLineG;
 
-        let y = (className.includes("follow-the-rule") ?
+        let y = (validityCategory.includes("follow-the-rule") ?
             yTopScale(nodes[nodeId].metadataOrder) :
             yBottomScale(nodes[nodeId].metadataOrder));
 
