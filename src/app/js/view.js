@@ -1002,6 +1002,14 @@ let DiffusionView = Backbone.View.extend({
             stat = _self.model.get("stat"),
             cstat = _self.model.get("cstat");
 
+        // compute color list based on length of year list
+        let _yearList = _.uniq(nodes.map((node) => node.adoptedYear)).sort(),
+            _colorList = utils.generateColor(css_variables["--color-trans-out"], css_variables["--color-trans-in"], _yearList.length),
+            _colorMap = {};
+        _yearList.forEach((year, index) => {
+            _colorMap[year] = _colorList[index];
+        });
+
         $.extend(_attr, {
             getPrefix: () => {
                 return (isSnapshot ? idPrefix : "");
@@ -1023,7 +1031,8 @@ let DiffusionView = Backbone.View.extend({
             xScale: xScale,
             yTopScale: yTopScale,
             yBottomScale: yBottomScale,
-            c: conditions
+            c: conditions,
+            _colorMap: _colorMap
         });
 
         // do init sort
@@ -1170,7 +1179,7 @@ let DiffusionView = Backbone.View.extend({
                         if (_self.isNodeDefault(d)) {
                             return css_variables["--color-unadopted"];
                         } else {
-                            return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+                            return d.valid ? _attr._colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
                         }
                     }
                 },
@@ -1181,7 +1190,7 @@ let DiffusionView = Backbone.View.extend({
                         if (_self.isNodeDefault(d)) {
                             return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                         } else {
-                            return d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                            return d.valid ? d3.rgb(_attr._colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
                         }
                     }
                 }
@@ -1361,7 +1370,7 @@ let DiffusionView = Backbone.View.extend({
                             return css_variables["--color-unadopted"];
                         } else {
                             return d.valid ?
-                                colorMap[d.adoptedYear] :
+                                _attr._colorMap[d.adoptedYear] :
                                 css_variables["--color-unadopted"];
                         }
                     }
@@ -1447,12 +1456,12 @@ let DiffusionView = Backbone.View.extend({
 
         grad.append("stop")
             .attr("offset", "5%")
-            .attr("stop-color", colorMap[source.adoptedYear])
+            .attr("stop-color", _self._attr._colorMap[source.adoptedYear])
             .attr("stop-opacity", 1);
 
         grad.append("stop")
             .attr("offset", "95%")
-            .attr("stop-color", colorMap[target.adoptedYear])
+            .attr("stop-color", _self._attr._colorMap[target.adoptedYear])
             .attr("stop-opacity", 1);
 
         return grad;
