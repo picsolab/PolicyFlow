@@ -139,6 +139,8 @@ function bindEvents() {
     $("#add-snapshot").on("click", (event) => {
         sc.add(diffusionView, conditions);
     });
+
+    document.getElementById("snapshot-wrapper").addEventListener('click', retrieveCascadeHandler, false);
 }
 
 function initDom() {
@@ -155,38 +157,78 @@ function initDom() {
 
     policyOptionsModel.fetch({
         success(model, response, options) {
-
-            let policies = model.get("policies")
-            let pipe = model.get("pipe");
-
-            // subject select drop down
-            Object.keys(policies).forEach(subjectName => {
-                $('#subject-select').append("<option data-subtext=(" + policies[subjectName].length + ") value='" + subjectName + "'>" + (subjectName) + "</option>");
-            });
-            $('#subject-select').val(conf.bases.subject.default);
-            $('#subject-select').prop('disabled', false);
-            $('#subject-select').selectpicker('refresh');
-
-            // policy select drop down
-            appendPolicyDefault();
-            policies[conf.bases.subject.default].forEach(policyId => {
-                $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
-            });
-            $('#policy-select').val(conf.bases.policy.default);
-            $('#policy-select').prop('disabled', false);
-            $('#policy-select').selectpicker('refresh');
-
-            // headers
-            updateHeader();
+            updateSubjectAndPolicy(model, conf.bases.subject.default, conf.bases.policy.default);
         }
     });
 
     bindEvents();
 }
 
-/*
- # Utils
+/**
+ * EventHandlers
  */
+
+function retrieveCascadeHandler(e) {
+    e.stopPropagation();
+    let _curr = $(e.target),
+        className = _curr.attr("class"),
+        domId = _curr.attr("id"),
+        isASnapshot = domId.includes("snapshot-view");
+
+    if (isASnapshot) {
+        let conditionId = +domId.split("-")[2],
+            aConditionCopy = sc.conditionList[conditionId].clone();
+        conditions.set(_.clone(aConditionCopy.attributes));
+        // recoverDomBy(conditions);
+    }
+}
+
+/** 
+ * Utils
+ */
+
+function recoverDomBy(conditions) {
+    console.log(conditions);
+    // recover subject and policy dropdown
+    updateSubjectAndPolicy(policyOptionsModel, conditions.get("subject"), conditions.get("policy"));
+
+    // recover centrality dropdown
+    $("#centrality-select").val(conditions.get("centrality"));
+    $('#centrality-select').selectpicker('refresh');
+
+    // recover metadata and sequence
+    $('#sequence-select').val(conditions.get("sequence"));
+    $('#metadata-select').val(conditions.get("metadata"));
+
+    setupCentralityDropdown();
+
+}
+
+function updateSubjectAndPolicy(policyOptionsModel, subjectSelected, policySelected) {
+    let pipe = policyOptionsModel.get("pipe"),
+        policies = policyOptionsModel.get("policies");
+
+    // subject select drop down
+    Object.keys(policies).forEach(subjectName => {
+        $('#subject-select').append("<option data-subtext=(" + policies[subjectName].length + ") value='" + subjectName + "'>" + (subjectName) + "</option>");
+    });
+    $('#subject-select').val(subjectSelected);
+    $('#subject-select').prop('disabled', false);
+    $('#subject-select').selectpicker('refresh');
+
+    // policy select drop down
+    $('#policy-select option.policy-option').remove();
+    appendPolicyDefault();
+    policies[subjectSelected].forEach(policyId => {
+        $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
+    });
+    $('#policy-select').val(policySelected);
+    $('#policy-select').prop('disabled', false);
+    $('#policy-select').selectpicker('refresh');
+
+    // headers
+    updateHeader();
+}
 
 // Update page header when conditions change
 function updateHeader() {

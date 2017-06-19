@@ -21,6 +21,11 @@
     height: 180px;
 }
 
+.snapshot-wrapper {
+    cursor: pointer;
+    float: left;
+}
+
 
 /*shared style*/
 
@@ -53,7 +58,7 @@
 
 #diffusion-path-group path {}
 
-#diffusion-guidance-line-group path {
+.guidances path {
     fill: none;
     stroke: var(--color-default-black);
     opacity: 0.3;

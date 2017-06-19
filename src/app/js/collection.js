@@ -40,11 +40,16 @@ let SnapshotCollection = {
 
         // unshift dom array
         _self.viewList.forEach((view, i) => {
-            _self.viewList[i].$el.attr("id", "snapshot-view-" + (i + 1));
+            let _svg = _self.viewList[i].$el,
+                _svgWrapper = _svg.parent();
+            _svg.attr("id", "snapshot-view-" + (i + 1));
+            _svgWrapper.attr("id", "snapshot-wrapper-" + (i + 1))
         });
 
         // prepend empty shapshot container
-        $(_self.container).prepend('<svg id="snapshot-view-0" class="snapshot"></svg>');
+        $(_self.container).prepend('<div id="snapshot-wrapper-0" class="snapshot-wrapper"></div>');
+        let _svgWrapper = $(_self.container).find("#snapshot-wrapper-0");
+        _svgWrapper.prepend('<svg id="snapshot-view-0" class="snapshot"></svg>');
         let newView = new View.DiffusionView({
             el: "#snapshot-view-0",
             model: aModelCopy
