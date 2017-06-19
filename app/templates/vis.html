@@ -77,8 +77,23 @@
                 <button id="add-snapshot" type="button" class="btn btn-default">add</button>
                 <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
             </div>
-            <div id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
-                <svg id="svg-network-view"></svg>
+
+            <div id="static-views-wrapper" class="col-sm-12 col-md-12 col-lg-12">
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#policy-network-wrapper" aria-controls="policy-network-wrapper" role="tab" data-toggle="tab">Spatial</a></li>
+                    <li role="presentation"><a href="#another-network-wrapper" aria-controls="another-network-wrapper" role="tab" data-toggle="tab">Network</a></li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane fade in active" id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
+                        <svg id="svg-network-view"></svg>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="another-network-wrapper">
+                        <p>a place holder</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
