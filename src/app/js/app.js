@@ -48,6 +48,7 @@ $(document).ready(() => {
 
     conditions.on('change', () => {
         updateHeader();
+
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
             diffusionModel.populate(conditions);
@@ -58,23 +59,26 @@ $(document).ready(() => {
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
             setupCentralityDropdown();
         }
-        if (conditions.hasChanged('metadata')) {
-            diffusionView.doSort("metadata");
-            diffusionView.update();
-        }
-        if (conditions.hasChanged('sequence')) {
-            diffusionView.doSort("sequence");
-            diffusionView.update();
-        }
-        if (conditions.hasChanged('centrality')) {
-            if (conditions.get('metadata') === "centrality") {
-                diffusionView.doSort("metadata");
+        if (Object.keys(conditions.changedAttributes()).length === 1 && (conditions.hasChanged('metadata') ||
+                conditions.hasChanged('sequence') || conditions.hasChanged('centrality'))) {
+            if (conditions.hasChanged('centrality')) {
+                if (conditions.get('metadata') === "centrality") {
+                    diffusionView.doSort("metadata");
+                }
+                if (conditions.get('sequence') === "centrality") {
+                    diffusionView.doSort("sequence");
+                }
+            } else {
+                if (conditions.hasChanged('metadata')) {
+                    diffusionView.doSort("metadata");
+                }
+                if (conditions.hasChanged('sequence')) {
+                    diffusionView.doSort("sequence");
+                }
             }
-            if (conditions.get('sequence') === "centrality") {
-                diffusionView.doSort("sequence");
-            }
             diffusionView.update();
         }
+
     });
 
     initDom();
@@ -178,8 +182,8 @@ function retrieveCascadeHandler(e) {
     if (isASnapshot) {
         let conditionId = +domId.split("-")[2],
             aConditionCopy = sc.conditionList[conditionId].clone();
-        conditions.set(_.clone(aConditionCopy.attributes));
-        // recoverDomBy(conditions);
+        conditions.set(aConditionCopy.attributes);
+        recoverDomBy(conditions);
     }
 }
 
@@ -188,17 +192,15 @@ function retrieveCascadeHandler(e) {
  */
 
 function recoverDomBy(conditions) {
-    console.log(conditions);
     // recover subject and policy dropdown
     updateSubjectAndPolicy(policyOptionsModel, conditions.get("subject"), conditions.get("policy"));
 
     // recover centrality dropdown
-    $("#centrality-select").val(conditions.get("centrality"));
-    $('#centrality-select').selectpicker('refresh');
+    $("#centrality-select").selectpicker('val', conditions.get("centrality"), { silent: true });
 
     // recover metadata and sequence
-    $('#sequence-select').val(conditions.get("sequence"));
-    $('#metadata-select').val(conditions.get("metadata"));
+    $('#sequence-select').selectpicker('val', conditions.get("sequence"), { silent: true });
+    $('#metadata-select').selectpicker('val', conditions.get("metadata"), { silent: true });
 
     setupCentralityDropdown();
 
