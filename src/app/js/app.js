@@ -59,8 +59,10 @@ $(document).ready(() => {
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
             setupCentralityDropdown();
         }
-        if (Object.keys(conditions.changedAttributes()).length === 1 && (conditions.hasChanged('metadata') ||
-                conditions.hasChanged('sequence') || conditions.hasChanged('centrality'))) {
+        if (!conditions.hasChanged('policy') &&
+            (conditions.hasChanged('metadata') ||
+                conditions.hasChanged('sequence') ||
+                conditions.hasChanged('centrality'))) {
             if (conditions.hasChanged('centrality')) {
                 if (conditions.get('metadata') === "centrality") {
                     diffusionView.doSort("metadata");
@@ -68,13 +70,12 @@ $(document).ready(() => {
                 if (conditions.get('sequence') === "centrality") {
                     diffusionView.doSort("sequence");
                 }
-            } else {
-                if (conditions.hasChanged('metadata')) {
-                    diffusionView.doSort("metadata");
-                }
-                if (conditions.hasChanged('sequence')) {
-                    diffusionView.doSort("sequence");
-                }
+            }
+            if (conditions.hasChanged('metadata')) {
+                diffusionView.doSort("metadata");
+            }
+            if (conditions.hasChanged('sequence')) {
+                diffusionView.doSort("sequence");
             }
             diffusionView.update();
         }
@@ -89,7 +90,7 @@ $(document).ready(() => {
 function initRendering() {
     // stateModel.fetch();
     policyModel.populate(conditions);
-    networkModel.fetch();
+    networkModel.populate(conditions);
     let fetching = diffusionModel.populate(conditions);
 }
 

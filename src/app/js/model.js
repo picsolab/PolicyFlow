@@ -39,10 +39,14 @@ let NetworkModel = Backbone.Model.extend({
     populate(conditions) {
         let _self = this;
         this.url = this.urlRoot + conditions.get("metadata") + "/" + conditions.get("policy");
-        $.getJSON(_self.url).done((data) => {
-            // console.log(_self.url);
-            _self.set(data);
-        });
+        if (conditions.get("metadata") === "centrality") {
+            return;
+        } else {
+            return $.getJSON(_self.url).done((data) => {
+                // console.log(_self.url);
+                _self.set(data);
+            });
+        }
     }
 });
 
