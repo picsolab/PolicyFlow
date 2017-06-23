@@ -35,7 +35,7 @@
 .select-wrapper {}
 
 .page-header {
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .footer {
@@ -59,7 +59,7 @@
 /*policytrend*/
 
 #policy-trend-wrapper {
-    height: 350px;
+    height: 300px;
     background: lightgray;
 }
 

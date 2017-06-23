@@ -236,10 +236,8 @@ let NetworkView = Backbone.View.extend({
             .size([1500, 600]);
 
         var svg = d3.select(_self.el)
-            .attr("width", 300)
-            .attr("height", 210)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("-300 -300 2200 1200"));
+            .attr('viewBox', ("-250 -250 2200 1200"));
 
         _self.udpate(svg, tip, force);
     },
