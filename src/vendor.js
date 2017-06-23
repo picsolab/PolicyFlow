@@ -7,3 +7,6 @@ require('../node_modules/bootstrap-select/dist/css/bootstrap-select.min.css');
 
 // d3-ForceEdgeBundling
 require('./assets/lib/d3-ForceEdgeBundling.js');
+
+// collapse extension for Bootstrap
+require('./assets/lib/collapse.js');

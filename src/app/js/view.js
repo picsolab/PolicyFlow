@@ -72,8 +72,6 @@ let PolicyView = Backbone.View.extend({
 
         // create svg element
         let svg = d3.select(_self.el)
-            .attr('width', gs.p.size.width)
-            .attr('height', gs.p.size.height)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .attr('viewBox', ("0 0 " + gs.p.size.width + " " + gs.p.size.height + ""))
             .classed('svg-content-responsive', true)
@@ -238,8 +236,8 @@ let NetworkView = Backbone.View.extend({
             .size([1500, 600]);
 
         var svg = d3.select(_self.el)
-            .attr("width", 850)
-            .attr("height", 600)
+            .attr("width", 300)
+            .attr("height", 210)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .attr('viewBox', ("-300 -300 2200 1200"));
 
@@ -928,17 +926,10 @@ let DiffusionView = Backbone.View.extend({
             circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
             yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
 
-        let __width = _width,
-            __height = _height;
-
-        if (isSnapshot) {
-            __width /= gs.d.multiplier.snapshot;
-            __height /= gs.d.multiplier.snapshot;
-        }
+        // _width *= isSnapshot ? gs.d.multiplier.snapshot : 1;
+        // _height *= isSnapshot ? gs.d.multiplier.snapshot : 1;
 
         let svg = _attr.svg = d3.select(_self.el)
-            .attr("width", __width)
-            .attr("height", __height)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
             .classed('svg-content-responsive', true);

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Policy network diffusion visualization</title>
+    <link rel="stylesheet" type="text/css" href="/static/vendor.bundle.css">
+    <link rel="stylesheet" type="text/css" href="/static/app.bundle.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarCollapse" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">PolicyFlow</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="nav">
+                    <li class="col-lg-2 col-md-2 col-sm-2">
+                        <label class="nav-title-label">Subject</label>
+                        <div class="select-wrapper" id="subject-select-wrapper">
+                            <select name="subject-select" id="subject-select" class="selectpicker show-tick" data-live-search="true" data-container="body" data-width="100%" title="Loading..." disabled></select>
+                        </div>
+                    </li>
+                    <li class="col-lg-2 col-md-2 col-sm-2">
+                        <label class="nav-title-label">Policy</label>
+                        <div class="select-wrapper" id="policy-select-wrapper">
+                            <select name="policy-select" id="policy-select" class="selectpicker show-tick" data-live-search="true" data-container="body" data-width="100%" title="Loading..." disabled></select>
+                        </div>
+                    </li>
+                    <li class="col-lg-2 col-md-2 col-sm-2">
+                        <label class="nav-title-label">Attributes</label>
+                        <div class="select-wrapper" id="metadata-select-wrapper">
+                            <select name="metadata-select" id="metadata-select" class="selectpicker show-tick" data-live-search="false" data-container="body" data-width="100%" title="Loading..." disabled></select>
+                        </div>
+                    </li>
+                    <li class="col-lg-2 col-md-2 col-sm-2">
+                        <label class="nav-title-label">Sequence</label>
+                        <div class="select-wrapper" id="sequence-select-wrapper">
+                            <select name="sequence-select" id="sequence-select" class="selectpicker show-tick" data-live-search="false" data-container="body" data-width="100%" title="Loading..." disabled></select>
+                        </div>
+                    </li>
+                    <li class="col-lg-2 col-md-2 col-sm-2">
+                        <label class="nav-title-label">Influence</label>
+                        <div class="select-wrapper" id="centrality-select-wrapper">
+                            <select name="centrality-select" id="centrality-select" class="selectpicker show-tick" data-live-search="false" data-container="body" data-width="100%" title="Loading..." disabled></select>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container-fluid -->
+    </nav>
+
+    <div class="container-fluid" id="content-wrapper">
+        <div class="row">
+            <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+                <div class="jumbotron" id="policy-trend-wrapper">
+                    <p>a place holder</p>
+                </div>
+                <div id="static-views-wrapper" class="col-sm-12 col-md-12 col-lg-12">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#policy-network-wrapper" aria-controls="policy-network-wrapper" role="tab" data-toggle="tab">Spatial</a></li>
+                        <li role="presentation"><a href="#another-network-wrapper" aria-controls="another-network-wrapper" role="tab" data-toggle="tab">Network</a></li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane fade in active" id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
+                            <svg id="svg-network-view"></svg>
+                        </div>
+                        <div role="tabpanel" class="tab-pane fade" id="another-network-wrapper">
+                            <div class="jumbotron">
+                                <p>a place holder</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12 main row">
+                <div class="page-header">
+                    <h3 id="page-header"></h3>
+                </div>
+                <div id="diffusion-wrapper" class="col-lg-9 col-md-9 col-sm-12 col-xs-12">
+                    <svg id="svg-diffusion-view"></svg>
+                </div>
+                <div id="policy-cascade-wrapper" class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+                    <div class="jumbotron">
+                        <p id="policy-unselected-notitication">
+                            Please select a policy.
+                        </p>
+                    </div>
+                    <svg id="svg-cascade-view" style="display:none;"></svg>
+                </div>
+                <div id="snapshot-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                </div>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button id="add-snapshot" type="button" class="btn btn-default">add</button>
+                    <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="navbar-text pull-left">&copy; 2017 PolicyFlow. All rights reserved.&nbsp;&nbsp;|&nbsp;&nbsp;
+                <a href="http://www.yurulin.com/lab.html " target="_blank">PICSO Lab</a>
+            </p>
+        </div>
+    </footer>
+</body>
+<!-- main entry -->
+<script type="text/javascript " src="/static/vendor.bundle.js "></script>
+<script type="text/javascript " src="/static/app.bundle.js "></script>
+
+</html>

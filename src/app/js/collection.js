@@ -1,6 +1,7 @@
 let conf = require('../config.js');
 let View = require('./view.js');
 let Model = require('./model.js');
+const gs = require('./graphSettings.js');
 
 let ConditionsCollection = Backbone.Collection.extend({
     initialize() {
@@ -45,6 +46,11 @@ let SnapshotCollection = {
             _svg.attr("id", "snapshot-view-" + (i + 1));
             _svgWrapper.attr("id", "snapshot-wrapper-" + (i + 1))
         });
+
+        let rawHeight = gs.d.size.barHeight + gs.d.margin.top + gs.d.margin.bottom,
+            rawWidth = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
+            scaledHeight = rawHeight * gs.d.multiplier.snapshot,
+            scaledWidth = rawWidth * gs.d.multiplier.snapshot;
 
         // prepend empty shapshot container
         $(_self.container).prepend('<div id="snapshot-wrapper-0" class="snapshot-wrapper"></div>');

@@ -14,8 +14,8 @@ const GraphSettings = {
                 // modify .text-tip in style.css to adjust text style
         },
         size: {
-            width: 250,
-            height: 600
+            width: 230,
+            height: 630
         },
         multiplier: {
 
@@ -38,7 +38,7 @@ const GraphSettings = {
             // width: 850,
             // height: 600,
             barWidth: 70,
-            harHeight: 650,
+            barHeight: 650,
             pathWidth: 700,
             pathHeight: 650,
             labelWidth: 30,
@@ -51,7 +51,7 @@ const GraphSettings = {
             rectHeight: 2
         },
         multiplier: {
-            snapshot: 4
+            snapshot: 0.25
         },
         config: {
             transitionTime: 1500
