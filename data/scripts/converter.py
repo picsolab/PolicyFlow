@@ -16,8 +16,8 @@ def rel_path(filename):
 	"""
 	return os.path.join(os.getcwd(), os.path.dirname(__file__), filename)
 
-with open(rel_path('raw_centralities.json'), 'r') as raw_centralities, \
-        open(rel_path('centralities_by_state.json'), 'w') as output_file:
+with open(rel_path('../raw/raw_centralities.json'), 'r') as raw_centralities, \
+        open(rel_path('../out/centralities_by_state.json'), 'w') as output_file:
     centralities = json.load(raw_centralities)
     output = {"centralities":{}, "stat":{}}
     max_cen = {"outdegree": 0, "pageRank": 0, "betweenness": 0,"hit": 0,"close":0 }

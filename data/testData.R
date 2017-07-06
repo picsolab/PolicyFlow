@@ -1,5 +1,5 @@
 library(data.table)
-data<-read.csv("./data/bills_for_evaluation_set.csv", header=FALSE, sep=",")
+data<-read.csv("./external/raw/bills_for_evaluation_set.csv", header=FALSE, sep=",")
 data
 data<-data[,c(1,2,4)]
 colnames(data)<-c("cascade", "state","year")

@@ -34,7 +34,7 @@ app/_config.py
 /node_modules
 
 # data files
-rplayground/*.json
+data/external
 
 # IDEs and editors
 /.idea

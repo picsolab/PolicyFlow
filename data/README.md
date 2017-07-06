@@ -1,6 +1,6 @@
 # Testing space
 
-A place to run some pre-tests.
+A place to run some data manipulations.
 
 ## Models
 
