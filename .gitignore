@@ -36,6 +36,12 @@ app/_config.py
 # data files
 data/external
 
+# database backup
+data/backup
+
+# byte codes
+*.pyc
+
 # IDEs and editors
 /.idea
 .project
