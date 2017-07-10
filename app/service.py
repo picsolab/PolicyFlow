@@ -2,12 +2,13 @@ from decimal import Decimal
 from flask import request, g, json
 from app import app
 
-from .dao import PageDao, PolicyDao, NetworkDao, StateDao
+from .dao import PageDao, PolicyDao, NetworkDao, StateDao, DiffusionDao
 
 page_dao = PageDao()
 policy_dao = PolicyDao()
 network_dao = NetworkDao()
 state_dao = StateDao()
+diffusion_dao = DiffusionDao()
 
 class Service(object):
     """Base Service class"""
@@ -94,6 +95,13 @@ class NetworkService(Service):
         """get_specified_arc_by meta_flag and policy_id"""
         query_result = network_dao.get_parameterized_network(meta_flag, policy_id)
         return json.dumps({"nodes": query_result}, cls=DecimalEncoder)
+
+    @staticmethod
+    @app.route("/api/diffusion/<policy_id>")
+    def get_specified_diffusion_by(policy_id):
+        """get_specified_diffusion_by policy_id"""
+        data_list, stat = diffusion_dao.get_parameterized_diffusion(policy_id)
+        return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
 
 class ServiceUtils():
     """service utils"""

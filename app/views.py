@@ -7,15 +7,10 @@ cache = Cache(app,config={'CACHE_TYPE': 'simple'})
 
 @app.route("/")
 @cache.cached(timeout=50)
-def home():
-    return render_template("home.html")
+def index():
+    return render_template("index.html")
 
-@app.route("/vis/")
+@app.route("/<any>/")
 @cache.cached(timeout=50)
-def vis():
-    return render_template("vis.html")
-
-@app.route("/about/")
-@cache.cached(timeout=50)
-def about():
-    return render_template("about.html")
+def redirect(any):
+    return index()

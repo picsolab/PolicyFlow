@@ -2,13 +2,25 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
-const eedges = conf.static.edges;
+const eedges = conf.static.edges,
+    printDiagnoseInfo = false;
 
 let colorList = [],
     colorMap = {};
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
     render() {
+        if (this.model.get("message") !== "success") {
+            $("#policy-unselected-notitication").show();
+            this.$el.hide();
+        } else {
+            $("#policy-unselected-notitication").hide();
+            this.paint();
+            this.$el.show();
+        }
+        return this;
+    },
+    paint() {
         // prepare params
         // - use Jan 1st to represent the year.
         let _self = this,
@@ -60,8 +72,6 @@ let PolicyView = Backbone.View.extend({
 
         // create svg element
         let svg = d3.select(_self.el)
-            .attr('width', gs.p.size.width)
-            .attr('height', gs.p.size.height)
             .attr('preserveAspectRatio', 'xMidYMin meet')
             .attr('viewBox', ("0 0 " + gs.p.size.width + " " + gs.p.size.height + ""))
             .classed('svg-content-responsive', true)
@@ -100,8 +110,6 @@ let PolicyView = Backbone.View.extend({
             _self.renderPalette(paletteG, yearList, xScale, yScale);
             _self.bindTriggers(yScale);
         });
-
-        return this;
     },
     renderPalette(paletteG, yearList, xScale, yScale) {
         let _self = this;
@@ -219,7 +227,7 @@ let NetworkView = Backbone.View.extend({
             .attr('class', 'd3-tip-network')
             .offset([-10, 0])
             .html(function(d) {
-                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>" + d.metaName + ": <span style='color:white'>" + d.metadata + "</span></p ><p>Adopted year: <span style='color:white'>" + (d.adoptedYear > 0 ? d.adoptedYear : "Haven't adopted") + "</span></p >";
+                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>" + d.metaName + ": <span style='color:white'>" + d.metadata + "</span></p ><p>Adopted year: <span style='color:white'>" + (d.adoptedYear < 9999 ? d.adoptedYear : "Haven't adopted") + "</span></p >";
             });
 
         var force = d3.layout.force()
@@ -228,10 +236,8 @@ let NetworkView = Backbone.View.extend({
             .size([1500, 600]);
 
         var svg = d3.select(_self.el)
-            .attr("width", 850)
-            .attr("height", 600)
             .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("-300 -300 2200 1200"));
+            .attr('viewBox', ("-250 -250 2200 1200"));
 
         _self.udpate(svg, tip, force);
     },
@@ -302,7 +308,7 @@ let NetworkView = Backbone.View.extend({
                         .append("svg:path")
                         .attr("d", "M0,-5L10,0L0,5");
 
-                    if (results[i][0].adoptedYear != -1 && results[i][results[i].length - 1].adoptedYear != -1) {
+                    if (results[i][0].adoptedYear != 9999 && results[i][results[i].length - 1].adoptedYear != 9999) {
                         svg.append("path")
                             .attr("d", d3line(results[i]))
                             .attr("id", String(i))
@@ -517,6 +523,7 @@ let NetworkView = Backbone.View.extend({
 
 });
 
+// @Deprecated
 let StatBarView = Backbone.View.extend({
     el: '#svg-stat-bar-view',
     render() {
@@ -578,16 +585,15 @@ let PolicyOptionsView = Backbone.View.extend({
 
 });
 
+// @Deprecated
 let ArcView = Backbone.View.extend({
     el: "#svg-arc-view",
     render(sortMethod) {
         // console.log("rendering arc: " + sortMethod);
         let _self = this,
             nodes = this.model.get("nodes"),
-            links = this.model.get("links"),
-            colors = d3.scale.category20(),
+            links = conf.static.edges,
             τ = 2 * Math.PI; // http://tauday.com/tau-manifesto
-        links = conf.static.edges;
 
         let svg = d3.select(_self.el)
             .attr("width", gs.a.size.width)
@@ -897,6 +903,929 @@ let ArcView = Backbone.View.extend({
     }
 });
 
+let DiffusionView = Backbone.View.extend({
+    el: "#svg-diffusion-view",
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        // console.log("rendering diffusion...");
+        let _self = this,
+            _attr = this._attr, // closure vars
+            isSnapshot = arguments.length !== 1;
+
+        $(_self.el).empty();
+
+        let _height = gs.d.margin.top + gs.d.size.pathHeight + gs.d.margin.bottom,
+            _width = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
+            pathXShift = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth, // min x of pathG
+            pathYMid = gs.d.margin.top,
+            circleXShift = pathXShift,
+            circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
+            yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
+
+        // _width *= isSnapshot ? gs.d.multiplier.snapshot : 1;
+        // _height *= isSnapshot ? gs.d.multiplier.snapshot : 1;
+
+        let svg = _attr.svg = d3.select(_self.el)
+            .attr('preserveAspectRatio', 'xMidYMin meet')
+            .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
+            .classed('svg-content-responsive', true);
+
+        let idPrefix = isSnapshot ? Math.random().toString(36).substr(2, 8) + "-" : '',
+            guidanceLineG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-guidance-line-group',
+                'class': 'guidances',
+                'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
+            }),
+            circleG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-circle-group',
+                'class': 'circles',
+                'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
+            }),
+            pathG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-path-group',
+                'class': 'paths',
+                'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
+            }),
+            xLabelG = circleG.append('g').attr({
+                'id': idPrefix + 'diffusion-x-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (0) + "," + (0) + ")"
+            }),
+            upBarG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-up-bar-group',
+                'class': 'bars',
+                'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
+            }),
+            bottomBarG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-bottom-bar-group',
+                'class': 'bars',
+                'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
+            }),
+            yLabelG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-y-label-group',
+                'class': 'y-labels',
+                'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
+            }),
+            refLineG = pathG.append('g').attr({
+                'id': idPrefix + 'diffusion-ref-line-group',
+                'class': 'refs',
+                'transform': "translate(" + (0) + "," + (0) + ")"
+            }),
+            defs = svg.append('defs');
+
+        let xScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([0, gs.d.size.pathWidth]),
+            yTopScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([0, gs.d.size.pathHeight / 2]),
+            yBottomScale = d3.scale.linear()
+            .domain([0, 49])
+            .range([gs.d.size.pathHeight, gs.d.size.pathHeight / 2]);
+
+        // data join
+        let nodes = _self.model.get("nodes"),
+            links = conf.static.edges,
+            stat = _self.model.get("stat"),
+            cstat = _self.model.get("cstat");
+
+        // compute color list based on length of year list
+        let _yearList = _.uniq(nodes.map((node) => node.adoptedYear)).sort(),
+            _colorList = utils.generateColor(css_variables["--color-trans-out"], css_variables["--color-trans-in"], _yearList.length),
+            _colorMap = {};
+        _yearList.forEach((year, index) => {
+            _colorMap[year] = _colorList[index];
+        });
+
+        $.extend(_attr, {
+            getPrefix: () => {
+                return (isSnapshot ? idPrefix : "");
+            },
+            isSnapshot: isSnapshot,
+            pathG: pathG,
+            circleG: circleG,
+            xLabelG: xLabelG,
+            upBarG: upBarG,
+            bottomBarG: bottomBarG,
+            yLabelG: yLabelG,
+            refLineG: refLineG,
+            guidanceLineG: guidanceLineG,
+            defs: defs,
+            nodes: nodes,
+            links: links,
+            stat: stat,
+            cstat: cstat,
+            xScale: xScale,
+            yTopScale: yTopScale,
+            yBottomScale: yBottomScale,
+            c: conditions,
+            _colorMap: _colorMap
+        });
+
+        // do init sort
+        _self.doInitSort();
+
+        _self.update();
+
+        if (!isSnapshot) {
+            _self.bindTriggers();
+        }
+
+        return this;
+    },
+    update() {
+        // console.log("updating diffusion...");
+        let _self = this,
+            _attr = this._attr,
+            stat = this.model.get("stat"),
+            cstat = this.model.get("cstat"),
+            nodes = _attr.nodes,
+            links = _attr.links;
+
+        // define radius scale for circles
+        // let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
+        let xSeq = _attr.c.get("centrality"),
+            radiusScale = d3.scale.linear()
+            .domain([cstat.min[xSeq], cstat.max[xSeq]])
+            .range(gs.d.size.circle);
+
+        let paths = _attr.pathG.selectAll('path')
+            .data(links),
+            guids = _attr.guidanceLineG.selectAll('path')
+            .data(links),
+            circles = _attr.circleG.selectAll('circle')
+            .data(nodes),
+            xlabels = _attr.xLabelG.selectAll('text')
+            .data(nodes),
+            upBars = _attr.upBarG.selectAll('rect')
+            .data(nodes),
+            bottomBars = _attr.bottomBarG.selectAll('rect')
+            .data(nodes);
+
+        paths.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("d", (d, i) => {
+                let c = d.coords,
+                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
+                    interpolateX1 = d3.interpolate(c.x1, n.x1),
+                    interpolateX2 = d3.interpolate(c.x2, n.x2),
+                    interpolateXMid = d3.interpolate(c.xMid, n.xMid),
+                    interpolateY1 = d3.interpolate(c.y1, n.y1),
+                    interpolateY2 = d3.interpolate(c.y2, n.y2),
+                    interpolateYM1 = d3.interpolate(c.ym1, n.ym1),
+                    interpolateYM2 = d3.interpolate(c.ym2, n.ym2);
+
+                return function(t) {
+                    d.coords.x1 = interpolateX1(t);
+                    d.coords.x2 = interpolateX2(t);
+                    d.coords.xMid = interpolateXMid(t);
+                    d.coords.y1 = interpolateY1(t);
+                    d.coords.y2 = interpolateY2(t);
+                    d.coords.ym1 = interpolateYM1(t);
+                    d.coords.ym2 = interpolateYM2(t);
+
+                    if (nodes[d.source].valid && nodes[d.target].valid) {
+                        let x = d.coords.x1 < d.coords.x2,
+                            y = d.coords.y1 < d.coords.y2,
+                            x1 = x ? "0" : "1",
+                            x2 = x ? "1" : "0",
+                            y1 = y ? "0" : "1",
+                            y2 = y ? "1" : "0",
+                            gradientIdentifier = _attr.getPrefix() + "gradient-" + nodes[d.source].stateId + nodes[d.target].stateId;
+
+                        $("#" + gradientIdentifier).attr("x1", x1);
+                        $("#" + gradientIdentifier).attr("x2", x2);
+                        $("#" + gradientIdentifier).attr("y1", y1);
+                        $("#" + gradientIdentifier).attr("y2", y2);
+                    }
+                    return _self.linkBuilder(d);
+                }
+            });
+
+        guids.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("d", (d, i) => {
+                let c = d.gcoords,
+                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
+                    interpolateX1 = d3.interpolate(c.x1, n.x1),
+                    interpolateX2 = d3.interpolate(c.x2, n.x2),
+                    interpolateXMid = d3.interpolate(c.xMid, n.xMid),
+                    interpolateY1 = d3.interpolate(c.y1, n.y1),
+                    interpolateY2 = d3.interpolate(c.y2, n.y2),
+                    interpolateYM1 = d3.interpolate(c.ym1, n.ym1);
+
+                return function(t) {
+                    d.gcoords.x1 = interpolateX1(t);
+                    d.gcoords.x2 = interpolateX2(t);
+                    d.gcoords.xMid = interpolateXMid(t);
+                    d.gcoords.y1 = interpolateY1(t);
+                    d.gcoords.y2 = interpolateY2(t);
+                    d.gcoords.ym1 = interpolateYM1(t);
+
+                    return _self.guidanceBuilder(d);
+                }
+            });
+
+        circles.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("cx", (d, i) => {
+                let interpolateX = d3.interpolate(d.circleX, _attr.xScale(d.sequenceOrder));
+                return function(t) {
+                    return d.circleX = interpolateX(t);
+                }
+            })
+            .attrTween("r", (d, i) => {
+                let interpolateR = d3.interpolate(d.circleR, radiusScale(d.centralities[xSeq]));
+                return function(t) {
+                    return d.circleR = interpolateR(t);
+                }
+            });
+
+        // enter
+        circles.enter()
+            .append('circle')
+            .attr({
+                cy: 0,
+                cx: (d) => {
+                    d.circleX = _attr.xScale(d.sequenceOrder);
+                    return d.circleX;
+                },
+                r: (d) => {
+                    d.circleR = radiusScale(d.centralities[xSeq]);
+                    return d.circleR;
+                },
+                class: "diffusion-circles",
+                id: (d, i) => _attr.getPrefix() + "diffusion-node-" + i,
+                nodeId: (d, i) => i
+            })
+            .style({
+                fill: (d) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                    } else {
+                        if (_self.isNodeDefault(d)) {
+                            return css_variables["--color-unadopted"];
+                        } else {
+                            return d.valid ? _attr._colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
+                        }
+                    }
+                },
+                stroke: (d, i) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(2);
+                    } else {
+                        if (_self.isNodeDefault(d)) {
+                            return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        } else {
+                            return d.valid ? d3.rgb(_attr._colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        }
+                    }
+                }
+            });
+
+        xlabels.transition()
+            .duration(gs.d.config.transitionTime)
+            .attrTween("transform", (d) => {
+                let interpolateX = d3.interpolate(d.labelX, _attr.xScale(d.sequenceOrder) - gs.d.size.circle[0]);
+                return function(t) {
+                    d.labelX = interpolateX(t);
+                    return "translate(" + d.labelX + "," + d.labelY + ") rotate(90)";
+                }
+            });
+
+        xlabels.enter()
+            .append('text')
+            .attr({
+                class: "text-tip"
+            })
+            .text((d) => " - " + d.stateId)
+            .attr({
+                transform: (d) => {
+                    d.labelX = _attr.xScale(d.sequenceOrder) - gs.d.size.circle[0];
+                    d.labelY = gs.d.size.circle[1];
+                    return "translate(" + d.labelX + "," + d.labelY + ") rotate(90)";
+                }
+            })
+            .style({
+                opacity: 0.5
+            });
+
+        paths.enter()
+            .append('path')
+            .attr({
+                d: (d, i) => {
+                    d.coords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
+                    return _self.linkBuilder(d);
+                },
+                class: (d, i) => {
+                    let source = nodes[d.source],
+                        target = nodes[d.target],
+                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
+
+                    d.isValid = source.valid && target.valid;
+
+                    if (printDiagnoseInfo) {
+                        console.groupCollapsed("Source: node-" + d.source + "\t" + source.stateId, "Target: node-" + d.target + "\t" + target.stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
+                        if (isValid) {
+                            console.log("Both valid.");
+                        } else {
+                            console.log("Source " + (source.valid ? "valid." : "invalid."));
+                            console.log("Target " + (target.valid ? "valid." : "invalid."));
+                        }
+                        console.log((isFollowingNetworkRule ? "Following " : "Violating ") + "rule.");
+                        console.groupEnd();
+                    }
+
+                    if (d.isValid) {
+                        _self.createGradient(source, target);
+                        if (isFollowingNetworkRule) {
+                            return "diffusion-strokes follow-the-rule";
+                        } else {
+                            return "diffusion-strokes violate-the-rule";
+                        }
+                    } else {
+                        return "diffusion-strokes invalid-arc";
+                    }
+                },
+                source: (d) => d.source,
+                target: (d) => d.target,
+                id: (d, i) => _attr.getPrefix() + "diffusion-path-" + i
+            })
+            .style({
+                fill: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
+                stroke: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
+                opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.source]) ?
+                    0.25 :
+                    0.6)
+            });
+
+        guids.enter()
+            .append('path')
+            .attr({
+                d: (d, i) => {
+                    d.gcoords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
+                    return _self.guidanceBuilder(d);
+                },
+                class: (d, i) => {
+                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
+                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
+
+                    if (isValid) {
+                        if (isFollowingNetworkRule) {
+                            return "diffusion-guidances follow-the-rule";
+                        } else {
+                            return "diffusion-guidances violate-the-rule";
+                        }
+                    } else {
+                        return "diffusion-guidances invalid-arc";
+                    }
+                }
+            });
+
+        upBars.transition()
+            .duration(gs.d.config.transitionTime)
+            .call(_self.barTween, _attr, "up");
+        _self.createBars(upBars, "up");
+
+        bottomBars.transition()
+            .duration(gs.d.config.transitionTime)
+            .call(_self.barTween, _attr, "bottom");
+        _self.createBars(bottomBars, "bottom");
+
+        return this;
+    },
+    getPathColor(source, target) {
+        if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
+            return css_variables["--color-default-black"];
+        } else {
+            let gradientIdentifier = this._attr.getPrefix() + "gradient-" + source.stateId + target.stateId;
+            return "url(#" + gradientIdentifier + ")";
+        }
+    },
+    isNodeDefault(node) {
+        return node.valid && node.adoptedYear === 9999;
+    },
+    createBars(bars, section) {
+        let _attr = this._attr,
+            stat = this.model.get("stat"),
+            cstat = this.model.get("cstat"),
+            isSortingByCentrality = (_attr.c.get('metadata') === "centrality"),
+            actualStat = isSortingByCentrality ? cstat : stat,
+            ySeq = (isSortingByCentrality ?
+                _attr.c.get('centrality') :
+                conf.pipe.metaToId[_attr.c.get('metadata')]),
+            rectScale = d3.scale.linear()
+            .domain([actualStat.min[ySeq], actualStat.max[ySeq]])
+            .range(gs.d.size.rect);
+
+        bars.enter()
+            .append('rect')
+            .attr({
+                width: (d) => {
+                    d.meta = (isSortingByCentrality ?
+                        d.centralities[ySeq] :
+                        d.metadata[ySeq]);
+                    d.width = typeof d.meta === "undefined" ?
+                        gs.d.size.rect[0] :
+                        rectScale(d.meta);
+                    return d.width;
+                },
+                height: gs.d.size.rectHeight,
+                x: (d) => {
+                    d.pad = typeof d.meta === "undefined" ?
+                        gs.d.size.rect[0] :
+                        rectScale(d.meta);
+                    return gs.d.size.barWidth - d.pad;
+                },
+                y: (d) => {
+                    if (section === "up") {
+                        d.upY = _attr.yTopScale(d.metadataOrder);
+                        return d.upY;
+                    } else {
+                        d.bottomY = _attr.yBottomScale(d.metadataOrder);
+                        return d.bottomY;
+                    }
+                },
+                class: (d, i) => "bar-" + i
+            })
+            .style({
+                fill: (d) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                    } else {
+                        if (this.isNodeDefault(d)) {
+                            return css_variables["--color-unadopted"];
+                        } else {
+                            return d.valid ?
+                                _attr._colorMap[d.adoptedYear] :
+                                css_variables["--color-unadopted"];
+                        }
+                    }
+                }
+            });
+    },
+    barTween(transition, _attr, section) {
+        transition.attrTween("width", (d) => {
+                let stat = _attr.stat,
+                    cstat = _attr.cstat,
+                    isSortingByCentrality = (_attr.c.get("metadata") === "centrality"),
+                    actualStat = isSortingByCentrality ? cstat : stat,
+                    ySeq = (isSortingByCentrality ?
+                        _attr.c.get("centrality") :
+                        conf.pipe.metaToId[_attr.c.get("metadata")]);
+
+                d.meta = (isSortingByCentrality ?
+                    d.centralities[ySeq] :
+                    d.metadata[ySeq]);
+
+                d.rectScale = d3.scale.linear()
+                    .domain([actualStat.min[ySeq], actualStat.max[ySeq]])
+                    .range(gs.d.size.rect);
+                let newWidth = typeof d.meta === "undefined" ?
+                    gs.d.size.rect[0] :
+                    d.rectScale(d.meta),
+                    interpolateWidth = d3.interpolate(d.width, newWidth);
+                return function(t) {
+                    d.width = interpolateWidth(t);
+                    return d.width;
+                }
+            })
+            .attrTween("x", (d) => {
+                let newPad = (typeof d.meta === "undefined" ?
+                        gs.d.size.rect[0] :
+                        d.rectScale(d.meta)),
+                    interpolatePad = d3.interpolate(d.pad, newPad);
+
+                return function(t) {
+                    d.pad = interpolatePad(t);
+                    return gs.d.size.barWidth - d.pad;
+                }
+            })
+            .attrTween("y", (d) => {
+                let interpolateY;
+                if (section === "up") {
+                    interpolateY = d3.interpolate(d.upY, _attr.yTopScale(d.metadataOrder));
+                    return function(t) {
+                        d.upY = interpolateY(t);
+                        return d.upY;
+                    }
+                } else {
+                    interpolateY = d3.interpolate(d.bottomY, _attr.yBottomScale(d.metadataOrder));
+                    return function(t) {
+                        d.bottomY = interpolateY(t);
+                        return d.bottomY;
+                    }
+                }
+            });
+    },
+    createGradient(source, target) {
+        let _self = this,
+            isFollowingNetworkRule = +source.adoptedYear <= +target.adoptedYear,
+            x = source.sequenceOrder < target.sequenceOrder,
+            y = (isFollowingNetworkRule ?
+                source.metadataOrder < target.metadataOrder :
+                source.metadataOrder > target.metadataOrder),
+            x1 = x ? "0" : "1",
+            x2 = x ? "1" : "0",
+            y1 = y ? "0" : "1",
+            y2 = y ? "1" : "0",
+            prefix = _self._attr.getPrefix();
+
+        let grad = this._attr.defs.append("linearGradient")
+            .attr({
+                id: prefix + "gradient-".concat(source.stateId, target.stateId),
+                x1: x1,
+                x2: x2,
+                y1: y1,
+                y2: y2,
+                spreadMethod: "pad"
+            });
+
+        grad.append("stop")
+            .attr("offset", "5%")
+            .attr("stop-color", _self._attr._colorMap[source.adoptedYear])
+            .attr("stop-opacity", 1);
+
+        grad.append("stop")
+            .attr("offset", "95%")
+            .attr("stop-color", _self._attr._colorMap[target.adoptedYear])
+            .attr("stop-opacity", 1);
+
+        return grad;
+    },
+    guidanceBuilder(d) {
+        let _attr = this._attr,
+            xScale = _attr.xScale,
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale,
+            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
+            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale,
+            c = d.gcoords;
+
+        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
+
+        return interpolate([
+            [xScale(c.x1), yScale(c.y1)],
+            [xScale(c.xMid), yScale(c.ym1)],
+            [xScale(c.x2), yScale(c.y2)]
+        ]);
+    },
+    linkBuilder(d) {
+        let _attr = this._attr,
+            xScale = _attr.xScale,
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale,
+            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
+            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale,
+            c = d.coords;
+
+        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
+
+        return interpolate([
+            [xScale(c.x1), yScale(c.y1)],
+            [xScale(c.xMid), yScale(c.ym1)],
+            [xScale(c.x2), yScale(c.y2)],
+            [xScale(c.xMid), yScale(c.ym2)],
+            [xScale(c.x1), yScale(c.y1)]
+        ]);
+    },
+    processCoordinates(nodes, cstat, c, d, i) {
+        const divider = 0.3,
+            yPartition1 = 0.25,
+            yPartition2 = 0.75,
+            centralityType = c.get("centrality"),
+            thicknessParam = nodes[d.source].centralities[centralityType],
+            standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]),
+            ySeq = conf.pipe.metaToId[c.get("metadata")],
+            xSeq = conf.pipe.metaToId[c.get("sequence")];
+
+        let x1 = nodes[d.source].sequenceOrder,
+            x2 = nodes[d.target].sequenceOrder,
+            y1 = nodes[d.source].metadataOrder,
+            y2 = nodes[d.target].metadataOrder,
+            xMid = x1 + (x2 - x1) * divider,
+            // tan = (y2 - y1) / (x2 - x1),
+            // fullShift = (x2 - x1) * divider * tan,
+            // ym1 = y1 + yPartition1 * fullShift,
+            // ym2 = ym1 + standardizedThickness * (yPartition2 - yPartition1) * fullShift;
+            unitGap = gs.d.size.labelHeight / 150,
+            ym1 = y1,
+            ym2 = ym1 + (y1 > y2 ? -1 : 1) * unitGap * standardizedThickness;
+
+        return {
+            x1: x1,
+            x2: x2,
+            xMid: xMid,
+            y1: y1,
+            y2: y2,
+            ym1: ym1,
+            ym2: ym2
+        }
+    },
+    lightUpBars(validityCategory, nodeId) {
+        switch (validityCategory) {
+            case "follow-the-rule":
+                $(this._attr.upBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
+                break;
+            case "violate-the-rule":
+                $(this._attr.bottomBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
+                break;
+            default:
+                console.log("Congrats on seeing a bug!");
+                break;
+        }
+    },
+    bindTriggers() {
+        let _self = this,
+            _attr = this._attr;
+
+        pathOverHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                pathId = _curr.attr("id"),
+                className = _curr.attr("class"),
+                classNameList = className.split(' '),
+                isStroke = (classNameList[0] === 'diffusion-strokes'),
+                isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+            if (isStroke && isValidPath) {
+                // why does it firing twice ???????
+                // console.log(e);
+                // console.log(e.type);
+                // console.log(className);
+                let validityCategory = classNameList[1];
+
+                [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                    // add ref lines
+                    _self.drawRefLines(+nodeId, validityCategory);
+
+                    // light up bars
+                    _self.lightUpBars(validityCategory, nodeId);
+
+                    // light up circles
+                    $("#diffusion-node-" + nodeId).addClass("hovered-item");
+
+                    // move mouseovered nodes to front
+                    // d3.select("#diffusion-node-" + nodeId).moveToFront();
+                });
+
+                // light up mouseovered path
+                _curr.addClass("hovered-item");
+
+                // move mouseovered to front
+                // d3.select("#" + pathId).moveToFront();
+
+            }
+        }
+        pathOutHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                className = _curr.attr("class"),
+                classNameList = className.split(' '),
+                isStroke = (classNameList[0] === 'diffusion-strokes'),
+                isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+            if (isStroke && isValidPath) {
+                let _curr = $(e.target);
+
+                // remove ref lines
+                $("#diffusion-ref-line-group").empty();
+
+                [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+
+                    // recover lighted bars
+                    $(".bar-" + nodeId).removeClass("hovered-item");
+
+                    // recover up circles
+                    $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+                });
+
+                // recover lighted path
+                _curr.removeClass("hovered-item");
+
+            }
+        }
+
+        circleOverHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                className = _curr.attr("class"),
+                isCircle = (className === "diffusion-circles");
+            if (isCircle) {
+                let nodeId = _curr.attr("nodeId"),
+                    _pathG = $("#diffusion-path-group"),
+                    _asSource = _pathG.find("path[source=" + nodeId + "]"),
+                    _asTarget = _pathG.find("path[target=" + nodeId + "]");
+
+                let nodeMap = {},
+                    targetMap = {};
+                nodeMap[nodeId] = true;
+
+                _asSource.each((i) => {
+                    let _theStroke = $(_asSource[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("target")] = true;
+                        _theStroke.addClass("hovered-item");
+
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            let validityCategory = _theStroke.attr("class").split(' ')[1];
+                            // add ref lines
+                            _self.drawRefLines(+nodeId, validityCategory);
+                            // light up bars
+                            _self.lightUpBars(validityCategory, nodeId);
+                        });
+                    }
+                });
+
+                _asTarget.each((i) => {
+                    let _theStroke = $(_asTarget[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("source")] = true;
+                        _theStroke.addClass("hovered-item");
+
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            let validityCategory = _theStroke.attr("class").split(' ')[1];
+                            // add ref lines
+                            _self.drawRefLines(+nodeId, validityCategory);
+                            // light up bars
+                            _self.lightUpBars(validityCategory, nodeId);
+                        });
+                    }
+                });
+
+                Object.keys(nodeMap).forEach((nodeId) => {
+                    $("#diffusion-node-" + nodeId).addClass("hovered-item");
+                });
+            }
+        };
+        circleOutHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target),
+                className = _curr.attr("class"),
+                classNameList = className.split(' '),
+                isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
+
+            if (isCircle) {
+                let nodeId = _curr.attr("nodeId"),
+                    _pathG = $("#diffusion-path-group"),
+                    _asSource = _pathG.find("path[source=" + nodeId + "]"),
+                    _asTarget = _pathG.find("path[target=" + nodeId + "]");
+
+                let nodeMap = {},
+                    targetMap = {};
+                nodeMap[nodeId] = true;
+
+                _asSource.each((i) => {
+                    let _theStroke = $(_asSource[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("target")] = true;
+                        _theStroke.removeClass("hovered-item");
+                        // recover lighted bars
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            $(".bar-" + nodeId).removeClass("hovered-item");
+                        });
+                    }
+                });
+
+                _asTarget.each((i) => {
+                    let _theStroke = $(_asTarget[i]);
+                    if (!_theStroke.hasClass("invalid-arc")) {
+                        nodeMap[_theStroke.attr("source")] = true;
+                        _theStroke.removeClass("hovered-item");
+                        // recover lighted bars
+                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                            $(".bar-" + nodeId).removeClass("hovered-item");
+                        });
+                    }
+                });
+
+                // remove ref lines
+                $("#diffusion-ref-line-group").empty();
+
+                Object.keys(nodeMap).forEach((nodeId) => {
+                    $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+                });
+            }
+        };
+
+        barOverHandler = function(notATypo) {
+
+        }
+        barOutHandler = function(aTypo) {
+
+        }
+
+        this.el.removeEventListener('mouseover', pathOverHandler, false);
+        this.el.removeEventListener('mouseout', pathOutHandler, false);
+        this.el.removeEventListener('mouseover', circleOverHandler, false);
+        this.el.removeEventListener('mouseout', circleOutHandler, false);
+
+        // mouseover events
+        this.el.addEventListener('mouseover', pathOverHandler, false);
+        this.el.addEventListener('mouseover', circleOverHandler, false);
+
+        // mouseout events
+        this.el.addEventListener('mouseout', pathOutHandler, false);
+        this.el.addEventListener('mouseout', circleOutHandler, false);
+
+    },
+    drawRefLines(nodeId, validityCategory) {
+
+        let _self = this,
+            _attr = this._attr,
+            nodes = _attr.nodes,
+            xScale = _attr.xScale,
+            yTopScale = _attr.yTopScale,
+            yBottomScale = _attr.yBottomScale,
+            refLineG = _attr.refLineG;
+
+        let y = (validityCategory.includes("follow-the-rule") ?
+            yTopScale(nodes[nodeId].metadataOrder) :
+            yBottomScale(nodes[nodeId].metadataOrder));
+
+        refLineG.append('line')
+            .attr({
+                x1: xScale(nodes[nodeId].sequenceOrder),
+                y1: gs.d.size.pathHeight / 2,
+                x2: xScale(nodes[nodeId].sequenceOrder),
+                y2: y,
+                class: "reference-line vertical"
+            });
+
+        refLineG.append('line')
+            .attr({
+                x1: xScale(nodes[nodeId].sequenceOrder),
+                y1: y,
+                x2: 0,
+                y2: y,
+                class: "reference-line horizontal"
+            });
+
+    },
+    isFollowingNetworkRule(d) {
+        let nodes = this._attr.nodes;
+        return +nodes[d.source].adoptedYear <= +nodes[d.target].adoptedYear;
+    },
+    standardized(curr, min, max) {
+        return (curr - min) / (max - min);
+    },
+    doInitSort() {
+        this.doSort("metadata");
+        this.doSort("sequence");
+    },
+    doSort(axis) {
+        let nodes = this._attr.nodes,
+            c = this._attr.c,
+            nodeMap = [],
+            identifier = axis + "Order",
+            isSortingByCentrality = c.get(axis) === "centrality";
+
+        nodes.forEach((node, i) => {
+            nodeMap.push($.extend({ index: i }, node));
+        });
+
+        if (axis === "metadata") {
+            let selectedAttrId = (isSortingByCentrality ?
+                c.get("centrality") :
+                conf.pipe.metaToId[c.get("metadata")]);
+            if (isSortingByCentrality) {
+                nodeMap.sort((a, b) => b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId]);
+            } else {
+                nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
+            }
+        } else {
+            let selectedAttr = c.get("sequence");
+            switch (selectedAttr) {
+                case "adoptionYear":
+                    nodeMap.sort((a, b) => {
+                        let diff = a.adoptedYear - b.adoptedYear;
+                        return (diff !== 0 ?
+                            diff :
+                            a.stateName.localeCompare(b.stateName));
+                    });
+                    break;
+                default:
+                    let selectedAttrId = c.get("centrality");
+                    nodeMap.sort((a, b) => {
+                        let diff = b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId];
+                        return (diff !== 0 ?
+                            diff :
+                            a.stateName.localeCompare(b.stateName));
+                    });
+                    break;
+            }
+        }
+
+        nodeMap.forEach((node, i) => {
+            nodes[node.index][identifier] = i;
+        });
+
+        return nodes;
+    }
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -909,5 +1838,6 @@ module.exports = {
     NetworkView: NetworkView,
     StatBarView: StatBarView,
     ArcView: ArcView,
+    DiffusionView: DiffusionView,
     PolicyOptionsView: PolicyOptionsView
 };

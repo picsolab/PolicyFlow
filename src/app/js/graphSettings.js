@@ -14,8 +14,8 @@ const GraphSettings = {
                 // modify .text-tip in style.css to adjust text style
         },
         size: {
-            width: 250,
-            height: 600
+            width: 230,
+            height: 630
         },
         multiplier: {
 
@@ -25,6 +25,40 @@ const GraphSettings = {
             yMaxTick: 10
         }
     },
+
+    // diffusion view settings
+    d: {
+        margin: {
+            top: 25,
+            left: 15,
+            bottom: 25,
+            right: 10
+        },
+        size: {
+            // width: 850,
+            // height: 600,
+            barWidth: 70,
+            barHeight: 650,
+            pathWidth: 700,
+            pathHeight: 650,
+            labelWidth: 30,
+            labelHeight: 650,
+            circleWidth: 700,
+            circleHeight: 100,
+            thickness: [5, 10],
+            circle: [3, 10],
+            rect: [0, 70], // barWidth
+            rectHeight: 2
+        },
+        multiplier: {
+            snapshot: 0.25
+        },
+        config: {
+            transitionTime: 1500
+        }
+
+    },
+
     // arc view settings
     a: {
         size: {

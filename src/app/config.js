@@ -4,15 +4,107 @@ const Config = {
             default: "Administrative Organzation"
         },
         policy: {
-            default: 'adcom'
-        }
+            // [prod]
+            default: 'unselected',
+            description: '---'
+                // [dev]
+                // default: 'adcom',
+                // description: 'Advertising Commissions'
+        },
+        yAttributeList: [
+            // the first element will be choosen as the default
+            // [prod]
+            {
+                id: "centrality",
+                domId: "y-option-centrality",
+                description: "Centrality"
+            },
+            // [dev]
+            {
+                id: "perCapitaIncome",
+                domId: "y-option-per-capita-income",
+                description: "Per Capita Income"
+            },
+            {
+                id: "minorityDiversity",
+                domId: "y-option-minority-diversity",
+                description: "Minority Diversity"
+            },
+            {
+                id: "legislativeProfessionalism",
+                domId: "y-option-citizen-ideology",
+                description: "Legislative Professionalism"
+            },
+            {
+                id: "citizenIdeology",
+                domId: "y-option-citizen-ideology",
+                description: "Citizen Ideology"
+            },
+            {
+                id: "totalPopulation",
+                domId: "y-option-total-population",
+                description: "Total Population"
+            },
+            {
+                id: "populationDensity",
+                domId: "y-option-population-density",
+                description: "Population Density"
+            }
+        ],
+        xAttributeList: [{
+                id: "centrality",
+                domId: "x-option-centrality",
+                description: "Centrality"
+                    // id: "perCapitaIncome",
+                    // domId: "x-option-per-capita-income",
+                    // description: "Per Capita Income"
+            },
+            {
+                id: "adoptionYear",
+                domId: "x-option-adoption-year",
+                description: "Adoption Year"
+            }
+        ],
+        centralityList: [{
+                id: "outdegree",
+                domId: "centrality-option-outdegree",
+                description: "Outdegree"
+            },
+            {
+                id: "pageRank",
+                domId: "centrality-option-page-rank",
+                description: "Page Rank"
+            },
+            {
+                id: "betweenness",
+                domId: "centrality-option-betweenness",
+                description: "Betweenness"
+            },
+            {
+                id: "hit",
+                domId: "centrality-option-hit",
+                description: "Hit"
+            },
+            {
+                id: "close",
+                domId: "centrality-option-close",
+                description: "Closeness"
+            }
+        ]
     },
     models: {
         conditions: {
             defaults: {
                 subject: 'Administrative Organzation',
-                policy: 'adcom',
-                metadata: 'perCapitaIncome'
+                // [dev]
+                // policy: 'adcom',
+                // metadata: 'perCapitaIncome',
+                // [prod]
+                policy: 'unselected',
+                metadata: 'centrality',
+                sequence: 'centrality',
+                centrality: 'outdegree',
+                cvalidity: true
             }
         }
     },
@@ -20,7 +112,8 @@ const Config = {
         root: '/api/',
         policyBase: 'policy/',
         networkBase: 'network/',
-        arcBase: 'arc/'
+        arcBase: 'arc/',
+        diffusionBase: 'diffusion/'
     },
     pipe: {
         subjectToId: {
@@ -44,9 +137,28 @@ const Config = {
             "year": 0,
             "metadata": 1,
             "name": 2
+        },
+        idToMeta: {
+            "ce": "centrality",
+            "md": "minorityDiversity",
+            "ci": "citizenIdeology",
+            "lp": "legislativeProfessionalism",
+            "pci": "perCapitaIncome",
+            "pd": "populationDensity",
+            "pop": "totalPopulation"
+        },
+        metaToId: {
+            "centrality": "ce",
+            "minorityDiversity": "md",
+            "citizenIdeology": "ci",
+            "legislativeProfessionalism": "lp",
+            "perCapitaIncome": "pci",
+            "populationDensity": "pd",
+            "totalPopulation": "pop"
         }
     },
     static: {
+        centrality: { "centralities": { "WA": { "close": 0.000517598, "betweenness": 28, "pageRank": 0.017280801, "hit": 3, "outdegree": 3 }, "DE": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017976146, "hit": 0, "outdegree": 0 }, "WI": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.03097851, "hit": 0, "outdegree": 0 }, "WV": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.02153404, "hit": 0, "outdegree": 0 }, "HI": { "close": 0, "betweenness": 0, "pageRank": 0, "hit": 0, "outdegree": 0 }, "FL": { "close": 0.000452694, "betweenness": 4, "pageRank": 0.017280801, "hit": 1, "outdegree": 1 }, "WY": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.02153404, "hit": 0, "outdegree": 0 }, "NH": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017976146, "hit": 0, "outdegree": 0 }, "NJ": { "close": 0.000462535, "betweenness": 4, "pageRank": 0.017976146, "hit": 2, "outdegree": 2 }, "NM": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "TX": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.045689926, "hit": 0, "outdegree": 0 }, "LA": { "close": 0.000452694, "betweenness": 6, "pageRank": 0.02153404, "hit": 1, "outdegree": 1 }, "NC": { "close": 0.000462321, "betweenness": 4, "pageRank": 0.017280801, "hit": 1, "outdegree": 1 }, "ND": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "NE": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "TN": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020595013, "hit": 0, "outdegree": 0 }, "NY": { "close": 0.007246377, "betweenness": 37, "pageRank": 0.017976146, "hit": 5, "outdegree": 5 }, "PA": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.018754731, "hit": 0, "outdegree": 0 }, "AK": { "close": 0, "betweenness": 0, "pageRank": 0, "hit": 0, "outdegree": 0 }, "NV": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "VA": { "close": 0.000452694, "betweenness": 6, "pageRank": 0.035283694, "hit": 1, "outdegree": 1 }, "CO": { "close": 0.000483325, "betweenness": 20, "pageRank": 0.020595013, "hit": 3, "outdegree": 3 }, "CA": { "close": 0.001375516, "betweenness": 89, "pageRank": 0.031640307, "hit": 17, "outdegree": 17 }, "AL": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020020345, "hit": 0, "outdegree": 0 }, "AR": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "VT": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017976146, "hit": 0, "outdegree": 0 }, "IL": { "close": 0.000483325, "betweenness": 12, "pageRank": 0.017280801, "hit": 3, "outdegree": 3 }, "GA": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "IN": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020595013, "hit": 0, "outdegree": 0 }, "IA": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017976146, "hit": 0, "outdegree": 0 }, "MA": { "close": 0.000452694, "betweenness": 2, "pageRank": 0.017976146, "hit": 1, "outdegree": 1 }, "AZ": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020020345, "hit": 0, "outdegree": 0 }, "ID": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.023338648, "hit": 0, "outdegree": 0 }, "CT": { "close": 0.006024096, "betweenness": 9, "pageRank": 0.018754731, "hit": 7, "outdegree": 7 }, "ME": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "MD": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "OK": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020020345, "hit": 0, "outdegree": 0 }, "OH": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "UT": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020595013, "hit": 0, "outdegree": 0 }, "MO": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "MN": { "close": 0.001402525, "betweenness": 58, "pageRank": 0.018754731, "hit": 1, "outdegree": 1 }, "MI": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.018754731, "hit": 0, "outdegree": 0 }, "RI": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.023338648, "hit": 0, "outdegree": 0 }, "KS": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "MT": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.017280801, "hit": 0, "outdegree": 0 }, "MS": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.030387467, "hit": 0, "outdegree": 0 }, "SC": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.03400272, "hit": 0, "outdegree": 0 }, "KY": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020020345, "hit": 0, "outdegree": 0 }, "OR": { "close": 0.000483559, "betweenness": 16, "pageRank": 0.020336746, "hit": 4, "outdegree": 4 }, "SD": { "close": 0.000443262, "betweenness": 0, "pageRank": 0.020595013, "hit": 0, "outdegree": 0 } }, "stat": { "max": { "close": 0.007246377, "betweenness": 89, "pageRank": 0.045689926, "hit": 17, "outdegree": 17 }, "min": { "close": 0, "betweenness": 0, "pageRank": 0, "hit": 0, "outdegree": 0 } } },
         edges: [{
                 "source": 36,
                 "target": 1

@@ -23,49 +23,37 @@
                     </li>
                 </ol>
                 <div class="select-wrapper" id="policy-select-wrapper">
-                    <select name="subject-select" id="policy-select" class="selectpicker show-tick" data-live-search="true" data-container="body" title="Loading..." disabled></select>
+                    <select name="policy-select" id="policy-select" class="selectpicker show-tick" data-live-search="true" data-container="body" title="Loading..." disabled></select>
                 </div>
             </div>
-            <div class="nav nav-sidebar" id="meta-wrapper">
+            <div class="nav nav-sidebar" id="centrality-wrapper">
                 <ol class="breadcrumb">
                     <li class="active">
-                        <h4>Metadata</h4>
+                        <h4>Centrality</h4>
                     </li>
                 </ol>
-                <div id="metadata-radio" class="select-wrapper btn-group-vertical" role="group" data-toggle="buttons" aria-label="...">
-                    <label class="btn btn-default active">
-                        <input type="radio" name="metadata" id="option-per-capita-income" value="perCapitaIncome" autocomplete="off" checked> Per Capita Income
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-minority-diversity" value="minorityDiversity" autocomplete="off"> Minority Diversity
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-legislative-professionalism" value="legislativeProfessionalism" autocomplete="off"> Legislative Professionalism
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-citizen-ideology" value="citizenIdeology" autocomplete="off"> Citizen Ideology
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-total-population" value="totalPopulation" autocomplete="off"> Total Population
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="metadata" id="option-population-density" value="populationDensity" autocomplete="off"> Population Density
-                    </label>
+                <div class="select-wrapper" id="centrality-select-wrapper">
+                    <select name="centrality-select" id="centrality-select" class="selectpicker show-tick" data-live-search="false" data-container="body" title="Loading..." disabled></select>
                 </div>
             </div>
-            <div class="nav nav-sidebar" id="view-selection-wrapper">
+            <div class="nav nav-sidebar" id="metadata-wrapper">
                 <ol class="breadcrumb">
                     <li class="active">
-                        <h4>View</h4>
+                        <h4>y-sequence</h4>
                     </li>
                 </ol>
-                <div id="view-selection-radio" class="select-wrapper btn-group-vertical" role="group" data-toggle="buttons" aria-label="...">
-                    <label class="btn btn-default active">
-                        <input type="radio" name="view-selection" id="option-arc-view" value="arc" autocomplete="off" checked> Arc view
-                    </label>
-                    <label class="btn btn-default">
-                        <input type="radio" name="view-selection" id="option-network-view" value="network" autocomplete="off"> Network view
-                    </label>
+                <div class="select-wrapper" id="metadata-select-wrapper">
+                    <select name="metadata-select" id="metadata-select" class="selectpicker show-tick" data-live-search="false" data-container="body" title="Loading..." disabled></select>
+                </div>
+            </div>
+            <div class="nav nav-sidebar" id="sequence-wrapper">
+                <ol class="breadcrumb">
+                    <li class="active">
+                        <h4>x-sequence</h4>
+                    </li>
+                </ol>
+                <div class="select-wrapper" id="sequence-select-wrapper">
+                    <select name="sequence-select" id="sequence-select" class="selectpicker show-tick" data-live-search="false" data-container="body" title="Loading..." disabled></select>
                 </div>
             </div>
 
@@ -74,21 +62,38 @@
             <div class="page-header">
                 <h2 id="page-header"></h2>
             </div>
-            <div id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
-                <select id="select-sort">
-                    <option value="year">by Adoption Year</option>
-                    <option value="metadata">by Metadata</option>
-                    <option value="name">by Name</option>
-                </select>
-                <svg id="svg-network-view" style="display:none"></svg>
-                <svg id="svg-arc-view">
-                    <g class="arcs"></g>
-                    <g class="circles"></g>
-                    <g class="labels"></g>
-                </svg>
+            <div id="diffusion-wrapper" class="col-sm-12 col-md-9 col-lg-9">
+                <svg id="svg-diffusion-view"></svg>
             </div>
             <div id="policy-cascade-wrapper" class="col-sm-12 col-md-3 col-lg-3">
-                <svg id="svg-cascade-view"></svg>
+                <p id="policy-unselected-notitication">
+                    Please select a policy.
+                </p>
+                <svg id="svg-cascade-view" style="display:none;"></svg>
+            </div>
+            <div id="snapshot-wrapper" class="col-sm-12 col-md-12 col-lg-12">
+            </div>
+            <div class="btn-group" role="group" aria-label="...">
+                <button id="add-snapshot" type="button" class="btn btn-default">add</button>
+                <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
+            </div>
+
+            <div id="static-views-wrapper" class="col-sm-12 col-md-12 col-lg-12">
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#policy-network-wrapper" aria-controls="policy-network-wrapper" role="tab" data-toggle="tab">Spatial</a></li>
+                    <li role="presentation"><a href="#another-network-wrapper" aria-controls="another-network-wrapper" role="tab" data-toggle="tab">Network</a></li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane fade in active" id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
+                        <svg id="svg-network-view"></svg>
+                    </div>
+                    <div role="tabpanel" class="tab-pane fade" id="another-network-wrapper">
+                        <p>a place holder</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

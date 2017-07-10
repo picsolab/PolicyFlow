@@ -33,6 +33,9 @@ app/_config.py
 # dependencies
 /node_modules
 
+# data files
+rplayground/*.json
+
 # IDEs and editors
 /.idea
 .project
