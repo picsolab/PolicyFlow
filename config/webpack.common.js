@@ -43,7 +43,8 @@ module.exports = {
             _: 'lodash',
             d3: 'd3',
             Backbone: 'backbone',
-            d3tip: 'd3-tip'
+            d3tip: 'd3-tip',
+            topojson: 'topojson'
         })
 
     ]

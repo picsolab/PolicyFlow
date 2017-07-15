@@ -62,52 +62,49 @@
     </nav>
 
     <div class="container-fluid" id="content-wrapper">
-        <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
-                <div class="jumbotron" id="policy-trend-wrapper">
-                    <p>a place holder</p>
-                </div>
-                <div id="static-views-wrapper" class="col-sm-12 col-md-12 col-lg-12">
-                    <!-- Nav tabs -->
-                    <ul class="nav nav-tabs" role="tablist">
-                        <li role="presentation" class="active"><a href="#policy-network-wrapper" aria-controls="policy-network-wrapper" role="tab" data-toggle="tab">Spatial</a></li>
-                        <li role="presentation"><a href="#another-network-wrapper" aria-controls="another-network-wrapper" role="tab" data-toggle="tab">Network</a></li>
-                    </ul>
-
-                    <!-- Tab panes -->
-                    <div class="tab-content">
-                        <div role="tabpanel" class="tab-pane fade in active" id="policy-network-wrapper" class="col-sm-12 col-md-9 col-lg-9">
-                            <svg id="svg-network-view"></svg>
-                        </div>
-                        <div role="tabpanel" class="tab-pane fade" id="another-network-wrapper">
-                            <div class="jumbotron">
-                                <p>a place holder</p>
-                            </div>
-                        </div>
-                    </div>
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 main row">
+            <div class="page-header">
+                <h3 id="page-header"></h3>
+            </div>
+            <!-- <div id="static-views-wrapper" class="col-sm-12 col-md-12 col-lg-12"> -->
+            <div id="policy-geo-wrapper" class="col-sm-12 col-md-7 col-lg-7">
+                <svg id="svg-geo-view"></svg>
+                <div id="policy-geo-controller-wrapper" class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-default active">
+                        <input type="radio" name="policy-geo-controller-options" id="geo-option-state" value="state" autocomplete="off" checked> State-wise
+                    </label>
+                    <label class="btn btn-default">
+                        <input type="radio" name="policy-geo-controller-options" id="geo-option-region" value="region" autocomplete="off"> Regional
+                    </label>
                 </div>
             </div>
-            <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12 main row">
-                <div class="page-header">
-                    <h3 id="page-header"></h3>
+            <div id="policy-network-wrapper" class="col-sm-12 col-md-5 col-lg-5">
+                <div class="jumbotron">
+                    <p>a place holder for network view.</p>
                 </div>
-                <div id="diffusion-wrapper" class="col-lg-9 col-md-9 col-sm-12 col-xs-12">
-                    <svg id="svg-diffusion-view"></svg>
-                </div>
-                <div id="policy-cascade-wrapper" class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
-                    <div id="policy-unselected-notitication" class="jumbotron">
-                        <p>
-                            Please select a policy.
-                        </p>
-                    </div>
-                    <svg id="svg-cascade-view" style="display:none;"></svg>
-                </div>
-                <div id="snapshot-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                </div>
+            </div>
+            <!-- </div> -->
+
+            <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 jumbotron">
+                <p>a place holder for policy trend view.</p>
+            </div>
+
+            <div id="diffusion-wrapper" class="col-lg-9 col-md-9 col-sm-12 col-xs-12">
+                <svg id="svg-diffusion-view"></svg>
                 <div class="btn-group" role="group" aria-label="...">
                     <button id="add-snapshot" type="button" class="btn btn-default">add</button>
                     <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
                 </div>
+            </div>
+            <div id="policy-cascade-wrapper" class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+                <div id="policy-unselected-notitication" class="jumbotron">
+                    <p>
+                        Please select a policy.
+                    </p>
+                </div>
+                <svg id="svg-cascade-view" style="display:none;"></svg>
+            </div>
+            <div id="snapshot-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
             </div>
         </div>
     </div>

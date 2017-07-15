@@ -59,6 +59,26 @@ const GraphSettings = {
 
     },
 
+    // geo view setings
+    g: {
+        margin: {
+            top: 20,
+            left: 10,
+            bottom: 10,
+            right: 10
+        },
+        size: {
+            mapHeight: 580,
+            mapWidth: 940
+        },
+        multiplier: {
+
+        },
+        config: {
+
+        }
+    },
+
     // arc view settings
     a: {
         size: {

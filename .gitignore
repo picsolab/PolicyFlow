@@ -35,6 +35,7 @@ app/_config.py
 
 # data files
 data/external
+data/out/*
 
 # database backup
 data/backup

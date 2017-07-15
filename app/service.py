@@ -29,6 +29,12 @@ class Service(object):
             print (response.get_data(), fn)
         return response
 
+    @staticmethod
+    @app.route("/api/success/", methods=["GET"])
+    def get_success():
+        """get all subject from database."""
+        return json.dumps({})
+
 
 class PageService(Service):
     """page service handling page related requests"""
@@ -36,7 +42,7 @@ class PageService(Service):
         pass
 
     @staticmethod
-    @app.route("/api/subjects", methods=["GET"])
+    @app.route("/api/subjects/", methods=["GET"])
     def get_subject_list():
         """get all subject from database."""
         return json.dumps(page_dao.get_all_policies())
@@ -102,6 +108,18 @@ class NetworkService(Service):
         """get_specified_diffusion_by policy_id"""
         data_list, stat = diffusion_dao.get_parameterized_diffusion(policy_id)
         return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
+
+    @staticmethod
+    @app.route("/api/geo/<policy_id>")
+    def get_specified_geo_by(policy_id):
+        """get_specified_diffusion_by policy_id"""
+        data_list, stat = diffusion_dao.get_parameterized_diffusion(policy_id)
+        data_object = {}
+        for item in data_list:
+            data_object[item["stateId"]] = item
+        return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
+
+
 
 class ServiceUtils():
     """service utils"""

@@ -7,12 +7,23 @@
     /*--color-trans-in: #FF6D00;
     --color-trans-out: #FFD180;*/
     /*green*/
-    /*--color-trans-in: #004D40;
-    --color-trans-out: #E0F2F1;*/
+    --color-value-in: #004D40;
+    --color-value-out: #E0F2F1;
     --color-pop-up: #666;
     --color-follow-the-rule: gray;
     --color-violate-the-rule: red;
     --color-unadopted: lightgray;
     --color-default-black: #311B92;
-    --color-hovered: #cc9900;
+    --color-hovered: #ffa700;
+    --color-map-border: white;
+    /* --color-map-border: #777; */
+    --color-ag: #008744;
+    --color-ab: #0057e7;
+    --color-ar: #d62d20;
+    --color-ao: #ffa700;
+    --color-ba: #c51162;
+    --color-bb: #6200ea;
+    --color-bc: #304ffe;
+    --color-bd: #00bfa5;
+    --color-be: #00b8d4;
 }

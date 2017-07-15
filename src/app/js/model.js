@@ -6,6 +6,21 @@ let Conditions = Backbone.Model.extend({
     setupCentralityValidity() {
         let validity = this.get("metadata") === "centrality" || this.get("sequence") === "centrality";
         this.set("cvalidity", validity);
+    },
+    toggleTractList(tract) {
+        let theListName = this.getTractListName(),
+            theList = this.getTractList();
+        if (_.indexOf(theList, tract) !== -1) {
+            this.set(theListName, _.filter(theList, (o) => o !== tract));
+        } else {
+            this.set(theListName, _.concat(theList, tract));
+        }
+    },
+    getTractList() {
+        return this.get(this.getTractListName());
+    },
+    getTractListName() {
+        return this.get("geoBase") + "List";
     }
 });
 
@@ -28,6 +43,33 @@ let PolicyModel = Backbone.Model.extend({
                 _self.set(data);
             });
         }
+    }
+});
+
+let GeoModel = Backbone.Model.extend({
+    initialize() {
+        this.topoUrl = './static/data/states.topo.json';
+        this.urlRoot = conf.api.root + conf.api.geoBase;
+        this.url = this.urlRoot + conf.models.conditions.defaults.policy;
+    },
+    fetchTopo() {
+        let _self = this;
+        return $.getJSON(_self.topoUrl);
+    },
+    fetchValues(conditions) {
+        let _self = this;
+        this.url = this.urlRoot + conditions.get("policy");
+        return $.getJSON(_self.url);
+    },
+    populate(conditions) {
+        let _self = this;
+        return $.when(_self.fetchTopo(), _self.fetchValues(conditions)).done((topo, geo) => {
+            _self.set({
+                "topo": topo[0],
+                "nodes": geo[0].nodes,
+                "stat": geo[0].stat
+            });
+        })
     }
 });
 
@@ -109,6 +151,7 @@ module.exports = {
     Conditions: Conditions,
     PolicyModel: PolicyModel,
     PolicyOptionsModel: PolicyOptionsModel,
+    GeoModel: GeoModel,
     NetworkModel: NetworkModel,
     ArcModel: ArcModel,
     DiffusionModel: DiffusionModel,

@@ -59,8 +59,7 @@
 /*policytrend*/
 
 #policy-trend-wrapper {
-    height: 300px;
-    background: lightgray;
+    height: 60px;
 }
 
 
@@ -84,6 +83,7 @@
 .hovered-item {
     fill: var(--color-hovered) !important;
     stroke: var(--color-hovered) !important;
+    opacity: 0.8 !important;
 }
 
 .follow-the-rule {
@@ -163,19 +163,25 @@
 }
 
 
-/*policy network panel*/
+/*policy geo panel*/
 
-circle:hover {
-    fill: var(--color-hovered);
+#svg-geo-view {
+    stroke-linejoin: "round";
+    stroke-linecap: "round";
 }
 
-.d3-tip-network {
-    line-height: 1;
-    padding: 12px;
-    background: #2F4F4F;
-    color: #fff;
-    border-radius: 1px;
-    z-index: 1001;
+.tract:hover {
+    cursor: pointer;
+}
+
+.tract-border {
+    fill: none;
+    stroke: var(--color-map-border);
+    pointer-events: none;
+}
+
+#region-tract-group {
+    pointer-events: visible;
 }
 
 

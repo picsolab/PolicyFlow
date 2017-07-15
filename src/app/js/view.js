@@ -4,7 +4,6 @@ let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
 const eedges = conf.static.edges,
     printDiagnoseInfo = false;
-
 let colorList = [],
     colorMap = {};
 let PolicyView = Backbone.View.extend({
@@ -216,691 +215,262 @@ let PolicyView = Backbone.View.extend({
     }
 });
 
-let NetworkView = Backbone.View.extend({
-    el: '#svg-network-view',
-    render() {
-        var _self = this;
+let GeoView = Backbone.View.extend({
+    el: '#svg-geo-view',
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            stateTopo = this.model.get("topo"),
+            nodes = _self.model.get("nodes"),
+            stat = _self.model.get("stat"),
+            projection = d3.geo.albersUsa().scale([1150]),
+            pathBuilder = d3.geo.path().projection(projection),
+            regionDef = conf.static.regions,
+            stateFeatures = topojson.feature(stateTopo, stateTopo.objects.states).features,
+            stateBorder = topojson.mesh(stateTopo, stateTopo.objects.states, (a, b) => a !== b),
+            regionTopo = {},
+            regionFeatures = [],
+            regionGeos = [],
+            regionBorder = {},
+            regionColorMap = {
+                "northeast": css_variables["--color-ba"],
+                "midwest": css_variables["--color-be"],
+                "south": css_variables["--color-bc"],
+                "west": css_variables["--color-bd"]
+            };
+
+        _.forEach(regionDef, (theRegion, key) => {
+            let theGeo = topojson.merge(stateTopo, stateTopo.objects.states.geometries.filter((d) => d3.set(theRegion).has(d.properties.id)));
+            regionGeos.push(theGeo);
+            regionFeatures.push({
+                type: "Feature",
+                geometry: theGeo,
+                id: key
+            });
+        });
+        regionTopo = topojson.topology(regionGeos);
+        regionBorder = topojson.mesh(regionTopo);
 
         $(_self.el).empty();
 
-        var tip = d3tip()
-            .attr('class', 'd3-tip-network')
-            .offset([-10, 0])
-            .html(function(d) {
-                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>" + d.metaName + ": <span style='color:white'>" + d.metadata + "</span></p ><p>Adopted year: <span style='color:white'>" + (d.adoptedYear < 9999 ? d.adoptedYear : "Haven't adopted") + "</span></p >";
-            });
+        let _width = gs.g.margin.left + gs.g.margin.right + gs.g.size.mapWidth,
+            _height = gs.g.margin.top + gs.g.margin.bottom + gs.g.size.mapHeight;
 
-        var force = d3.layout.force()
-            .charge(-100)
-            .gravity(0)
-            .size([1500, 600]);
+        // dom element and groups
+        let svg = _attr.svg = d3.select(_self.el)
+            .attr({
+                'preserveAspectRatio': 'xMidYMid meet',
+                'viewBox': ("0 0 " + _width + " " + _height + ""),
+                'class': 'svg-content-responsive'
+            }),
+            stateTractG = svg.append('g').attr({
+                'id': 'state-tract-group',
+                'class': 'tract-group',
+                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            stateBorderG = svg.append('g').attr({
+                'id': 'state-border-group',
+                'class': 'border-group',
+                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            regionTractG = svg.append('g').attr({
+                'id': 'region-tract-group',
+                'class': 'tract-group',
+                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            regionBorderG = svg.append('g').attr({
+                'id': 'region-border-group',
+                'class': 'border-group',
+                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            defs = svg.append('defs');
 
-        var svg = d3.select(_self.el)
-            .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("-250 -250 2200 1200"));
-
-        _self.udpate(svg, tip, force);
-    },
-    udpate(svg, tip, force) {
-        /**
-         * NOTES: modifications made:
-         * 1. tip class name: d3-tip-network;
-         * 2. color and opacity: locate by search:  .attr("fill", (d) => {
-         * 3. move gradient definition to seperate function named defineGradient
-         * 4. remove duplicated svg definition
-         */
-        var _self = this,
-            nnodes = _self.model.get("detail");
-
-        svg.call(tip);
-
-        nnodes.forEach(function(d) {
-            d.state_id = d.stateId;
-            d.x = +d.longtitude;
-            d.x = 15 * (180 + d.x) - 600;
-            d.y = +d.latitude;
-            d.y = 20 * (80 - d.y) - 400;
-            d.gravity_x = d.x * 1.5;
-            d.gravity_y = d.y;
-            if (d.normalizedMetadata < 0) {
-                d.r = 20;
-            } else d.r = d.normalizedMetadata * 100;
+        $.extend(_attr, {
+            stateTractG: stateTractG,
+            stateBorderG: stateBorderG,
+            regionTractG: regionTractG,
+            regionBorderG: regionBorderG,
+            defs: defs,
+            regionColorMap: regionColorMap,
+            c: conditions,
+            nodes: nodes,
+            stat: stat
         });
 
-        nnodes = nnodes.slice(0, 50)
+        let states = _attr.stateTractG.selectAll("path")
+            .data(stateFeatures),
+            regions = regionTractG.selectAll("path")
+            .data(regionFeatures);
 
-        force
-            .nodes(nnodes)
-            //.links(eedges)
-            .start()
-            .on("end", function(e) {
-                var d3line = d3.svg.line()
-                    .x(function(d) {
-                        return d.x;
-                    })
-                    .y(function(d) {
-                        return d.y;
-                    });
-                var fbundling = d3.ForceEdgeBundling().nodes(nnodes).edges(eedges);
-                var results = fbundling();
-
-                var defs = svg.append("defs");
-                _self.defineGradient(defs);
-
-                var texts = $("#svg-network-view text");
-                // console.log("texts", texts[3].innerHTML);
-
-                for (var i = 0; i < results.length; i++) {
-                    // console.log("results", results[i]);
-
-                    svg.append("svg:defs").selectAll("marker")
-                        .data(["end"]) // Different link/path types can be defined here
-                        .enter().append("svg:marker") // This section adds in the arrows
-                        .attr("id", String)
-                        .attr("viewBox", "0 -5 12 12")
-                        .attr("refX", 0)
-                        .attr("refY", 0)
-                        .attr("markerWidth", 4)
-                        .attr("markerHeight", 3)
-                        .style("fill", "red")
-                        .style('opacity', 0.3)
-                        .attr("orient", "auto")
-                        .append("svg:path")
-                        .attr("d", "M0,-5L10,0L0,5");
-
-                    if (results[i][0].adoptedYear != 9999 && results[i][results[i].length - 1].adoptedYear != 9999) {
-                        svg.append("path")
-                            .attr("d", d3line(results[i]))
-                            .attr("id", String(i))
-                            .style("stroke-width", 10)
-                            .attr('stroke-linecap', 'round')
-                            .style("stroke", function(d) {
-                                if (results[i][0].adoptedYear > results[i][results[i].length - 1].adoptedYear) {
-                                    return "black";
-                                } else if (results[i][0].x < results[i][results[i].length - 1].x) {
-                                    return "url(#gradient_1)";
-                                } else if (results[i][0].x >= results[i][results[i].length - 1].x) {
-                                    return "url(#gradient_2)";
-                                }
-                            })
-                            //.style("stroke", function(d) {if (results[i][0].adoptedYear < results[i][results[i].length-1].adoptedYear == -1)  {return "grey";} })
-                            .style("fill", "none")
-                            .style('stroke-opacity', 0.3)
-                            .attr("marker-end", "url(#end)")
-
-                        .on("mouseover", function() {
-                            var temp = parseInt(d3.select(this).attr("id"));
-                            var temp_len = results[temp].length;
-
-                            $(_self.el).find("text").css("fill", "Silver");
-                            d3.select(this).style('stroke-opacity', 1).style("stroke-width", 15);
-                            d3.selectAll("marker").style("opacity", 1);
-                            for (var j = 0; j < texts.length; j++) {
-                                if (texts[j].innerHTML == results[temp][0].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 50).style("fill", "black").style("font-weight", "bold").moveToFront();
-                                }
-                                if (texts[j].innerHTML == results[temp][temp_len - 1].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 50).style("fill", "black").style("font-weight", "bold").moveToFront();
-                                }
-                            }
-                        })
-
-                        .on("mouseout", function() {
-                            var temp = parseInt(d3.select(this).attr("id"));
-                            var temp_len = results[temp].length;
-
-                            $(_self.el).find("text").css("fill", "black");
-                            d3.select(this).style('stroke-opacity', 0.4).style("stroke-width", 10);
-                            d3.selectAll("marker").style("opacity", 0.3);
-                            for (var j = 0; j < texts.length; j++) {
-                                if (texts[j].innerHTML == results[temp][0].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 30);
-                                }
-                                if (texts[j].innerHTML == results[temp][temp_len - 1].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 30);
-                                }
-                            }
-                        })
+        states.enter()
+            .append("path")
+            .attr({
+                class: "tract state-tract",
+                d: pathBuilder,
+                title: (d) => {
+                    return d.stateId = d.properties.id;
+                }
+            })
+            .style({
+                fill: (d) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                    } else {
+                        return d3.rgb(css_variables["--color-unadopted"]);
                     }
                 }
             })
-            .on("tick", function(e) {
+            .append("title")
+            .text((d) => d.properties.id);
 
-                var k = e.alpha,
-                    kg = k * .02,
-                    spaceAround = 0.;
-
-                nnodes.forEach(function(a, i) {
-                    // Apply gravity forces.
-                    a.x += (a.gravity_x - a.x) * kg;
-                    a.y += (a.gravity_y - a.y) * kg;
-
-                    a.overlapCount = 0;
-
-                    nnodes.slice(i + 1).forEach(function(b) {
-
-                        dx = (a.x - b.x)
-                        dy = (a.y - b.y)
-
-                        adx = Math.abs(dx)
-                        ady = Math.abs(dy)
-
-                        mdx = (1 + spaceAround) * (a.r + b.r) / 2
-                        mdy = (1 + spaceAround) * (a.r + b.r) / 2
-
-                        if (adx < mdx && ady < mdy) {
-                            l = Math.sqrt(dx * dx + dy * dy)
-
-                            lx = (adx - mdx) / l * k
-                            ly = (ady - mdy) / l * k
-
-                            // choose the direction with less overlap
-                            if (lx > ly && ly > 0) lx = 0;
-                            else if (ly > lx && lx > 0) ly = 0;
-
-                            dx *= lx;
-                            dy *= ly;
-                            a.x -= dx;
-                            a.y -= dy;
-                            b.x += dx;
-                            b.y += dy;
-
-                            a.overlapCount++;
-                        }
-                    });
-                    //node.for each braces
-                })
-
-                svg.selectAll("text")
-                    .data(nnodes)
-                    .attr("x", function(d) {
-                        return d.x - d.r / 2;
-                    })
-                    .attr("y", function(d) {
-                        return d.y - d.r / 2;
-                    });
-
-                svg.selectAll("circle")
-                    .data(nnodes)
-                    .attr("cx", function(d) {
-                        return d.x - d.r / 2;
-                    })
-                    .attr("cy", function(d) {
-                        return d.y - d.r / 2;
-                    });
-                //tick braces
-            });
-
-        //Run the FDEB algorithm using default values on the data 
-        svg.selectAll('.node')
-            .data(d3.entries(nnodes))
-            .enter()
-            .append('circle')
-            .attr("opacity", 0.8)
-            .attr("fill", (d) => {
-                d = d.value;
-                return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
-            })
+        stateBorderG.append("path")
+            .datum(stateBorder)
             .attr({
-                'r': function(d) {
-                    return d.value.r;
-                }
-            })
-            .on("mouseover", function(d, i) {
-                tip.show(d, i);
-                d3.select(".d3-tip-network")
-                    .style("opacity", 0.9);
-            })
-            .on('mouseout', tip.hide);
-
-        svg.selectAll('.node')
-            .data(d3.entries(nnodes))
-            .enter()
-            .append('text')
-            .attr("fill", "black")
-            .attr("font-size", function(d) {
-                return 30;
-            })
-            .attr("font-family", "Trebuchet MS")
-            .attr("text-anchor", "middle")
-            .text(function(d, i) {
-                return d.value.state_id;
-            })
-            .on("mouseover", function(d, i) {
-                tip.show(d, i);
-                d3.select(".d3-tip-network")
-                    .style("opacity", 0.9);
-            })
-            .on('mouseout', tip.hide);
-    },
-    defineGradient(defs) {
-        var gradient_1 = defs.append("linearGradient")
-            .attr("id", "gradient_1")
-            .attr("x1", "0%")
-            .attr("y1", "0%")
-            .attr("x2", "100%")
-            .attr("y2", "0%")
-            .attr("spreadMethod", "pad");
-
-        gradient_1.append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", "darkblue")
-            .attr("stop-opacity", 0.15);
-
-        gradient_1.append("stop")
-            .attr("offset", "50%")
-            .attr("stop-color", "grey")
-            .attr("stop-opacity", 0.3);
-
-        gradient_1.append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", "red")
-            .attr("stop-opacity", 1);
-
-        var gradient_2 = defs.append("linearGradient")
-            .attr("id", "gradient_2")
-            .attr("x1", "0%")
-            .attr("y1", "0%")
-            .attr("x2", "100%")
-            .attr("y2", "0%")
-            .attr("spreadMethod", "pad");
-
-        gradient_2.append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", "red")
-            .attr("stop-opacity", 1);
-
-        gradient_2.append("stop")
-            .attr("offset", "50%")
-            .attr("stop-color", "grey")
-            .attr("stop-opacity", 0.3);
-
-        gradient_2.append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", "darkblue")
-            .attr("stop-opacity", 0.15);
-    }
-
-});
-
-// @Deprecated
-let StatBarView = Backbone.View.extend({
-    el: '#svg-stat-bar-view',
-    render() {
-        //prepare params
-        let _self = this,
-            data = _self.model.get("detail");
-
-        $(_self.el).empty();
-
-        var tip = d3tip()
-            .attr('class', 'd3-tip')
-            .offset([-10, 0])
-            .html(function(d) {
-                return "<span style='color:red'>" + d.state_name + "</span><strong> root number:</strong> <span style='color:black'>" + d.num + "</span>";
+                id: 'geo-state-border',
+                class: "tract-border state-tract-border",
+                d: pathBuilder
             });
 
-        // set the dimensions of the canvas
-        var svg = d3.select(_self.el)
-            .attr("height", "100")
-            .attr("width", "1200");
+        regions.enter()
+            .append("path")
+            .attr({
+                class: "tract region-tract",
+                d: pathBuilder,
+                title: (d) => d.id
+            })
+            .style({
+                fill: (d) => regionColorMap[d.id],
+                opacity: 0.2
+            })
+            .append("title")
+            .text((d) => d.id)
+            .insert("text")
+            .text((d) => d.id);
 
-        svg.call(tip);
+        regionBorderG.append("path")
+            .datum(regionBorder)
+            .attr({
+                id: 'geo-region-border',
+                class: "tract-border region-tract-border",
+                d: pathBuilder
+            });
 
-        // load the data
-        data.forEach(function(d) {
-            d.state_id = d.state_id;
-            d.num = +d.num;
-            d.state_name = d.state_name;
+        this.update();
+        this.bindTriggers();
+        this.toggleTract();
+    },
+    update() {
+        let _self = this,
+            _attr = _self._attr,
+            meta = 'centrality',
+            colorNeeded = (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected'),
+            colorScale;
+
+        if (colorNeeded) {
+            meta = conf.pipe.metaToId[_attr.c.get("metadata")];
+            colorScale = d3.scale.linear()
+                .domain([_attr.stat.min[meta], _attr.stat.max[meta]])
+                .interpolate(d3.interpolateHcl)
+                .range([css_variables["--color-value-out"], css_variables["--color-value-in"]]);
+        }
+
+        let stateTracts = $("#state-tract-group path");
+        stateTracts.each(i => {
+            let __tract = $(stateTracts[i]),
+                title = __tract.attr("title");
+            __tract.css("fill", () => {
+                if (title === "NE") {
+                    return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                } else if (colorNeeded) {
+                    let node = _attr.nodes[title];
+                    if (!d3.set(conf.static.states).has(title) || _self.isNodeDefault(node)) {
+                        return css_variables["--color-unadopted"];
+                    } else {
+                        return node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                    }
+                } else if (meta === 'centrality') {
+                    return d3.rgb(css_variables["--color-unadopted"]);
+                }
+            });
         });
+    },
+    isNodeDefault(node) {
+        return node.valid && node.adoptedYear === 9999;
+    },
+    bindTriggers() {
+        let _self = this,
+            _attr = this._attr,
+            __svg = $(this.el);
 
-        // Add bar chart
-        svg.selectAll("bar")
-            .data(data)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("width", "20")
-            .attr("x", function(d, i) { return (i * 22) })
-            .attr("y", "0")
-            .attr("fill", "#bcbddc")
-            .attr("height", function(d, i) { return (d.num * 3) })
-            .on('mouseover', tip.show)
-            .on('mouseout', tip.hide);
+        regionTractClickHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target);
+            if (_curr.hasClass("region-tract")) {
+                _attr.c.toggleTractList(_curr.attr("title"));
+            }
+        }
 
-        svg.selectAll("text")
-            .data(data)
-            .enter()
-            .append("text")
-            .text(function(d) { return d.state_id; })
-            .attr("x", function(d, i) { return (i * 22) })
-            .attr("y", function(d, i) { return (10 + d.num * 3) })
-            .attr("font-family", "sans-serif")
-            .attr("font-size", "11px")
-            .attr("fill", "black");
+        stateTractClickHandler = function(e) {
+            e.stopPropagation();
+            let _curr = $(e.target);
+            if (_curr.hasClass("state-tract")) {
+                _attr.c.toggleTractList(_curr.attr("title"));
+            }
+        }
+        __svg.off();
+
+        __svg.on('click', regionTractClickHandler);
+        __svg.on('click', stateTractClickHandler);
+    },
+    toggleTract() {
+        let c = this._attr.c;
+        switch (c.get("geoBase")) {
+            case "state":
+                $("#region-tract-group").hide();
+                $("#state-tract-group").css("opacity", 1);
+                c.set("stateList", [], { silent: true });
+                $("#region-tract-group path").removeClass("hovered-item");
+                break;
+            case "region":
+                $("#region-tract-group").show();
+                $("#state-tract-group").css("opacity", 0.15);
+                c.set("regionList", [], { silent: true });
+                $("#state-tract-group path").removeClass("hovered-item");
+                break;
+            default:
+                console.log("[invalid geoBase] - Congratulations on toggling a bug!");
+        }
+    },
+    updateSelection() {
+        let c = this._attr.c,
+            theListName = c.getTractListName(),
+            theList = c.getTractList(),
+            geoBase = c.get("geoBase"),
+            previousList = c.previousAttributes()[theListName],
+            currentList = c.get(theListName),
+            isAppendingNewElement = previousList.length < currentList.length,
+            theTract = (isAppendingNewElement ?
+                _.difference(currentList, previousList)[0] :
+                _.difference(previousList, currentList)[0]),
+            __tractG = $("#" + geoBase + "-tract-group"),
+            __domElement = __tractG.find("path[title=" + theTract + "]");
+
+        if (isAppendingNewElement) {
+            __domElement.addClass("hovered-item");
+        } else {
+            __domElement.removeClass("hovered-item");
+        }
 
     }
 });
+
+let NetworkView = Backbone.View.extend({});
 
 let PolicyOptionsView = Backbone.View.extend({
 
-});
-
-// @Deprecated
-let ArcView = Backbone.View.extend({
-    el: "#svg-arc-view",
-    render(sortMethod) {
-        // console.log("rendering arc: " + sortMethod);
-        let _self = this,
-            nodes = this.model.get("nodes"),
-            links = conf.static.edges,
-            τ = 2 * Math.PI; // http://tauday.com/tau-manifesto
-
-        let svg = d3.select(_self.el)
-            .attr("width", gs.a.size.width)
-            .attr("height", gs.a.size.height)
-            .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("0 0 " + gs.a.size.width + " " + gs.a.size.height + ""))
-            .classed('svg-content-responsive', true);
-
-        // Set each node's value to the sum of all incoming and outgoing link values
-        let nodeValMin = 100000000,
-            nodeValMax = 0;
-        for (i = 0; i < nodes.length; i++) {
-            nodes[i].displayOrder = i;
-        }
-        for (i = 0; i < nodes.length; i++) {
-            nodeValMin = Math.min(nodeValMin, nodes[i].metadata);
-            nodeValMax = Math.max(nodeValMax, nodes[i].metadata);
-        }
-
-        // define arc builder
-        let arcBuilder = d3.svg.arc()
-            .startAngle(-τ / 4)
-            .endAngle(τ / 4);
-
-        arcBuilder.setRadii = function(d) {
-            let arcHeight = 0.5 * Math.abs(d.x2 - d.x1);
-            this.innerRadius(arcHeight - d.thickness / 2)
-                .outerRadius(arcHeight + d.thickness / 2);
-        };
-
-        nodes = this.doSort(nodes, sortMethod);
-
-        let pathG = svg.select('.arcs'),
-            circleG = svg.select('.circles'),
-            labelG = svg.select('.labels');
-
-        // DATA JOIN
-        let path = pathG.selectAll("path")
-            .data(links);
-
-        // UPDATE
-        path.transition()
-            .duration(gs.a.transitionTime)
-            .call(_self.pathTween, this, arcBuilder, nodes);
-
-        // ENTER
-        path.enter()
-            .append("path")
-            .attr({
-                "transform": (d, i) => {
-                    d.x1 = _self.nodeDisplayX(nodes[d.target]);
-                    d.x2 = _self.nodeDisplayX(nodes[d.source]);
-                    return _self.arcTranslation(d);
-                },
-                "d": (d, i) => {
-                    d.thickness = gs.a.margin.arcThickness;
-                    arcBuilder.setRadii(d);
-                    return arcBuilder();
-                },
-                class: (d, i) => {
-                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
-                        isFollowingNetworkRule = +nodes[d.source].adoptedYear < +nodes[d.target].adoptedYear;
-                    if (isValid) {
-                        if (isFollowingNetworkRule) {
-                            return "follow-the-rule";
-                        } else {
-                            return "violate-the-rule";
-                        }
-                    } else {
-                        return "invalid-arc";
-                    }
-                },
-                target: (d) => d.target,
-                source: (d) => d.source
-            });
-
-        // DATA JOIN
-        let circle = circleG.selectAll("circle")
-            .data(nodes);
-
-        // UPDATE
-        circle.transition()
-            .duration(gs.a.transitionTime)
-            .attr("cx", (d, i) => _self.nodeDisplayX(d));
-
-        // ENTER
-        circle.enter()
-            .append("circle")
-            .attr({
-                cy: gs.a.nodeY,
-                cx: (d, i) => _self.nodeDisplayX(d),
-                r: (d, i) => _self.mapRange(d.metadata, nodeValMin, nodeValMax, gs.a.multiplier.outMin, gs.a.multiplier.outMax),
-                fill: (d, i) => d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"],
-                stroke: (d, i) => d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1),
-                id: (d, i) => "node_" + i
-            });
-
-        // DATA JOIN
-        let text = labelG.selectAll("text")
-            .data(nodes);
-        // UPDATE
-        text.transition()
-            .duration(gs.a.transitionTime)
-            .attr({
-                x: (d, i) => _self.nodeDisplayX(d),
-                transform: (d, i) => _self.textTransform(d)
-            });
-        // ENTER
-        text.enter()
-            .append("text")
-            .attr({
-                y: gs.a.nodeY + gs.a.margin.textYShift,
-                x: (d, i) => _self.nodeDisplayX(d),
-                transform: (d, i) => _self.textTransform(d)
-            })
-            .text((d, i) => d.stateName);
-
-        _self.bindTriggers(nodes);
-
-    },
-    pathTween(transition, _self, arcBuilder, nodes) {
-        transition.attrTween("d", (d) => {
-            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target])),
-                interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
-            return function(t) {
-                d.x1 = interpolateX1(t);
-                d.x2 = interpolateX2(t);
-                arcBuilder.setRadii(d);
-                return arcBuilder();
-            };
-        });
-
-        transition.attrTween("transform", (d) => {
-            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target]));
-            let interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
-            return function(t) {
-                d.x1 = interpolateX1(t);
-                d.x2 = interpolateX2(t);
-                return _self.arcTranslation(d);
-            };
-        });
-    },
-    doSort(nodes, sortMethod) {
-        let nodeMap = [],
-            sortFunciton;
-
-        nodes.forEach((node, i) => {
-            nodeMap.push($.extend({ index: i }, node));
-        });
-
-        if (sortMethod == 0) {
-            // ADOPTION YEAR
-            sortFunction = (a, b) => {
-                return b.adoptedYear - a.adoptedYear;
-            };
-        } else if (sortMethod == 1) {
-            // METADATA
-            sortFunction = (a, b) => {
-                return b.metadata - a.metadata;
-            };
-        } else if (sortMethod == 2) {
-            // NAME
-            sortFunction = (a, b) => {
-                return a.stateName.localeCompare(b.stateName)
-            };
-        }
-
-        nodeMap.sort(sortFunction);
-        nodeMap.forEach((node, i) => {
-            nodes[node.index].displayOrder = i;
-        });
-
-        return nodes;
-    },
-    bindTriggers(nodes) {
-        let _self = this,
-            _arrow = d3.select(_self.el).append('g').attr("class", "arrow"),
-            _indicator = d3.svg.symbol().type('triangle-down'),
-            nodeMap = {};
-
-        $("#svg-arc-view .arcs path").on("mouseover", (event) => {
-            if (!$(event.target).hasClass("invalid-arc")) {
-                let x = _self.nodeDisplayX(nodes[+$(event.target).attr("target")]),
-                    _sourceNode = $("#node_" + $(event.target).attr("source")),
-                    _targetNode = $("#node_" + $(event.target).attr("target"));
-                _arrow.append("path")
-                    .attr({
-                        d: _indicator,
-                        transform: "translate(" + x + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
-                        fill: $(event.target).hasClass("follow-the-rule") ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
-                    });
-                _sourceNode.addClass("hovered-item");
-                _targetNode.addClass("hovered-item");
-            }
-        });
-
-        $("#svg-arc-view .arcs path").on("mouseout", (event) => {
-            let _sourceNode = $("#node_" + $(event.target).attr("source")),
-                _targetNode = $("#node_" + $(event.target).attr("target"));
-            $("#svg-arc-view .arrow path").remove();
-            _sourceNode.removeClass("hovered-item");
-            _targetNode.removeClass("hovered-item");
-        });
-
-        $("#svg-arc-view .circles circle").on("mouseover", (event) => {
-            let nodeId = event.target.id.split('_')[1],
-                _arcG = $("#svg-arc-view .arcs"),
-                _asSource = _arcG.find("path[source=" + nodeId + "]"),
-                _asTarget = _arcG.find("path[target=" + nodeId + "]");
-            nodeMap = {};
-            targetMap = {};
-            nodeMap[nodeId] = true;
-
-            _asSource.each((i) => {
-                let arc = _asSource[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    nodeMap[$(arc).attr("target")] = true;
-                    $(arc).addClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
-
-                    let x = _self.nodeDisplayX(nodes[$(arc).attr("target")]);
-                    _arrow.append("path")
-                        .attr({
-                            d: _indicator,
-                            transform: "translate(" + x + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
-                            fill: $(arc).hasClass("follow-the-rule") ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
-                        });
-                }
-            });
-
-            let existArcFollowTheRule = true;
-
-            _asTarget.each((i) => {
-                let arc = _asTarget[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    nodeMap[$(arc).attr("source")] = true;
-                    existArcFollowTheRule = $(arc).hasClass("follow-the-rule");
-                    $(arc).addClass(existArcFollowTheRule ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
-                }
-            });
-
-            if (_asTarget.length > 0 && !$(_asTarget[0]).hasClass("invalid-arc")) {
-                _arrow.append("path")
-                    .attr({
-                        d: _indicator,
-                        transform: "translate(" + _self.nodeDisplayX(nodes[nodeId]) + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
-                        fill: existArcFollowTheRule ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
-                    });
-            }
-
-            Object.keys(nodeMap).forEach((nodeId) => {
-                $("#node_" + nodeId).addClass("hovered-item");
-            });
-        });
-
-        $("#svg-arc-view .circles circle").on("mouseout", (event) => {
-            let nodeId = event.target.id.split('_')[1],
-                _arcG = $("#svg-arc-view .arcs"),
-                _asSource = _arcG.find("path[source=" + nodeId + "]"),
-                _asTarget = _arcG.find("path[target=" + nodeId + "]");
-
-            _asSource.each((i) => {
-                let arc = _asSource[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
-                }
-            });
-
-            _asTarget.each((i) => {
-                let arc = _asTarget[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
-                }
-            });
-
-            $("#svg-arc-view .arrow path").remove();
-
-            Object.keys(nodeMap).forEach((nodeId) => {
-                $("#node_" + nodeId).removeClass("hovered-item");
-            });
-        });
-
-
-    },
-    mapRange(value, inMin, inMax, outMin, outMax) {
-        let inVal = Math.min(Math.max(value, inMin), inMax);
-        return outMin + (outMax - outMin) * ((inVal - inMin) / (inMax - inMin));
-    },
-    arcTranslation(d) {
-        return "translate(" + (d.x1 + d.x2) / 2 + "," + gs.a.nodeY + ")";
-    },
-    nodeDisplayX(node) {
-        return node.displayOrder * gs.a.margin.spacing + gs.a.margin.margin;
-    },
-    textTransform(node) {
-        return ("rotate(90 " + (this.nodeDisplayX(node) - 5) + " " + (gs.a.nodeY + 12) + ")");
-    },
-    empty() {
-        this.$el.empty();
-        let _self = this,
-            svg = d3.select(_self.el);
-        svg.append('g')
-            .attr('class', 'arcs');
-        svg.append('g')
-            .attr('class', 'circles');
-        svg.append('g')
-            .attr('class', 'labels');
-    }
 });
 
 let DiffusionView = Backbone.View.extend({
@@ -989,15 +559,8 @@ let DiffusionView = Backbone.View.extend({
         let nodes = _self.model.get("nodes"),
             links = conf.static.edges,
             stat = _self.model.get("stat"),
-            cstat = _self.model.get("cstat");
-
-        // compute color list based on length of year list
-        let _yearList = _.uniq(nodes.map((node) => node.adoptedYear)).sort(),
-            _colorList = utils.generateColor(css_variables["--color-trans-out"], css_variables["--color-trans-in"], _yearList.length),
-            _colorMap = {};
-        _yearList.forEach((year, index) => {
-            _colorMap[year] = _colorList[index];
-        });
+            cstat = _self.model.get("cstat"),
+            _colorMap = utils.getColorMap(nodes, css_variables["--color-trans-out"], css_variables["--color-trans-in"]);
 
         $.extend(_attr, {
             getPrefix: () => {
@@ -1539,7 +1102,8 @@ let DiffusionView = Backbone.View.extend({
     },
     bindTriggers() {
         let _self = this,
-            _attr = this._attr;
+            _attr = this._attr,
+            __svg = $(this.el);
 
         pathOverHandler = function(e) {
             e.stopPropagation();
@@ -1710,25 +1274,15 @@ let DiffusionView = Backbone.View.extend({
             }
         };
 
-        barOverHandler = function(notATypo) {
-
-        }
-        barOutHandler = function(aTypo) {
-
-        }
-
-        this.el.removeEventListener('mouseover', pathOverHandler, false);
-        this.el.removeEventListener('mouseout', pathOutHandler, false);
-        this.el.removeEventListener('mouseover', circleOverHandler, false);
-        this.el.removeEventListener('mouseout', circleOutHandler, false);
+        __svg.off();
 
         // mouseover events
-        this.el.addEventListener('mouseover', pathOverHandler, false);
-        this.el.addEventListener('mouseover', circleOverHandler, false);
+        __svg.on('mouseover', pathOverHandler);
+        __svg.on('mouseover', circleOverHandler);
 
         // mouseout events
-        this.el.addEventListener('mouseout', pathOutHandler, false);
-        this.el.addEventListener('mouseout', circleOutHandler, false);
+        __svg.on('mouseout', pathOutHandler);
+        __svg.on('mouseout', circleOutHandler);
 
     },
     drawRefLines(nodeId, validityCategory) {
@@ -1835,9 +1389,8 @@ d3.selection.prototype.moveToFront = function() {
 
 module.exports = {
     PolicyView: PolicyView,
+    GeoView: GeoView,
     NetworkView: NetworkView,
-    StatBarView: StatBarView,
-    ArcView: ArcView,
     DiffusionView: DiffusionView,
     PolicyOptionsView: PolicyOptionsView
 };

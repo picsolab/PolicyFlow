@@ -11,19 +11,19 @@ let Router = require('./router.js');
 let conditions = new Model.Conditions(),
     policyOptionsModel = new Model.PolicyOptionsModel(),
     policyModel = new Model.PolicyModel(),
+    geoModel = new Model.GeoModel(),
     networkModel = new Model.NetworkModel(),
-    stateModel = new Model.StateModel(),
     diffusionModel = new Model.DiffusionModel(),
     sc = Collection.SnapshotCollection,
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
         model: policyModel
     }),
+    geoView = new View.GeoView({
+        model: geoModel
+    }),
     networkView = new View.NetworkView({
         model: networkModel
-    }),
-    statBarView = new View.StatBarView({
-        model: stateModel
     }),
     diffusionView = new View.DiffusionView({
         model: diffusionModel
@@ -42,8 +42,12 @@ $(document).ready(() => {
         networkView.render();
     });
 
-    diffusionModel.on("change", function() {
+    diffusionModel.on("change", () => {
         diffusionView.render(conditions);
+    });
+
+    geoModel.on("change", () => {
+        geoView.render(conditions);
     });
 
     conditions.on('change', () => {
@@ -52,6 +56,10 @@ $(document).ready(() => {
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
             diffusionModel.populate(conditions);
+            geoModel.populate(conditions);
+        }
+        if (conditions.hasChanged('metadata')) {
+            geoView.update();
         }
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata')) {
             networkModel.populate(conditions);
@@ -79,6 +87,12 @@ $(document).ready(() => {
             }
             diffusionView.update();
         }
+        if (conditions.hasChanged('geoBase')) {
+            geoView.toggleTract();
+        }
+        if (conditions.hasChanged('stateList') || conditions.hasChanged('regionList')) {
+            geoView.updateSelection();
+        }
 
     });
 
@@ -91,7 +105,8 @@ function initRendering() {
     // stateModel.fetch();
     policyModel.populate(conditions);
     networkModel.populate(conditions);
-    let fetching = diffusionModel.populate(conditions);
+    diffusionModel.populate(conditions);
+    geoModel.populate(conditions);
 }
 
 function bindEvents() {
@@ -144,6 +159,10 @@ function bindEvents() {
     $("#add-snapshot").on("click", (event) => {
         sc.add(diffusionView, conditions);
     });
+
+    $("#policy-geo-controller-wrapper").on('click', (event) => {
+        conditions.set("geoBase", $(event.target).find('input').val());
+    })
 
     document.getElementById("snapshot-wrapper").addEventListener('click', retrieveCascadeHandler, false);
 }
