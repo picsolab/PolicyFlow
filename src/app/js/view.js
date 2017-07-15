@@ -266,6 +266,11 @@ let GeoView = Backbone.View.extend({
                 'viewBox': ("0 0 " + _width + " " + _height + ""),
                 'class': 'svg-content-responsive'
             }),
+            legendG = svg.append('g').attr({
+                'id': 'geo-legend',
+                'class': 'legend',
+                'transform': "translate(" + (gs.g.margin.left + gs.g.margin.legendXShift) + "," + gs.g.margin.top + ")"
+            }),
             stateTractG = svg.append('g').attr({
                 'id': 'state-tract-group',
                 'class': 'tract-group',
@@ -289,6 +294,7 @@ let GeoView = Backbone.View.extend({
             defs = svg.append('defs');
 
         $.extend(_attr, {
+            legendG: legendG,
             stateTractG: stateTractG,
             stateBorderG: stateBorderG,
             regionTractG: regionTractG,
@@ -358,6 +364,8 @@ let GeoView = Backbone.View.extend({
                 d: pathBuilder
             });
 
+        this.createLegendGradient();
+
         this.update();
         this.bindTriggers();
         this.toggleTract();
@@ -369,12 +377,40 @@ let GeoView = Backbone.View.extend({
             colorNeeded = (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected'),
             colorScale;
 
+        $(this.el).find("#geo-legend").empty();
+
         if (colorNeeded) {
             meta = conf.pipe.metaToId[_attr.c.get("metadata")];
+            let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
+                colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]]
             colorScale = d3.scale.linear()
-                .domain([_attr.stat.min[meta], _attr.stat.max[meta]])
+                .domain(valueDomain)
                 .interpolate(d3.interpolateHcl)
-                .range([css_variables["--color-value-out"], css_variables["--color-value-in"]]);
+                .range(colorRange);
+
+            // render a legend
+            let legendScale = d3.scale.linear()
+                .domain(valueDomain)
+                .range([0, gs.g.size.legendWidth]),
+                legendAxis = d3.svg.axis()
+                .scale(legendScale)
+                .orient("bottom")
+                .ticks(gs.g.config.legendTickNumber)
+                .tickSize(gs.g.size.legendTickSize)
+                .tickFormat(d3.format(".2f"))
+                .tickPadding(gs.g.margin.legendTickPadding);
+
+            _attr.legendG.append('rect')
+                .attr({
+                    id: 'geo-legend-bar',
+                    height: gs.g.size.legendHeight,
+                    width: gs.g.size.legendWidth
+                })
+                .style({
+                    fill: "url(#geo-legend-linear-gradient)"
+                });
+
+            _attr.legendG.call(legendAxis).select(".domain").remove();
         }
 
         let stateTracts = $("#state-tract-group path");
@@ -464,6 +500,27 @@ let GeoView = Backbone.View.extend({
             __domElement.removeClass("hovered-item");
         }
 
+    },
+    createLegendGradient() {
+        let grad = this._attr.defs.append("linearGradient")
+            .attr({
+                id: "geo-legend-linear-gradient",
+                x1: 0,
+                x2: 1,
+                spreadMethod: "pad"
+            });
+
+        grad.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", css_variables["--color-value-out"])
+            .attr("stop-opacity", 1);
+
+        grad.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", css_variables["--color-value-in"])
+            .attr("stop-opacity", 1);
+
+        return grad;
     }
 });
 

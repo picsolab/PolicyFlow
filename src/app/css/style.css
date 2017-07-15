@@ -67,14 +67,14 @@
 
 #snapshot-wrapper {
     overflow: scroll;
-    height: 160px;
+    height: 480px;
 }
 
 .snapshot-wrapper {
     cursor: pointer;
     float: left;
-    width: 175px;
-    height: 150px;
+    width: 190px;
+    height: 165px;
 }
 
 
@@ -182,6 +182,14 @@
 
 #region-tract-group {
     pointer-events: visible;
+}
+
+#geo-legend line {
+    stroke: #fff;
+}
+
+#geo-legend text {
+    fill: #000;
 }
 
 

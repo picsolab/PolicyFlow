@@ -62,20 +62,25 @@ const GraphSettings = {
     // geo view setings
     g: {
         margin: {
-            top: 20,
+            top: 40,
             left: 10,
             bottom: 10,
-            right: 10
+            right: 10,
+            legendXShift: 650,
+            legendTickPadding: 2
         },
         size: {
             mapHeight: 580,
-            mapWidth: 940
+            mapWidth: 940,
+            legendWidth: 200,
+            legendHeight: 10,
+            legendTickSize: 13
         },
         multiplier: {
 
         },
         config: {
-
+            legendTickNumber: 5
         }
     },
 

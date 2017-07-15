@@ -256,7 +256,7 @@ function updateSubjectAndPolicy(policyOptionsModel, subjectSelected, policySelec
 function updateHeader() {
     let headerStr = conditions.get("policy") === conf.bases.policy.default ?
         "Select a policy to get started." :
-        policyOptionsModel.get("pipe")[conditions.get("policy")] + "&nbsp;<small>" + conditions.get("subject") + "</small>";
+        policyOptionsModel.get("pipe")[conditions.get("policy")] + "<br/><small>" + conditions.get("subject") + "</small>";
     $('#page-header').html(headerStr);
 }
 
