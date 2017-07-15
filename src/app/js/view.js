@@ -267,7 +267,7 @@ let GeoView = Backbone.View.extend({
                 'class': 'svg-content-responsive'
             }),
             legendG = svg.append('g').attr({
-                'id': 'geo-legend',
+                'id': 'geo-legend-group',
                 'class': 'legend',
                 'transform': "translate(" + (gs.g.margin.left + gs.g.margin.legendXShift) + "," + gs.g.margin.top + ")"
             }),
@@ -377,7 +377,7 @@ let GeoView = Backbone.View.extend({
             colorNeeded = (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected'),
             colorScale;
 
-        $(this.el).find("#geo-legend").empty();
+        $(this.el).find("#geo-legend-group").empty();
 
         if (colorNeeded) {
             meta = conf.pipe.metaToId[_attr.c.get("metadata")];
@@ -466,12 +466,14 @@ let GeoView = Backbone.View.extend({
         switch (c.get("geoBase")) {
             case "state":
                 $("#region-tract-group").hide();
+                $("#geo-legend-group").show();
                 $("#state-tract-group").css("opacity", 1);
                 c.set("stateList", [], { silent: true });
                 $("#region-tract-group path").removeClass("hovered-item");
                 break;
             case "region":
                 $("#region-tract-group").show();
+                $("#geo-legend-group").hide();
                 $("#state-tract-group").css("opacity", 0.15);
                 c.set("regionList", [], { silent: true });
                 $("#state-tract-group path").removeClass("hovered-item");

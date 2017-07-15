@@ -184,11 +184,11 @@
     pointer-events: visible;
 }
 
-#geo-legend line {
+#geo-legend-group line {
     stroke: #fff;
 }
 
-#geo-legend text {
+#geo-legend-group text {
     fill: #000;
 }
 
