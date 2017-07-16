@@ -17,7 +17,11 @@ Dump: run the script on previous dump file
 
 584 of new policy added, 170 of overlapping old policy found, and 12601 of cascaded inserted.
 
-Script: `./scripts/migrate_0707_add_policies.sql`
+Script: 
+
+- update database schema: `./scripts/migrate_0707_add_policies.sql`
+
+- append new data to database: `./scripts/migrate.py`
 
 Dump: `./backup/diffusion2017vis_20170707.sql`
 
