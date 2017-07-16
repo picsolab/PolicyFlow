@@ -55,22 +55,10 @@ $(document).ready(() => {
 
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
+            networkModel.populate(conditions);
             diffusionModel.populate(conditions);
             geoModel.populate(conditions);
-        }
-        if (conditions.hasChanged('metadata')) {
-            geoView.update();
-        }
-        if (conditions.hasChanged('policy') || conditions.hasChanged('metadata')) {
-            networkModel.populate(conditions);
-        }
-        if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
-            setupCentralityDropdown();
-        }
-        if (!conditions.hasChanged('policy') &&
-            (conditions.hasChanged('metadata') ||
-                conditions.hasChanged('sequence') ||
-                conditions.hasChanged('centrality'))) {
+        } else {
             if (conditions.hasChanged('centrality')) {
                 if (conditions.get('metadata') === "centrality") {
                     diffusionView.doSort("metadata");
@@ -81,17 +69,27 @@ $(document).ready(() => {
             }
             if (conditions.hasChanged('metadata')) {
                 diffusionView.doSort("metadata");
+                geoView.update();
+                networkView.update();
             }
             if (conditions.hasChanged('sequence')) {
                 diffusionView.doSort("sequence");
             }
-            diffusionView.update();
+            if (conditions.hasChanged('metadata') ||
+                conditions.hasChanged('sequence') ||
+                conditions.hasChanged('centrality')) {
+                diffusionView.update();
+            }
+        }
+        if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
+            setupCentralityDropdown();
         }
         if (conditions.hasChanged('geoBase')) {
             geoView.toggleTract();
         }
         if (conditions.hasChanged('stateList') || conditions.hasChanged('regionList')) {
             geoView.updateSelection();
+            networkView.update();
         }
 
     });

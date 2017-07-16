@@ -77,6 +77,7 @@ let NetworkModel = Backbone.Model.extend({
     initialize() {
         this.urlRoot = conf.api.root + conf.api.networkBase;
         this.url = this.urlRoot + conf.models.conditions.defaults.metadata + "/" + conf.models.conditions.defaults.policy;
+        this.set("links", conf.static.edges);
     },
     populate(conditions) {
         let _self = this;
