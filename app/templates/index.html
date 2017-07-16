@@ -62,15 +62,14 @@
     </nav>
 
     <div class="container-fluid" id="content-wrapper">
-        <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12 row">
+        <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
             <div class="page-header">
                 <h3 id="page-header"></h3>
             </div>
-
         </div>
-        <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12 main row">
+        <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12 main">
             <div id="network-views-wrapper" class="col-lg-12 col-md-12 col-sm-12">
-                <div id="policy-geo-wrapper" class="col-lg-6 col-md-6 col-sm-12">
+                <div id="policy-geo-wrapper" class="col-lg-7 col-md-7 col-sm-12">
                     <svg id="svg-geo-view"></svg>
                     <div id="policy-geo-controller-wrapper" class="btn-group" data-toggle="buttons">
                         <label class="btn btn-default active">
@@ -81,12 +80,27 @@
                     </label>
                     </div>
                 </div>
-                <div id="policy-network-wrapper" class="col-lg-4 col-md-4 col-sm-12">
+                <div id="policy-network-wrapper" class="col-lg-5 col-md-5 col-sm-12">
                     <div class="jumbotron">
                         <p>a place holder for network view.</p>
                     </div>
                 </div>
-                <div id="policy-cascade-wrapper" class="col-lg-2 col-md-2 col-sm-12 col-xs-12">
+            </div>
+
+            <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 jumbotron">
+                <p>a place holder for policy trend view.</p>
+            </div>
+            <div id="diffusion-views-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <div id="diffusion-wrapper" class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
+                    <svg id="svg-diffusion-view"></svg>
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button id="add-snapshot" type="button" class="btn btn-default">add</button>
+                        <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
+                    </div>
+                </div>
+                <div id="snapshot-wrapper" class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
+                </div>
+                <div id="policy-cascade-wrapper" class="col-lg-2 col-md-2 col-sm-6 col-xs-6">
                     <div id="policy-unselected-notitication" class="jumbotron">
                         <p>
                             Please select a policy.
@@ -94,20 +108,6 @@
                     </div>
                     <svg id="svg-cascade-view" style="display:none;"></svg>
                 </div>
-            </div>
-
-            <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 jumbotron">
-                <p>a place holder for policy trend view.</p>
-            </div>
-
-            <div id="diffusion-wrapper" class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
-                <svg id="svg-diffusion-view"></svg>
-                <div class="btn-group" role="group" aria-label="...">
-                    <button id="add-snapshot" type="button" class="btn btn-default">add</button>
-                    <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
-                </div>
-            </div>
-            <div id="snapshot-wrapper" class="col-lg-5 col-md-5 col-sm-12 col-xs-12">
             </div>
         </div>
     </div>

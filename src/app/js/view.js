@@ -368,7 +368,7 @@ let GeoView = Backbone.View.extend({
 
         this.update();
         this.bindTriggers();
-        this.toggleTract();
+        this.toggleTract("animationless");
     },
     update() {
         let _self = this,
@@ -465,14 +465,24 @@ let GeoView = Backbone.View.extend({
         let c = this._attr.c;
         switch (c.get("geoBase")) {
             case "state":
-                $("#region-tract-group").hide();
-                $("#state-tract-group").css("opacity", 1);
+                if (arguments.length !== 0 && arguments[0] === "animationless") {
+                    $("#region-tract-group").hide();
+                    $("#state-tract-group").show();
+                } else {
+                    $("#region-tract-group").fadeOut();
+                    $("#state-tract-group").fadeIn();
+                }
                 c.set("stateList", [], { silent: true });
                 $("#region-tract-group path").removeClass("hovered-item");
                 break;
             case "region":
-                $("#region-tract-group").show();
-                $("#state-tract-group").css("opacity", 0.15);
+                if (arguments.length !== 0 && arguments[0] === "animationless") {
+                    $("#region-tract-group").show();
+                    $("#state-tract-group").hide();
+                } else {
+                    $("#region-tract-group").fadeIn();
+                    $("#state-tract-group").fadeOut();
+                }
                 c.set("regionList", [], { silent: true });
                 $("#state-tract-group path").removeClass("hovered-item");
                 break;
@@ -499,7 +509,6 @@ let GeoView = Backbone.View.extend({
         } else {
             __domElement.removeClass("hovered-item");
         }
-
     },
     createLegendGradient() {
         let grad = this._attr.defs.append("linearGradient")
@@ -524,7 +533,15 @@ let GeoView = Backbone.View.extend({
     }
 });
 
-let NetworkView = Backbone.View.extend({});
+let NetworkView = Backbone.View.extend({
+    el: "#svg-network-view",
+    render() {
+        return this;
+    },
+    update() {
+        return this;
+    }
+});
 
 let PolicyOptionsView = Backbone.View.extend({
 
