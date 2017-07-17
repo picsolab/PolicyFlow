@@ -39,7 +39,7 @@ $(document).ready(() => {
     });
 
     networkModel.on('change', () => {
-        networkView.render();
+        networkView.render(conditions);
     });
 
     diffusionModel.on("change", () => {
@@ -86,6 +86,7 @@ $(document).ready(() => {
         }
         if (conditions.hasChanged('geoBase')) {
             geoView.toggleTract();
+            networkView.update();
         }
         if (conditions.hasChanged('stateList') || conditions.hasChanged('regionList')) {
             geoView.updateSelection();
