@@ -6,7 +6,7 @@
         "start": "webpack-dev-server --inline --progress --port 8080",
         "dev": "webpack -w",
         "test": "karma start",
-        "build": "rimraf static && webpack --config config/webpack.prod.js --progress --profile --bail"
+        "build": "rimraf ./app/static/ && webpack --config config/webpack.prod.js --progress --profile --bail"
     },
     "repository": {
         "type": "git",
@@ -38,17 +38,22 @@
         "topojson": "^3.0.0"
     },
     "devDependencies": {
+        "babel-core": "^6.25.0",
+        "babel-loader": "^7.1.1",
+        "babel-preset-env": "^1.6.0",
+        "copy-webpack-plugin": "^4.0.1",
         "css-loader": "^0.26.1",
         "extract-text-webpack-plugin": "2.0.0-beta.5",
         "file-loader": "^0.9.0",
         "html-loader": "^0.4.3",
-        "html-webpack-plugin": "^2.16.1",
+        "html-webpack-plugin": "^2.29.0",
         "null-loader": "^0.1.1",
         "raw-loader": "^0.5.1",
         "rimraf": "^2.5.2",
         "style-loader": "^0.13.1",
         "topojson-server": "^3.0.0",
         "typescript": "~2.0.10",
+        "uglifyjs-webpack-plugin": "^0.4.6",
         "webpack": "2.2.1",
         "webpack-dev-server": "2.4.1",
         "webpack-merge": "^3.0.0"

@@ -21,6 +21,7 @@
 
 # compiled output
 app/static
+app/templates/
 
 # server
 app/env
