@@ -89,11 +89,14 @@ class NetworkService(Service):
         pass
 
     @staticmethod
-    @app.route("/api/network/<meta_flag>/<policy_id>")
-    def get_specified_network_by(meta_flag, policy_id):
+    @app.route("/api/network/<policy_id>")
+    def get_specified_network_by(policy_id):
         """get_specified_network_by meta_flag and policy_id"""
-        query_result = network_dao.get_parameterized_network(meta_flag, policy_id)
-        return json.dumps({"detail": query_result}, cls=DecimalEncoder)
+        data_list, stat = diffusion_dao.get_parameterized_diffusion(policy_id)
+        data_object = {}
+        for item in data_list:
+            data_object[item["stateId"]] = item
+        return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
 
     @staticmethod
     @app.route("/api/arc/<meta_flag>/<policy_id>")

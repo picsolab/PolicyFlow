@@ -195,6 +195,36 @@
 
 /* policy network panel */
 
+.network-link {
+    fill: none;
+    stroke: #666;
+    stroke-width: 1.5px;
+}
+
+.network-link.violate-the-rule {
+    stroke-dasharray: 0, 2 1;
+}
+
+#network-node-group circle {
+    fill: var(--color-unadopted);
+    stroke: var(--color-unadopted-darker);
+    stroke-width: 1.5px;
+}
+
+#network-label-group text {
+    font: 10px sans-serif;
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+.network-node {
+    cursor: move;
+}
+
+.network-node.fixed {
+    fill: var(--color-hovered) !important;
+}
+
 
 /*policy cascade panel*/
 

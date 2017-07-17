@@ -352,8 +352,6 @@ let GeoView = Backbone.View.extend({
                 opacity: 0.2
             })
             .append("title")
-            .text((d) => d.id)
-            .insert("text")
             .text((d) => d.id);
 
         regionBorderG.append("path")
@@ -368,7 +366,8 @@ let GeoView = Backbone.View.extend({
 
         this.update();
         this.bindTriggers();
-        this.toggleTract("animationless");
+        this.toggleTract({ silent: true });
+        return this;
     },
     update() {
         let _self = this,
@@ -432,6 +431,7 @@ let GeoView = Backbone.View.extend({
                 }
             });
         });
+        return this;
     },
     isNodeDefault(node) {
         return node.valid && node.adoptedYear === 9999;
@@ -465,7 +465,7 @@ let GeoView = Backbone.View.extend({
         let c = this._attr.c;
         switch (c.get("geoBase")) {
             case "state":
-                if (arguments.length !== 0 && arguments[0] === "animationless") {
+                if (arguments.length !== 0 && arguments[0].silent) {
                     $("#region-tract-group").hide();
                     $("#state-tract-group").show();
                 } else {
@@ -473,11 +473,11 @@ let GeoView = Backbone.View.extend({
                     $("#state-tract-group").fadeIn();
                 }
                 $("#geo-legend-group").show();
-                c.set("stateList", [], { silent: true });
+                c.set("stateList", []);
                 $("#region-tract-group path").removeClass("hovered-item");
                 break;
             case "region":
-                if (arguments.length !== 0 && arguments[0] === "animationless") {
+                if (arguments.length !== 0 && arguments[0].silent) {
                     $("#region-tract-group").show();
                     $("#state-tract-group").hide();
                 } else {
@@ -485,7 +485,7 @@ let GeoView = Backbone.View.extend({
                     $("#state-tract-group").fadeOut();
                 }
                 $("#geo-legend-group").hide();
-                c.set("regionList", [], { silent: true });
+                c.set("regionList", []);
                 $("#state-tract-group path").removeClass("hovered-item");
                 break;
             default:
@@ -537,12 +537,214 @@ let GeoView = Backbone.View.extend({
 
 let NetworkView = Backbone.View.extend({
     el: "#svg-network-view",
-    render() {
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            nodes = this.model.get("nodes"),
+            edges = this.model.get("edges"),
+            stat = this.model.get("stat");
+
+        $(_self.el).empty();
+
+        let _width = gs.n.margin.left + gs.n.margin.right + gs.n.size.width,
+            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height;
+
+        // dom element and groups
+        let svg = _attr.svg = d3.select(_self.el)
+            .attr({
+                'preserveAspectRatio': 'xMidYMid meet',
+                'viewBox': ("0 0 " + _width + " " + _height + ""),
+                'class': 'svg-content-responsive'
+            }),
+            edgeG = svg.append('g').attr({
+                'id': 'network-edge-group',
+                'class': 'edge-group',
+                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
+            }),
+            nodeG = svg.append('g').attr({
+                'id': 'network-node-group',
+                'class': 'node-group',
+                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
+            }),
+            labelG = svg.append('g').attr({
+                'id': 'network-label-group',
+                'class': 'label-group',
+                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
+            }),
+            defs = svg.append('defs');
+
+        let force = d3.layout.force()
+            .size([_width, _height])
+            .linkDistance(100)
+            .charge(-500)
+            .gravity(0.4)
+            .friction(0.9);
+
+        $.extend(_attr, {
+            svg: svg,
+            edgeG: edgeG,
+            nodeG: nodeG,
+            labelG: labelG,
+            defs: defs,
+            c: conditions,
+            nodes: nodes,
+            edges: edges,
+            stat: stat,
+            force: force
+        });
+
+        this.update();
+
         return this;
     },
     update() {
+        let _self = this,
+            _attr = this._attr,
+            nodes = _attr.nodes,
+            edges = _attr.edges,
+            selectedIdList = d3.set(_self.getSelectedIds(_attr.c)),
+            isAValidEdge = function(edge) {
+                return (nodes[edge.source].valid && nodes[edge.target].valid) &&
+                    (_attr.c.get("geoBase") === "state" ?
+                        selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :
+                        selectedIdList.has(edge.source) && selectedIdList.has(edge.target));
+            },
+            filteredNodes = {},
+            filteredEdges = [];
+
+        let force = _attr.force.on("tick", tick),
+            drag = force.drag()
+            .on("dragstart", dragstart);
+
+        edges.forEach(edge => {
+            if (isAValidEdge(edge)) {
+                let newEdge = {
+                    source: filteredNodes[edge.source] || (filteredNodes[edge.source] = nodes[edge.source]),
+                    target: filteredNodes[edge.target] || (filteredNodes[edge.target] = nodes[edge.target])
+                }
+                $.extend(newEdge, {
+                    validity: _self.isFollowingNetworkRule(newEdge),
+                    name: newEdge.source.stateId + "-" + newEdge.target.stateId
+                })
+                filteredEdges.push(newEdge);
+            }
+        });
+
+        force.nodes(d3.values(filteredNodes))
+            .links(filteredEdges)
+            .start();
+
+        let links = _attr.edgeG.selectAll("path")
+            .data(force.links(), (d) => d.name),
+            circles = _attr.nodeG.selectAll(".network-node")
+            .data(force.nodes(), (d) => d.stateId),
+            texts = _attr.labelG.selectAll("text")
+            .data(force.nodes(), (d) => d.stateId);
+
+        // Per-type markers, as they don't inherit styles.
+        _attr.defs.selectAll("marker")
+            .data(["follow-the-rule", "violate-the-rule"])
+            .enter().append("marker")
+            .attr({
+                "id": d => d,
+                "viewBox": "0 -5 10 10",
+                "refX": 15,
+                "refY": -1.5,
+                "markerWidth": 6,
+                "markerHeight": 6,
+                "orient": "auto"
+            })
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+        links.enter().append("path")
+            .attr({
+                "class": d => "network-link " + _self.getLinkValidityClass(d),
+                "marker-end": d => "url(#" + _self.getLinkValidityClass(d) + ")"
+            });
+
+        circles.enter().append("circle")
+            .attr({
+                r: 6,
+                class: "network-node"
+            })
+            .on("dblclick", dblclick)
+            .call(drag);
+
+        texts.enter().append("text")
+            .attr({
+                "x": 8,
+                "y": ".31em"
+            })
+            .text(d => d.stateId);
+
+        links.exit().remove();
+        circles.exit().transition()
+            .attr("r", 0).remove();
+        texts.exit().remove();
+
+        while (force.alpha() > 1e-5) { force.tick(); }
+
+        // Use elliptical arc path segments to doubly-encode directionality.
+        function tick() {
+            links.attr({
+                d: (d) => {
+                    let dx = d.target.x - d.source.x,
+                        dy = d.target.y - d.source.y,
+                        dr = Math.sqrt(dx * dx + dy * dy);
+                    return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+                },
+                x1: (d) => d.source.x,
+                y1: (d) => d.source.y,
+                x2: (d) => d.target.x,
+                y2: (d) => d.target.y
+            });
+            circles.attr({
+                cx: (d) => d.x,
+                cy: (d) => d.y
+            });
+            texts.attr("transform", (d) => "translate(" + d.x + "," + d.y + ")");
+        }
+
+        function dragstart(d) {
+            d3.select(this).classed("fixed", d.fixed = true);
+        }
+
+        function dblclick(d) {
+            d3.select(this).classed("fixed", d.fixed = false);
+        }
+
         return this;
-    }
+    },
+    updateColors() {
+        return this;
+    },
+    getSelectedIds(conditions) {
+        if ((conditions.get("regionList").length === 0 && conditions.get("stateList").length === 0) ||
+            conditions.get("policy") === "unselected") {
+            return _.flatMap(conf.static.regions);
+        }
+        switch (conditions.get("geoBase")) {
+            case "state":
+                return conditions.get("stateList");
+            case "region":
+                return _.flatten(conditions.get("regionList").map(region => conf.static.regions[region]))
+            default:
+                //shouldn't happen
+        }
+    },
+    getLinkValidityClass(edge) {
+        return (edge.validity ?
+            "follow-the-rule" :
+            "violate-the-rule");
+    },
+    isFollowingNetworkRule(edge) {
+        let nodes = this._attr.nodes;
+        return +edge.source.adoptedYear <= +edge.target.adoptedYear;
+    },
 });
 
 let PolicyOptionsView = Backbone.View.extend({
@@ -895,7 +1097,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
                 stroke: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
-                opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.source]) ?
+                opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.target]) ?
                     0.25 :
                     0.6)
             });

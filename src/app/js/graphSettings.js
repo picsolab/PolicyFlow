@@ -112,6 +112,22 @@ const GraphSettings = {
 
     // network view settings
     n: {
+        margin: {
+            top: 10,
+            left: 10,
+            bottom: 10,
+            right: 10
+        },
+        size: {
+            height: 500,
+            width: 500
+        },
+        multiplier: {
+
+        },
+        config: {
+
+        }
 
     }
 }
