@@ -61,9 +61,7 @@ do:
 shp2json -n [input .shp with .shx and .dbf in same directory] | ndjson-reduce 'p.features.push({type: "Feature", properties: {id: d.properties.STUSPS, gid: d.properties.GEOID}, geometry: d.geometry}), p' '{type: "FeatureCollection", features: []}' | geo2topo states=- > [output]
 
 # Unify and simplify
-toposimplify -s 1 ./data/out/states.topo.json -o ./data/out/states-s1.topo.json
-toposimplify -S 0.1 ./data/out/states.topo.json -o ./data/out/states-S01.topo.json
-cp ./data/out/*.topo.json ./app/static/assets/data
+toposimplify -P 0.1 ./app/static/data/states.topo.json -o ./app/static/data/states.p1.topo.json
 ```
 
 move topojson files to `/app/static/data/states.topo.json`

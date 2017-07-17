@@ -48,7 +48,7 @@ let PolicyModel = Backbone.Model.extend({
 
 let GeoModel = Backbone.Model.extend({
     initialize() {
-        this.topoUrl = './static/data/states.topo.json';
+        this.topoUrl = './static/data/states.p1.topo.json';
         this.urlRoot = conf.api.root + conf.api.geoBase;
         this.url = this.urlRoot + conf.models.conditions.defaults.policy;
     },

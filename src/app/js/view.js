@@ -686,6 +686,7 @@ let NetworkView = Backbone.View.extend({
             .attr("r", 0).remove();
         texts.exit().remove();
 
+        // this is MAGIC
         while (force.alpha() > 1e-5) { force.tick(); }
 
         // Use elliptical arc path segments to doubly-encode directionality.
