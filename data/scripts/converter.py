@@ -22,7 +22,7 @@ edges = [{"source": 36, "target": 1}, {"source": 4, "target": 2}, {"source": 36,
          {"source": 46, "target": 40}, {"source": 13, "target": 41}, {"source": 44, "target": 42},
          {"source": 46, "target": 43}, {"source": 13, "target": 44}, {"source": 26, "target": 44},
          {"source": 6, "target": 45}, {"source": 4, "target": 46}, {"source": 18, "target": 47},
-         {"source": 5, "target": 48}, {"source": 5, "target": 49}]
+         {"source": 5, "target": 48 }, {"source": 5, "target": 49}]
 
 
 def convert_edges():

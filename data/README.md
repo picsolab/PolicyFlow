@@ -17,6 +17,10 @@ Dump: run the script on previous dump file
 
 584 of new policy added, 170 of overlapping old policy found, and 12601 of cascaded inserted.
 
+some stats on `len(description)`:
+
+mode: 33, median: 46, mean: 53, max: 222
+
 Script: 
 
 - update database schema: `./scripts/migrate_0707_add_policies.sql`
@@ -61,7 +65,7 @@ do:
 shp2json -n [input .shp with .shx and .dbf in same directory] | ndjson-reduce 'p.features.push({type: "Feature", properties: {id: d.properties.STUSPS, gid: d.properties.GEOID}, geometry: d.geometry}), p' '{type: "FeatureCollection", features: []}' | geo2topo states=- > [output]
 
 # Unify and simplify
-toposimplify -P 0.1 ./app/static/data/states.topo.json -o ./app/static/data/states.p1.topo.json
+toposimplify -P 0.1 ./app/data/states.topo.json -o ./app/data/states.p1.topo.json
 ```
 
 move topojson files to `/app/static/data/states.topo.json`
