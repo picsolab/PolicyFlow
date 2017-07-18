@@ -230,8 +230,9 @@ function updateSubjectAndPolicy(policyOptionsModel, subjectSelected, policySelec
         policies = policyOptionsModel.get("policies");
 
     // subject select drop down
+    $('#subject-select option.subject-option').remove();
     Object.keys(policies).forEach(subjectName => {
-        $('#subject-select').append("<option data-subtext=(" + policies[subjectName].length + ") value='" + subjectName + "'>" + (subjectName) + "</option>");
+        $('#subject-select').append("<option class='subject-option' data-subtext=(" + policies[subjectName].length + ") value='" + subjectName + "'>" + (subjectName) + "</option>");
     });
     $('#subject-select').val(subjectSelected);
     $('#subject-select').prop('disabled', false);
