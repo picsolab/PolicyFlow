@@ -3,10 +3,14 @@
     "version": "1.0.0",
     "description": "A visualization for policy diffusion network analysis.",
     "scripts": {
-        "start": "webpack-dev-server --inline --progress --port 8080",
+        "prestart": "npm run build",
+        "start": "app/env/bin/python ./server.py",
+        "predev": "npm run clean",
         "dev": "webpack -w",
-        "test": "karma start",
-        "build": "rimraf ./app/static/ && webpack --config config/webpack.prod.js --progress --profile --bail"
+        "clean": "rimraf ./app/static/",
+        "prebuild": "npm run clean",
+        "build": "webpack --config config/webpack.prod.js --progress --profile --bail",
+        "stop": "ps aux | grep ./server.py | grep -v grep | awk '{ print $2 }' | xargs kill"
     },
     "repository": {
         "type": "git",

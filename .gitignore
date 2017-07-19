@@ -80,3 +80,6 @@ Thumbs.db
 
 # npm log
 npm-debug.log
+
+# nohup log
+nohup.out
