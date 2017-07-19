@@ -83,3 +83,6 @@ npm-debug.log
 
 # nohup log
 nohup.out
+
+# shell script
+deploy
