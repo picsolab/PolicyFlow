@@ -9,14 +9,18 @@
     /*green*/
     --color-value-in: #004D40;
     --color-value-out: #E0F2F1;
-    --color-pop-up: #666;
     --color-follow-the-rule: gray;
     --color-violate-the-rule: red;
     --color-unadopted: lightgray;
     --color-unadopted-darker: #939393;
+    --color-dark-gray: #666;
     --color-default-black: #311B92;
     --color-hovered: #ffa700;
     --color-map-border: white;
+    --color-a: #DA727E;
+    --color-b: #AC6C82;
+    --color-c: #685C79;
+    --color-d: #455C7B;
     --color-ag: #008744;
     --color-ab: #0057e7;
     --color-ar: #d62d20;
@@ -26,4 +30,6 @@
     --color-bc: #304ffe;
     --color-bd: #00bfa5;
     --color-be: #00b8d4;
+    --opacity-state: 1;
+    --opacity-region: 1;
 }

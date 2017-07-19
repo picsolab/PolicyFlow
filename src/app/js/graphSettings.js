@@ -1,3 +1,4 @@
+const css_variables = require('!css-variables-loader!../css/variables.css');
 const GraphSettings = {
     // policy view settings
     p: {
@@ -80,7 +81,13 @@ const GraphSettings = {
 
         },
         config: {
-            legendTickNumber: 5
+            legendTickNumber: 5,
+            regionColorMap: {
+                "northeast": css_variables["--color-a"],
+                "midwest": css_variables["--color-b"],
+                "south": css_variables["--color-c"],
+                "west": css_variables["--color-d"]
+            }
         }
     },
 

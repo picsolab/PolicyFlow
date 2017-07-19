@@ -28,11 +28,6 @@ module.exports = {
                 test: /\.css$/,
                 include: helpers.root('src', 'app'),
                 loader: ExtractTextPlugin.extract({ fallbackLoader: 'style-loader', loader: 'css-loader' })
-            },
-            {
-                test: /\.js$/,
-                exclude: /node_modules/,
-                loader: "babel-loader"
             }
         ]
     },

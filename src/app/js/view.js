@@ -235,12 +235,7 @@ let GeoView = Backbone.View.extend({
             regionFeatures = [],
             regionGeos = [],
             regionBorder = {},
-            regionColorMap = {
-                "northeast": css_variables["--color-ba"],
-                "midwest": css_variables["--color-be"],
-                "south": css_variables["--color-bc"],
-                "west": css_variables["--color-bd"]
-            };
+            regionColorMap = gs.g.config.regionColorMap;
 
         _.forEach(regionDef, (theRegion, key) => {
             let theGeo = topojson.merge(stateTopo, stateTopo.objects.states.geometries.filter((d) => d3.set(theRegion).has(d.properties.id)));
@@ -327,7 +322,8 @@ let GeoView = Backbone.View.extend({
                     } else {
                         return d3.rgb(css_variables["--color-unadopted"]);
                     }
-                }
+                },
+                opacity: css_variables["--opacity-state"]
             })
             .append("title")
             .text((d) => d.properties.id);
@@ -349,7 +345,7 @@ let GeoView = Backbone.View.extend({
             })
             .style({
                 fill: (d) => regionColorMap[d.id],
-                opacity: 0.2
+                opacity: css_variables["--opacity-region"]
             })
             .append("title")
             .text((d) => d.id);
@@ -384,7 +380,7 @@ let GeoView = Backbone.View.extend({
                 colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]]
             colorScale = d3.scale.linear()
                 .domain(valueDomain)
-                .interpolate(d3.interpolateHcl)
+                .interpolate(d3.interpolateRgb)
                 .range(colorRange);
 
             // render a legend
@@ -596,9 +592,7 @@ let NetworkView = Backbone.View.extend({
             force: force
         });
 
-        this.update();
-
-        return this;
+        return this.update();;
     },
     update() {
         let _self = this,
@@ -614,6 +608,11 @@ let NetworkView = Backbone.View.extend({
             },
             filteredNodes = {},
             filteredEdges = [];
+
+        $.extend(_attr, {
+            filteredEdges: filteredEdges,
+            filteredNodes: filteredNodes
+        });
 
         let force = _attr.force.on("tick", tick),
             drag = force.drag()
@@ -669,7 +668,8 @@ let NetworkView = Backbone.View.extend({
         circles.enter().append("circle")
             .attr({
                 r: 6,
-                class: "network-node"
+                class: "network-node",
+                title: (d) => d.stateId
             })
             .on("dblclick", dblclick)
             .call(drag);
@@ -718,9 +718,78 @@ let NetworkView = Backbone.View.extend({
             d3.select(this).classed("fixed", d.fixed = false);
         }
 
-        return this;
+        return this.updateColors();
     },
     updateColors() {
+        let _self = this,
+            _attr = this._attr,
+            filteredEdges = _attr.filteredEdges,
+            filteredNodes = _attr.filteredNodes,
+            meta = 'centrality',
+            geoBase = _attr.c.get("geoBase"),
+            opacity = css_variables["--opacity-state"],
+            colorNeeded = (geoBase === "state" ?
+                (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected') :
+                true),
+            getColor = function(title, meta) {
+                switch (geoBase) {
+                    case "state":
+                        if (title === "NE") {
+                            return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        } else if (colorNeeded) {
+                            let node = _attr.nodes[title];
+                            if (!d3.set(conf.static.states).has(title) || _self.isNodeDefault(node)) {
+                                return css_variables["--color-unadopted"];
+                            } else {
+                                return node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                            }
+                        } else if (meta === 'centrality') {
+                            return d3.rgb(css_variables["--color-unadopted"]);
+                        }
+                        break;
+                    case "region":
+                        return colorScale[conf.pipe.regionOf[title]];
+                        break;
+                    default:
+                        // won't ever happen
+                }
+            },
+            colorScale;
+
+        if (colorNeeded) {
+            meta = conf.pipe.metaToId[_attr.c.get("metadata")];
+            switch (geoBase) {
+                case "state":
+                    let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
+                        colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]];
+                    colorScale = d3.scale.linear()
+                        .domain(valueDomain)
+                        .interpolate(d3.interpolateRgb)
+                        .range(colorRange);
+                    break;
+                case "region":
+                    colorScale = gs.g.config.regionColorMap
+                    opacity = css_variables["--opacity-region"]
+                    break;
+                default:
+                    // won't happen
+            }
+        }
+
+        let __circles = $("#network-node-group .network-node");
+
+        __circles.each(i => {
+            let __circle = $(__circles[i]),
+                title = __circle.attr("title"),
+                fillColor = getColor(title, meta);
+
+            __circle.css({
+                "fill": fillColor,
+                "stroke": d3.rgb(fillColor).darker(1),
+                "opacity": opacity
+            });
+        });
+
         return this;
     },
     getSelectedIds(conditions) {
@@ -746,6 +815,9 @@ let NetworkView = Backbone.View.extend({
         let nodes = this._attr.nodes;
         return +edge.source.adoptedYear <= +edge.target.adoptedYear;
     },
+    isNodeDefault(node) {
+        return node.valid && node.adoptedYear === 9999;
+    }
 });
 
 let PolicyOptionsView = Backbone.View.extend({

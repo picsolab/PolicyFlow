@@ -10,6 +10,14 @@ const ENV = process.env.ENV = process.env.NODE_ENV = 'production';
 module.exports = webpackMerge(commonConfig, {
     devtool: 'source-map',
 
+    module: {
+        rules: [{
+            test: /\.js$/,
+            exclude: /node_modules/,
+            loader: "babel-loader"
+        }]
+    },
+
     output: {
         path: helpers.root('app/static'),
         filename: '[name].[hash].js',
