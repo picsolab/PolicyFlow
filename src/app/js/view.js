@@ -235,7 +235,14 @@ let GeoView = Backbone.View.extend({
             regionFeatures = [],
             regionGeos = [],
             regionBorder = {},
-            regionColorMap = gs.g.config.regionColorMap;
+            regionColorMap = gs.g.config.regionColorMap,
+            _altIndexForWest = 47;
+
+        // TO FIND OUT INDEX FOR UT
+        //  - use centroid of NV as alternative for west region
+        // stateFeatures.forEach((feature, i) => {
+        //     feature.properties.id === "UT" && console.log(i);
+        // });
 
         _.forEach(regionDef, (theRegion, key) => {
             let theGeo = topojson.merge(stateTopo, stateTopo.objects.states.geometries.filter((d) => d3.set(theRegion).has(d.properties.id)));
@@ -262,29 +269,39 @@ let GeoView = Backbone.View.extend({
                 'class': 'svg-content-responsive'
             }),
             legendG = svg.append('g').attr({
-                'id': 'geo-legend-group',
-                'class': 'legend',
-                'transform': "translate(" + (gs.g.margin.left + gs.g.margin.legendXShift) + "," + gs.g.margin.top + ")"
+                id: 'geo-legend-group',
+                class: 'legend',
+                transform: "translate(" + (gs.g.margin.left + gs.g.margin.legendXShift) + "," + gs.g.margin.top + ")"
             }),
             stateTractG = svg.append('g').attr({
-                'id': 'state-tract-group',
-                'class': 'tract-group',
-                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+                id: 'state-tract-group',
+                class: 'tract-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
             }),
             stateBorderG = svg.append('g').attr({
-                'id': 'state-border-group',
-                'class': 'border-group',
-                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+                id: 'state-border-group',
+                class: 'border-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            stateLabelG = svg.append('g').attr({
+                id: 'state-label-group',
+                class: 'label-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
             }),
             regionTractG = svg.append('g').attr({
-                'id': 'region-tract-group',
-                'class': 'tract-group',
-                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+                id: 'region-tract-group',
+                class: 'tract-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
             }),
             regionBorderG = svg.append('g').attr({
-                'id': 'region-border-group',
-                'class': 'border-group',
-                'transform': "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+                id: 'region-border-group',
+                class: 'border-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            regionLabelG = svg.append('g').attr({
+                id: 'region-label-group',
+                class: 'label-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
             }),
             defs = svg.append('defs');
 
@@ -292,8 +309,10 @@ let GeoView = Backbone.View.extend({
             legendG: legendG,
             stateTractG: stateTractG,
             stateBorderG: stateBorderG,
+            stateLabelG: stateLabelG,
             regionTractG: regionTractG,
             regionBorderG: regionBorderG,
+            regionLabelG: regionLabelG,
             defs: defs,
             regionColorMap: regionColorMap,
             c: conditions,
@@ -328,6 +347,19 @@ let GeoView = Backbone.View.extend({
             .append("title")
             .text((d) => d.properties.id);
 
+        stateLabelG.selectAll("text")
+            .data(stateFeatures).enter()
+            .append("text")
+            .filter(d => {
+                d.centroid = pathBuilder.centroid(d);
+                return _.isFinite(d.centroid[0]);
+            })
+            .text(d => d.properties.id)
+            .attr({
+                x: d => d.centroid[0],
+                y: d => d.centroid[1]
+            })
+
         stateBorderG.append("path")
             .datum(stateBorder)
             .attr({
@@ -356,6 +388,21 @@ let GeoView = Backbone.View.extend({
                 id: 'geo-region-border',
                 class: "tract-border region-tract-border",
                 d: pathBuilder
+            });
+
+        regionLabelG.selectAll("text")
+            .data(regionFeatures).enter()
+            .append("text")
+            .text(d => {
+                let feature = (d.id !== "west" ? d : stateFeatures[_altIndexForWest]),
+                    bbox = topojson.bbox(topojson.topology(feature)),
+                    centroid = [_.mean([bbox[0], bbox[2]]), _.mean([bbox[1], bbox[3]])];
+                d.centroid = projection(centroid);
+                return d.id;
+            })
+            .attr({
+                x: d => d.centroid[0],
+                y: d => d.centroid[1]
             });
 
         this.createLegendGradient();
@@ -463,10 +510,14 @@ let GeoView = Backbone.View.extend({
             case "state":
                 if (arguments.length !== 0 && arguments[0].silent) {
                     $("#region-tract-group").hide();
+                    $("#region-label-group").hide();
                     $("#state-tract-group").show();
+                    $("#state-label-group").show();
                 } else {
                     $("#region-tract-group").fadeOut();
+                    $("#region-label-group").fadeOut();
                     $("#state-tract-group").fadeIn();
+                    $("#state-label-group").fadeIn();
                 }
                 $("#geo-legend-group").show();
                 c.set("stateList", []);
@@ -475,10 +526,14 @@ let GeoView = Backbone.View.extend({
             case "region":
                 if (arguments.length !== 0 && arguments[0].silent) {
                     $("#region-tract-group").show();
+                    $("#region-label-group").show();
                     $("#state-tract-group").hide();
+                    $("#state-label-group").hide();
                 } else {
                     $("#region-tract-group").fadeIn();
+                    $("#region-label-group").fadeIn();
                     $("#state-tract-group").fadeOut();
+                    $("#state-label-group").fadeOut();
                 }
                 $("#geo-legend-group").hide();
                 c.set("regionList", []);
