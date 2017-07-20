@@ -541,7 +541,8 @@ let NetworkView = Backbone.View.extend({
             _attr = this._attr,
             nodes = this.model.get("nodes"),
             edges = this.model.get("edges"),
-            stat = this.model.get("stat");
+            stat = this.model.get("stat"),
+            cstat = this.model.get("cstat");
 
         $(_self.el).empty();
 
@@ -589,6 +590,7 @@ let NetworkView = Backbone.View.extend({
             nodes: nodes,
             edges: edges,
             stat: stat,
+            cstat: cstat,
             force: force
         });
 
@@ -599,6 +601,10 @@ let NetworkView = Backbone.View.extend({
             _attr = this._attr,
             nodes = _attr.nodes,
             edges = _attr.edges,
+            stat = _attr.stat,
+            cstat = _attr.cstat,
+            metaType = _attr.c.get("metadata"),
+            cType = _attr.c.get("centrality"),
             selectedIdList = d3.set(_self.getSelectedIds(_attr.c)),
             isAValidEdge = function(edge) {
                 return (nodes[edge.source].valid && nodes[edge.target].valid) &&
@@ -614,7 +620,10 @@ let NetworkView = Backbone.View.extend({
             filteredNodes: filteredNodes
         });
 
-        let force = _attr.force.on("tick", tick),
+        let sizeScale = d3.scale.linear()
+            .domain([cstat.min[cType], cstat.max[cType]])
+            .range(gs.n.config.circleSizeRange),
+            force = _attr.force.on("tick", tick),
             drag = force.drag()
             .on("dragstart", dragstart);
 
@@ -659,6 +668,11 @@ let NetworkView = Backbone.View.extend({
             .append("path")
             .attr("d", "M0,-5L10,0L0,5");
 
+        links.exit().remove();
+        circles.exit().transition()
+            .attr("r", 0).remove();
+        texts.exit().remove();
+
         links.enter().append("path")
             .attr({
                 "class": d => "network-link " + _self.getLinkValidityClass(d),
@@ -667,27 +681,35 @@ let NetworkView = Backbone.View.extend({
 
         circles.enter().append("circle")
             .attr({
-                r: 6,
                 class: "network-node",
                 title: (d) => d.stateId
             })
             .on("dblclick", dblclick)
             .call(drag);
 
+        circles.attr({
+            r: d => sizeScale(nodes[d.stateId].centralities[cType])
+        });
+
         texts.enter().append("text")
             .attr({
-                "x": 8,
                 "y": ".31em"
             })
             .text(d => d.stateId);
 
-        links.exit().remove();
-        circles.exit().transition()
-            .attr("r", 0).remove();
-        texts.exit().remove();
+        texts.attr({
+            "x": d => {
+                let r = sizeScale(nodes[d.stateId].centralities[cType]);
+                if (r > 10) {
+                    return -5;
+                } else {
+                    return gs.n.margin.labelXShift + r;
+                }
+            }
+        });
 
         // this is MAGIC
-        while (force.alpha() > 1e-5) { force.tick(); }
+        while (!gs.n.config.animationSwitch && force.alpha() > 1e-5) { force.tick(); }
 
         // Use elliptical arc path segments to doubly-encode directionality.
         function tick() {
@@ -723,11 +745,7 @@ let NetworkView = Backbone.View.extend({
     updateColors() {
         let _self = this,
             _attr = this._attr,
-            filteredEdges = _attr.filteredEdges,
-            filteredNodes = _attr.filteredNodes,
-            meta = 'centrality',
             geoBase = _attr.c.get("geoBase"),
-            opacity = css_variables["--opacity-state"],
             colorNeeded = (geoBase === "state" ?
                 (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected') :
                 true),
@@ -754,6 +772,8 @@ let NetworkView = Backbone.View.extend({
                         // won't ever happen
                 }
             },
+            opacity = css_variables["--opacity-state"],
+            meta = 'centrality',
             colorScale;
 
         if (colorNeeded) {

@@ -79,14 +79,18 @@ let NetworkModel = Backbone.Model.extend({
         this.url = this.urlRoot + conf.models.conditions.defaults.policy;
     },
     populate(conditions) {
-        let _self = this;
+        let _self = this,
+            centralities = conf.static.centrality.centralities,
+            centralityStat = conf.static.centrality.stat;
         this.url = this.urlRoot + conditions.get("policy");
         return $.getJSON(_self.url).done((data) => {
-            // console.log(_self.url);
+            let nodes = data.nodes;
+            _.mapValues(nodes, (node) => node["centralities"] = centralities[node.stateId]);
             _self.set({
                 edges: conf.static.edgesInStateIds,
-                nodes: data.nodes,
-                stat: data.stat
+                nodes: nodes,
+                stat: data.stat,
+                cstat: centralityStat
             });
         });
     }

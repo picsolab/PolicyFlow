@@ -66,6 +66,7 @@ $(document).ready(() => {
                 if (conditions.get('sequence') === "centrality") {
                     diffusionView.doSort("sequence");
                 }
+                networkView.update();
             }
             if (conditions.hasChanged('metadata')) {
                 diffusionView.doSort("metadata");

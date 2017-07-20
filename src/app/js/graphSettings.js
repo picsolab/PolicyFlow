@@ -123,7 +123,8 @@ const GraphSettings = {
             top: 10,
             left: 10,
             bottom: 10,
-            right: 10
+            right: 10,
+            labelXShift: 2
         },
         size: {
             height: 500,
@@ -133,9 +134,10 @@ const GraphSettings = {
 
         },
         config: {
-
+            circleSizeDefault: 6,
+            circleSizeRange: [6, 18],
+            animationSwitch: true
         }
-
     }
 }
 
