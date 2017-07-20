@@ -54,6 +54,8 @@ module.exports = {
         new CopyWebpackPlugin([{
             from: helpers.root('src', 'data'),
             to: 'data'
+        }, {
+            from: helpers.root('src', 'assets/images/favicon.ico')
         }])
 
     ]

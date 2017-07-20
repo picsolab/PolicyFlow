@@ -71,7 +71,9 @@ $(document).ready(() => {
             if (conditions.hasChanged('metadata')) {
                 diffusionView.doSort("metadata");
                 geoView.update();
-                networkView.update();
+                if (conditions.get("geoBase") === "state") {
+                    networkView.update();
+                }
             }
             if (conditions.hasChanged('sequence')) {
                 diffusionView.doSort("sequence");
