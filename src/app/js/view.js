@@ -603,17 +603,44 @@ let NetworkView = Backbone.View.extend({
             edges = _attr.edges,
             stat = _attr.stat,
             cstat = _attr.cstat,
+            geoBase = _attr.c.get("geoBase"),
             metaType = _attr.c.get("metadata"),
             cType = _attr.c.get("centrality"),
             selectedIdList = d3.set(_self.getSelectedIds(_attr.c)),
             isAValidEdge = function(edge) {
                 return (nodes[edge.source].valid && nodes[edge.target].valid) &&
-                    (_attr.c.get("geoBase") === "state" ?
+                    (geoBase === "state" ?
                         selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :
                         selectedIdList.has(edge.source) && selectedIdList.has(edge.target));
             },
             filteredNodes = {},
-            filteredEdges = [];
+            filteredEdges = [],
+            colorNeeded = (geoBase === "state" ?
+                (metaType !== 'centrality') && (_attr.c.get("policy") !== 'unselected') :
+                true),
+            opacity = css_variables["--opacity-state"],
+            meta = 'centrality',
+            colorScale;
+
+        if (colorNeeded) {
+            meta = conf.pipe.metaToId[_attr.c.get("metadata")];
+            switch (geoBase) {
+                case "state":
+                    let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
+                        colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]];
+                    colorScale = d3.scale.linear()
+                        .domain(valueDomain)
+                        .interpolate(d3.interpolateRgb)
+                        .range(colorRange);
+                    break;
+                case "region":
+                    colorScale = gs.g.config.regionColorMap
+                    opacity = css_variables["--opacity-region"]
+                    break;
+                default:
+                    // won't happen
+            }
+        }
 
         $.extend(_attr, {
             filteredEdges: filteredEdges,
@@ -688,8 +715,36 @@ let NetworkView = Backbone.View.extend({
             .call(drag);
 
         circles.attr({
-            r: d => sizeScale(nodes[d.stateId].centralities[cType])
-        });
+                r: d => sizeScale(nodes[d.stateId].centralities[cType])
+            })
+            .style({
+                fill: (d) => {
+                    switch (geoBase) {
+                        case "state":
+                            if (d.stateId === "NE") {
+                                d.fill = d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                            } else if (colorNeeded) {
+                                let node = _attr.nodes[d.stateId];
+                                if (!d3.set(conf.static.states).has(d.stateId) || _self.isNodeDefault(node)) {
+                                    d.fill = css_variables["--color-unadopted"];
+                                } else {
+                                    d.fill = node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                                }
+                            } else if (meta === 'centrality') {
+                                d.fill = d3.rgb(css_variables["--color-unadopted"]);
+                            }
+                            break;
+                        case "region":
+                            d.fill = colorScale[conf.pipe.regionOf[d.stateId]];
+                            break;
+                        default:
+                            // won't ever happen
+                    }
+                    return d.fill;
+                },
+                stroke: (d) => d3.rgb(d.fill).darker(1),
+                opacity: opacity
+            });
 
         texts.enter().append("text")
             .attr({
@@ -739,76 +794,6 @@ let NetworkView = Backbone.View.extend({
         function dblclick(d) {
             d3.select(this).classed("fixed", d.fixed = false);
         }
-
-        return this.updateColors();
-    },
-    updateColors() {
-        let _self = this,
-            _attr = this._attr,
-            geoBase = _attr.c.get("geoBase"),
-            colorNeeded = (geoBase === "state" ?
-                (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected') :
-                true),
-            getColor = function(title, meta) {
-                switch (geoBase) {
-                    case "state":
-                        if (title === "NE") {
-                            return d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                        } else if (colorNeeded) {
-                            let node = _attr.nodes[title];
-                            if (!d3.set(conf.static.states).has(title) || _self.isNodeDefault(node)) {
-                                return css_variables["--color-unadopted"];
-                            } else {
-                                return node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
-                            }
-                        } else if (meta === 'centrality') {
-                            return d3.rgb(css_variables["--color-unadopted"]);
-                        }
-                        break;
-                    case "region":
-                        return colorScale[conf.pipe.regionOf[title]];
-                        break;
-                    default:
-                        // won't ever happen
-                }
-            },
-            opacity = css_variables["--opacity-state"],
-            meta = 'centrality',
-            colorScale;
-
-        if (colorNeeded) {
-            meta = conf.pipe.metaToId[_attr.c.get("metadata")];
-            switch (geoBase) {
-                case "state":
-                    let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
-                        colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]];
-                    colorScale = d3.scale.linear()
-                        .domain(valueDomain)
-                        .interpolate(d3.interpolateRgb)
-                        .range(colorRange);
-                    break;
-                case "region":
-                    colorScale = gs.g.config.regionColorMap
-                    opacity = css_variables["--opacity-region"]
-                    break;
-                default:
-                    // won't happen
-            }
-        }
-
-        let __circles = $("#network-node-group .network-node");
-
-        __circles.each(i => {
-            let __circle = $(__circles[i]),
-                title = __circle.attr("title"),
-                fillColor = getColor(title, meta);
-
-            __circle.css({
-                "fill": fillColor,
-                "stroke": d3.rgb(fillColor).darker(1),
-                "opacity": opacity
-            });
-        });
 
         return this;
     },
