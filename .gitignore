@@ -27,6 +27,7 @@ app/templates/
 app/env
 app/*.pyc
 app/db_repository
+app/libs/*
 
 # credentials
 app/_config.py
@@ -86,3 +87,6 @@ nohup.out
 
 # shell script
 deploy
+
+# exclude
+!**/README.md

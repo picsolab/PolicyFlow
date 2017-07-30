@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Float, ForeignKey, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 
 from app import db
@@ -15,6 +14,7 @@ class Network(db.Model):
     def __repr__(self):
         return '<Network from %r to %r>' % (self.stateFromId, self.stateToId)
 
+
 class Subject(db.Model):
     """Subject class"""
     __tablename__ = 'subject'
@@ -26,6 +26,7 @@ class Subject(db.Model):
 
     def __repr__(self):
         return '<Subject %r>' % (self.subjectName)
+
 
 class State(db.Model):
     """State class"""
@@ -41,6 +42,7 @@ class State(db.Model):
     def __repr__(self):
         return '<State %r>' % (self.stateId)
 
+
 class RootState(db.Model):
     """RootState class: states that act as roots in a cascade."""
     __tablename__ = 'root_state'
@@ -52,6 +54,7 @@ class RootState(db.Model):
 
     def __repr__(self):
         return '<RootState %r>' % (self.rootId)
+
 
 class Policy(db.Model):
     """Policy class"""
@@ -70,6 +73,7 @@ class Policy(db.Model):
     def __repr__(self):
         return '<Policy %r: %r>' % (self.policyId, self.policyName)
 
+
 class Cascade(db.Model):
     """Cascade class"""
     __tablename__ = 'cascade'
@@ -82,6 +86,7 @@ class Cascade(db.Model):
 
     def __repr__(self):
         return '<Cascade %r>' % (self.policyId)
+
 
 class Metadata(db.Model):
     """Metadata class"""

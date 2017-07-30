@@ -1,6 +1,6 @@
 from decimal import Decimal
 from flask import request, g, json
-from app import app
+from . import app
 
 from .dao import PageDao, PolicyDao, NetworkDao, StateDao, DiffusionDao
 
@@ -10,8 +10,10 @@ network_dao = NetworkDao()
 state_dao = StateDao()
 diffusion_dao = DiffusionDao()
 
+
 class Service(object):
     """Base Service class"""
+
     def __init__(self):
         pass
 
@@ -38,6 +40,7 @@ class Service(object):
 
 class PageService(Service):
     """page service handling page related requests"""
+
     def __init__(self):
         pass
 
@@ -47,8 +50,10 @@ class PageService(Service):
         """get all subject from database."""
         return json.dumps(page_dao.get_all_policies())
 
+
 class StateService(Service):
     """state service handling requests from bar chart"""
+
     def __init__(self):
         pass
 
@@ -60,20 +65,21 @@ class StateService(Service):
         state_pipe = state_dao.get_state_id_names()
         root_states = state_dao.get_root_count_list_for(subject_id)
         for state in state_pipe:
-            if(root_states.has_key(state.stateId)):
+            if (root_states.has_key(state.stateId)):
                 result.append(root_states[state.stateId])
             else:
                 result.append({
                     "state_id": state.stateId,
                     "state_name": state.stateName,
-                    "num":0
+                    "num": 0
                 })
-        result.sort(key = lambda state: state["num"], reverse = True)
+        result.sort(key=lambda state: state["num"], reverse=True)
         return json.dumps({"detail": result})
 
 
 class PolicyService(Service):
     """policy service handling requests from policy view"""
+
     def __init__(self):
         pass
 
@@ -83,8 +89,10 @@ class PolicyService(Service):
         """get_policy_by_id"""
         return json.dumps(policy_dao.get_policy_by_id(policy_id))
 
+
 class NetworkService(Service):
     """network service handling requests for network view"""
+
     def __init__(self):
         pass
 
@@ -123,10 +131,10 @@ class NetworkService(Service):
         return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
 
 
-
 class ServiceUtils():
     """service utils"""
     pass
+
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
