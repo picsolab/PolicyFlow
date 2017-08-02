@@ -77,6 +77,22 @@ def add_policy_n_description():
     session.commit()
 
 
+def get_stat_for_0708_update():
+    df = pd.read_stata(rel_path('../external/raw/policies_with_descriptions.dta'))
+    distinct_df = df.drop_duplicates(['policy'])
+    # count_dc = df.state.value_counts()['DC']
+    policies = {}
+    for state in IGNORING_STATE_LIST:
+        policies[state] = df.loc[df['state'] == state, 'policy']
+    full_series = pd.concat([policies[state] for state in IGNORING_STATE_LIST])
+    distinct_full_series = full_series.drop_duplicates().sort_values()
+    print "%d policies contain one or more states from {'DC' 'GU', 'PR', 'VI'}." % len(distinct_full_series)
+    print "policies that adopted by less that 5 states:"
+    for policy in distinct_full_series.iteritems():
+        if (distinct_df.loc[distinct_df['policy'] == policy[1], 'totadopt'] < 5).bool():
+            print policy[1]
+
+
 if __name__ == '__main__':
     parser = ArgumentParser(description='database migration.')
     parser.add_argument('--operation', '-o', help='specify operation to perform.', required=True)
@@ -86,3 +102,5 @@ if __name__ == '__main__':
     if operation == "a":
         """add policy and description"""
         add_policy_n_description()
+    if operation == "s":
+        get_stat_for_0708_update()

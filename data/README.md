@@ -5,6 +5,15 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
+
+### 20170801
+
+Create table `policy_text` for policy description text.
+
+Script: `./script/migrate_0801_add_policy_text_table.sql`
+
+Dump: same to the previous
+
 ### 20170708
 
 For potential requirement on displaying policy description, add `policy_description` column to TABLE `pilocy`, with identical values to `policy_name` for now.
@@ -15,7 +24,11 @@ Dump: run the script on previous dump file
 
 ### 20170707
 
+Totally, there are 755 policies in this dataset. All adoptions by either state from {'DC' 'GU', 'PR', 'VI'} are removed before insert to database. 151 policies are affected by this rule. Specially, policy `healthcareconsentact1982` is removed since it contains only 'VI'.
+
 584 of new policy added, 170 of overlapping old policy found, and 12601 of cascaded inserted.
+
+By appending the new dataset, the total number of policy becomes 773, with 18696 adoptions from all 50 states.
 
 some stats on `len(description)`:
 
@@ -32,6 +45,8 @@ Dump: `./backup/diffusion2017vis_20170707.sql`
 ### 20170401
 
 The initiating version, please refer to `v1.0` specification documentation.
+
+>189 policies, 6196 adoptions.
 
 Script & Dump: `./backup/diffusion2017vis_20170706.sql`
 

@@ -1,41 +1,15 @@
-from decimal import Decimal
 from flask import request, g, json
-from . import app
+from app import app
 
-from .dao import PageDao, PolicyDao, NetworkDao, StateDao, DiffusionDao
+from .helper import DecimalEncoder
+from .service import Service
+from ..dao import PageDao, PolicyDao, NetworkDao, StateDao, DiffusionDao
 
 page_dao = PageDao()
 policy_dao = PolicyDao()
 network_dao = NetworkDao()
 state_dao = StateDao()
 diffusion_dao = DiffusionDao()
-
-
-class Service(object):
-    """Base Service class"""
-
-    def __init__(self):
-        pass
-
-    @app.before_request
-    def before():
-        pass
-
-    @app.after_request
-    def after(response):
-        fn = g.get('fn', None)
-        if fn:
-            print ("Printing response", fn)
-            print (response.status, fn)
-            print (response.headers, fn)
-            print (response.get_data(), fn)
-        return response
-
-    @staticmethod
-    @app.route("/api/success/", methods=["GET"])
-    def get_success():
-        """get all subject from database."""
-        return json.dumps({})
 
 
 class PageService(Service):
@@ -134,10 +108,3 @@ class NetworkService(Service):
 class ServiceUtils():
     """service utils"""
     pass
-
-
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, Decimal):
-            return float(o)
-        return super(DecimalEncoder, self).default(o)

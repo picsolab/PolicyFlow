@@ -13,7 +13,7 @@ app.config.from_pyfile('_config.py')
 db = SQLAlchemy(app)
 
 import views
-import service
+from services import web_service, computing_service
 
 Compress(app)
 
