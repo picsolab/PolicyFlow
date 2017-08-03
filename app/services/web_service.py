@@ -2,7 +2,7 @@ from flask import request, g, json
 from app import app
 
 from .helper import DecimalEncoder
-from .service import Service
+from .base_service import BaseService
 from ..dao import PageDao, PolicyDao, NetworkDao, StateDao, DiffusionDao
 
 page_dao = PageDao()
@@ -12,7 +12,7 @@ state_dao = StateDao()
 diffusion_dao = DiffusionDao()
 
 
-class PageService(Service):
+class PageService(BaseService):
     """page service handling page related requests"""
 
     def __init__(self):
@@ -25,7 +25,7 @@ class PageService(Service):
         return json.dumps(page_dao.get_all_policies())
 
 
-class StateService(Service):
+class StateService(BaseService):
     """state service handling requests from bar chart"""
 
     def __init__(self):
@@ -51,7 +51,7 @@ class StateService(Service):
         return json.dumps({"detail": result})
 
 
-class PolicyService(Service):
+class PolicyService(BaseService):
     """policy service handling requests from policy view"""
 
     def __init__(self):
@@ -64,7 +64,7 @@ class PolicyService(Service):
         return json.dumps(policy_dao.get_policy_by_id(policy_id))
 
 
-class NetworkService(Service):
+class NetworkService(BaseService):
     """network service handling requests for network view"""
 
     def __init__(self):
@@ -79,13 +79,6 @@ class NetworkService(Service):
         for item in data_list:
             data_object[item["stateId"]] = item
         return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
-
-    @staticmethod
-    @app.route("/api/arc/<meta_flag>/<policy_id>")
-    def get_specified_arc_by(meta_flag, policy_id):
-        """get_specified_arc_by meta_flag and policy_id"""
-        query_result = network_dao.get_parameterized_network(meta_flag, policy_id)
-        return json.dumps({"nodes": query_result}, cls=DecimalEncoder)
 
     @staticmethod
     @app.route("/api/diffusion/<policy_id>")

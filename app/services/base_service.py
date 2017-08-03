@@ -1,7 +1,7 @@
 from flask import request, g, json
 from app import app
 
-class Service(object):
+class BaseService(object):
     """Base Service class"""
 
     def __init__(self):

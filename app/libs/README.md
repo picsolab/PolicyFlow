@@ -2,9 +2,11 @@
 
 ## libs
 
-`./netinf/`: netinf implementation from snap package below
+`./netinf/`: modified netinf. 
 
-`./snap/`: full snap package from [GitHub](https://github.com/snap-stanford/snap).
+- To invoke the `netinf` from python, the modified `netinf` executable takes cascade from stdin and pipe the network to stdout. Please refer `./netinf/ReadMe.txt` or `./netinf/netinf.cpp` for usage.
+
+`./snap/`: full snap package from [GitHub](https://github.com/snap-stanford/snap), **required** to compile modified netinf.
 
 `./netinf/linux/`: [download](http://snap.stanford.edu/netinf/netinf.tgz) cpp implementation for Linux/Windows
 
@@ -18,20 +20,10 @@
 
 Tree edit distance using the [Zhang Shasha algorithm](http://www.grantjenks.com/wiki/_media/ideas:simple_fast_algorithms_for_the_editing_distance_between_tree_and_related_problems.pdf) (an [overview slide](http://www.inf.unibz.it/dis/teaching/ATA/ata7-handout-1x1.pdf), another [paper](http://research.cs.queensu.ca/TechReports/Reports/1995-372.pdf)) on [GitHub](https://github.com/timtadh/zhang-shasha).
 
-### cpp python wrappers
+### compile modified netinf
 
 ```
-# mac
-g++ -c -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -o netinf -shared -dynamiclib -fPIC netinf.cpp
-
-g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -shared -dynamiclib -fPIC -o cascnetinf cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp
-
-# or
-g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp ../snap/snap-adv/cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp
-
-# linux
-gcc -c -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -o netinf.so -shared -fPIC netinf.cpp
-
+g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp
 ```
 
 #### refs

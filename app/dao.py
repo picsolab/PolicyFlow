@@ -20,7 +20,7 @@ class BaseDao(object):
         return State.query.all()
 
     def get_state_id_names(self):
-        return db.session.execute( \
+        return db.session.execute(
             text("SELECT state.state_id AS stateId, state_name AS stateName FROM `state`")).fetchall()
 
     def get_metadata_by_year(self, year):
@@ -121,124 +121,6 @@ class PolicyDao(BaseDao):
 
 class NetworkDao(BaseDao):
     """network dao providing network related data"""
-
-    def get_parameterized_network(self, meta_flag, policy_id):
-        """get_parameterized_network"""
-        output = []
-        meta_set = {}
-        year_set = {}
-        meta_noshow_set = {}
-        year_noshow_set = {}
-        meta_unadopted_set = {}
-        min_year = 9999
-        min_meta = 9999
-        max_meta = 0
-        ne_adopt_year = 0
-        pipe = {
-            "perCapitaIncome": "state_pci",
-            "minorityDiversity": "state_md",
-            "legislativeProfessionalism": "state_lp",
-            "citizenIdeology": "state_ci",
-            "totalPopulation": "state_pop",
-            "populationDensity": "state_pd"
-        }
-        readable_meta_name = {
-            "perCapitaIncome": "Per Capita Income",
-            "minorityDiversity": "Minority Diversity",
-            "legislativeProfessionalism": "Legislative Professionalism",
-            "citizenIdeology": "Citizen Ideology",
-            "totalPopulation": "Total Population",
-            "populationDensity": "Population Density"
-        }
-        stmt = text("SELECT s.state_id AS stateId, m.year AS year, m." + pipe[meta_flag] + " AS " + meta_flag + " "
-                                                                                                                "FROM state AS s, `metadata` AS m "
-                                                                                                                "WHERE s.state_id=m.state_id "
-                                                                                                                "HAVING (m.year, s.state_id) IN ( "
-                                                                                                                "   SELECT c0.adopted_year, c0.state_id "
-                                                                                                                "   FROM `cascade` AS c0 "
-                                                                                                                "   WHERE c0.policy_id=:policy_id "
-                                                                                                                ") ORDER BY m.year ASC")
-        stmt = stmt.columns(State.stateId, Metadata.year, getattr(Metadata, meta_flag))
-
-        # data from those states who:
-        # - were affected by the specified policy
-        # - during 1960 to 1999
-        result_with_valid_data = db.session.query(State.stateId, Metadata.year, getattr(Metadata, meta_flag)) \
-            .from_statement(stmt).params(policy_id=policy_id).all()
-
-        for item in result_with_valid_data:
-            meta = getattr(item, meta_flag)
-            meta_set[item.stateId] = meta
-            year_set[item.stateId] = item.year
-            max_meta = max(max_meta, meta)
-            min_meta = min(min_meta, meta)
-
-        # data from those states who:
-        # - were affected by the specified policy
-        # - without time limitations
-        result_full = super(NetworkDao, self).get_cascade_by_policy_id(policy_id)
-        for item in result_full:
-            if item.stateId == "NE":
-                ne_adopt_year = item.adoptedYear
-            if item.stateId not in meta_set:
-                meta_noshow_set[item.stateId] = 0
-                year_noshow_set[item.stateId] = item.adoptedYear
-            if item.adoptedYear < min_year:
-                min_year = item.adoptedYear
-        min_year = super(NetworkDao, self).helper_get_valid_year(min_year)
-
-        meta_from_earliest_year = super(NetworkDao, self).get_metadata_by_year(min_year)
-        for item in meta_from_earliest_year:
-            stateId = item.stateId
-            if stateId not in meta_set:
-                meta = getattr(item, meta_flag)
-                if stateId in meta_noshow_set:
-                    meta_noshow_set[stateId] = meta
-                else:
-                    meta_unadopted_set[stateId] = meta
-                max_meta = max(max_meta, meta)
-                min_meta = min(min_meta, meta)
-
-        states = super(NetworkDao, self).get_all_state()
-
-        for state in states:
-            temp_object = {}
-            stateId = state.stateId
-            temp_object["stateId"] = stateId
-            temp_object["stateName"] = state.stateName
-            temp_object["longtitude"] = state.longtitude
-            temp_object["latitude"] = state.latitude
-            temp_object["metaId"] = meta_flag
-            temp_object["metaName"] = readable_meta_name[meta_flag]
-            if stateId == "NE":
-                temp_object["valid"] = False if stateId in meta_unadopted_set else True
-                temp_object["metadata"] = -1
-                temp_object["normalizedMetadata"] = -1
-                temp_object["dataYear"] = 9999
-                temp_object["adoptedYear"] = ne_adopt_year
-            elif stateId in meta_unadopted_set:
-                temp_object["valid"] = False
-                temp_object["metadata"] = meta_unadopted_set[stateId]
-                temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(
-                    meta_unadopted_set[stateId], min_meta, max_meta)
-                temp_object["dataYear"] = min_year
-                temp_object["adoptedYear"] = 9999
-            else:
-                temp_object["valid"] = True
-                if stateId in meta_set:
-                    temp_object["metadata"] = meta_set[stateId]
-                    temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_set[stateId],
-                                                                                                  min_meta, max_meta)
-                    temp_object["adoptedYear"] = year_set[stateId]
-                    temp_object["dataYear"] = year_set[stateId]
-                else:
-                    temp_object["metadata"] = meta_noshow_set[stateId]
-                    temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(
-                        meta_noshow_set[stateId], min_meta, max_meta)
-                    temp_object["adoptedYear"] = year_noshow_set[stateId]
-                    temp_object["dataYear"] = min_year
-            output.append(temp_object)
-        return output
 
 
 class DiffusionDao(BaseDao):
