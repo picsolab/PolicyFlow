@@ -3,6 +3,16 @@ from sqlalchemy.orm import relationship
 
 from app import db
 
+STATES = ["AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY",
+              "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY",
+              "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"]
+
+
+def get_state_index(state_id):
+    return STATES.index(state_id)
+
+def get_state_id(state_index):
+    return STATES[state_index]
 
 class Network(db.Model):
     """Network class"""
@@ -72,6 +82,10 @@ class Policy(db.Model):
 
     def __repr__(self):
         return '<Policy %r: %r>' % (self.policyId, self.policyName)
+
+    def serialize(self):
+        """serialize full cascade"""
+        return reduce(lambda x, y: "{}{},{};".format(x, get_state_index(y.stateId), y.adoptedYear), self.cascades, "\n").rstrip(';')
 
 
 class Cascade(db.Model):

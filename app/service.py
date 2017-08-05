@@ -1,1 +1,1 @@
-from .services import web_service, computing_service
+from .services import web_service
