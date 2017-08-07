@@ -56,6 +56,9 @@ module.exports = {
             to: 'data'
         }, {
             from: helpers.root('src', 'assets/images/favicon.ico')
+        }, {
+            from: helpers.root('src', 'assets/images/ellipsis.gif'),
+            to: 'assets/ellipsis.gif'
         }])
 
     ]

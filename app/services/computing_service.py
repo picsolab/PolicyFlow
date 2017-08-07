@@ -1,6 +1,7 @@
 from .base_service import BaseService
-from ..plugins import netinf
+from ..plugins.netinf import Netinf
 from .helper import rel_path
+from ..models import NetinfNetwork
 
 
 class ComputingService(BaseService):
@@ -9,7 +10,10 @@ class ComputingService(BaseService):
     def __init__(self):
         pass
 
-    def get_network(self):
-        sp_netinf = netinf.Netinf()
-        with open(rel_path("../libs/netinf/example-cascades.txt"), 'r') as f:
-            print sp_netinf.get_network_text(f,10)
+    @staticmethod
+    def get_network_by(cascade_text, iters=Netinf.ITER):
+        sp_netinf = Netinf()
+        network_text = sp_netinf.get_network_text(cascade_text, iters=iters)
+        nn = NetinfNetwork(network_text=network_text)
+        return nn.get_network_object()
+

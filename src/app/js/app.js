@@ -14,6 +14,7 @@ let conditions = new Model.Conditions(),
     geoModel = new Model.GeoModel(),
     networkModel = new Model.NetworkModel(),
     diffusionModel = new Model.DiffusionModel(),
+    dynamicNetworkModel = new Model.DynamicNetworkModel(),
     sc = Collection.SnapshotCollection,
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
@@ -48,6 +49,17 @@ $(document).ready(() => {
 
     geoModel.on("change", () => {
         geoView.render(conditions);
+    });
+
+    policyOptionsModel.on("change", () => {
+        updateSubjectAndPolicy(policyOptionsModel, conf.bases.subject.default, conf.bases.policy.default);
+    });
+
+    dynamicNetworkModel.on("change", () => {
+        networkModel.set("edges", dynamicNetworkModel.get("edgesInStateIds"), { silent: true });
+        diffusionModel.set("edges", dynamicNetworkModel.get("edgesInIndices"), { silent: true });
+        networkModel.populate(conditions);
+        diffusionModel.populate(conditions);
     });
 
     conditions.on('change', () => {
@@ -95,7 +107,13 @@ $(document).ready(() => {
             geoView.updateSelection();
             networkView.update();
         }
-
+        if (conditions.hasChanged("param") || conditions.hasChanged("startYear") || conditions.hasChanged("endYear")) {
+            networkView.$el.hide();
+            diffusionView.$el.hide();
+            $("#policy-network-wrapper .loader-img").show();
+            $("#diffusion-wrapper .loader-img").show();
+            dynamicNetworkModel.populate(conditions);
+        }
     });
 
     initDom();
@@ -106,9 +124,8 @@ $(document).ready(() => {
 function initRendering() {
     // stateModel.fetch();
     policyModel.populate(conditions);
-    networkModel.populate(conditions);
-    diffusionModel.populate(conditions);
     geoModel.populate(conditions);
+    dynamicNetworkModel.populate(conditions);
 }
 
 function bindEvents() {
@@ -119,7 +136,7 @@ function bindEvents() {
             policies = policyOptionsModel.get("policies"),
             pipe = policyOptionsModel.get("pipe");
 
-        conditions.set('subject', subjectList[clickedIndex - 1], { silent: true });
+        conditions.setSubject(subjectList[clickedIndex - 1]);
         // stateModel.populate(conditions);
 
         // reload policy select drop down
@@ -181,11 +198,7 @@ function initDom() {
     initDropdowns($("#centrality-select"), "centrality-option", conf.bases.centralityList);
     setupCentralityDropdown();
 
-    policyOptionsModel.fetch({
-        success(model, response, options) {
-            updateSubjectAndPolicy(model, conf.bases.subject.default, conf.bases.policy.default);
-        }
-    });
+    policyOptionsModel.fetch();
 
     bindEvents();
 }

@@ -51,33 +51,6 @@
 }
 
 
-/*
- * Vis panels
- */
-
-
-/*policytrend*/
-
-#policy-trend-wrapper {
-    height: 60px;
-}
-
-
-/*snapshot panel*/
-
-#snapshot-wrapper {
-    overflow: scroll;
-    height: 480px;
-}
-
-.snapshot-wrapper {
-    cursor: pointer;
-    float: left;
-    width: 190px;
-    height: 165px;
-}
-
-
 /*shared style*/
 
 .hovered-item {
@@ -110,10 +83,49 @@
     text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
 
+.loader-img {
+    display: inline-block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+    z-index: 50;
+}
+
+
+/*
+ * Vis panels
+ */
+
+
+/*policytrend*/
+
+#policy-trend-wrapper {
+    height: 60px;
+}
+
+
+/*snapshot panel*/
+
+#snapshot-wrapper {
+    overflow: scroll;
+    height: 480px;
+}
+
+.snapshot-wrapper {
+    cursor: pointer;
+    float: left;
+    width: 190px;
+    height: 165px;
+}
+
 
 /*diffusion view panel*/
 
-#diffusion-path-group path {}
+#diffusion-wrapper {
+    min-height: 300px;
+}
 
 .guidances path {
     fill: none;
@@ -204,6 +216,10 @@
 
 
 /* policy network panel */
+
+#policy-network-wrapper {
+    min-height: 300px;
+}
 
 .network-link {
     fill: none;

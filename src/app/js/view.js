@@ -2,8 +2,8 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
-const eedges = conf.static.edges,
-    printDiagnoseInfo = false;
+const printDiagnoseInfo = false;
+
 let colorList = [],
     colorMap = {};
 let PolicyView = Backbone.View.extend({
@@ -850,6 +850,8 @@ let NetworkView = Backbone.View.extend({
             d3.select(this).classed("fixed", d.fixed = false);
         }
 
+        $("#policy-network-wrapper .loader-img").hide();
+        this.$el.show();
         return this;
     },
     getSelectedIds(conditions) {
@@ -968,7 +970,7 @@ let DiffusionView = Backbone.View.extend({
 
         // data join
         let nodes = _self.model.get("nodes"),
-            links = conf.static.edges,
+            links = _self.model.get("edges"),
             stat = _self.model.get("stat"),
             cstat = _self.model.get("cstat"),
             _colorMap = utils.getColorMap(nodes, css_variables["--color-trans-out"], css_variables["--color-trans-in"]);
@@ -1268,6 +1270,8 @@ let DiffusionView = Backbone.View.extend({
             .call(_self.barTween, _attr, "bottom");
         _self.createBars(bottomBars, "bottom");
 
+        $("#diffusion-wrapper .loader-img").hide();
+        this.$el.show();
         return this;
     },
     getPathColor(source, target) {

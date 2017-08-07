@@ -30,8 +30,10 @@ class PageService(BaseService):
         for policy in policies:
             policy_set.setdefault(subject_pipe[policy.policySubjectId], []).append(policy.policyId)
             policy_pipe[policy.policyId] = policy.policyName
+        all_policies = reduce(lambda x, y: x + y, map(lambda z: policy_set[z], policy_set), [])
         output["policies"] = policy_set
         output["pipe"] = policy_pipe
+        output["all"] = sorted(all_policies)
         return json.dumps(output)
 
 
@@ -47,7 +49,11 @@ class StateService(BaseService):
         """get all subject from database."""
         result = []
         state_pipe = StateDao.get_state_id_names()
-        root_states = StateDao.get_root_count_list_for(subject_id)
+        query_result = StateDao.get_root_count_list_for(subject_id)
+        root_states = {}
+        for item in query_result:
+            temp_object = {"state_id": item.stateId, "state_name": item.stateName, "num": item.rootCount}
+            root_states[item.stateId] = temp_object
         for state in state_pipe:
             if root_states.has_key(state.stateId):
                 result.append(root_states[state.stateId])
@@ -71,7 +77,20 @@ class PolicyService(BaseService):
     @app.route("/api/policy/<policy_id>")
     def get_policy_by_id(policy_id):
         """get_policy_by_id"""
-        return json.dumps(PolicyDao.get_policy_by_id(policy_id))
+        output = {}
+        detail = {}
+        result = PolicyDao.get_policy_by_id(policy_id)
+        cascades = result.cascades
+        for item in cascades:
+            detail.setdefault(item.adoptedYear, []).append(item.stateId)
+        years = detail.keys()
+        output["policyId"] = result.policyId
+        output["policyName"] = result.policyName
+        output["policyStart"] = min(years)
+        output["policyEnd"] = max(years)
+        output["detail"] = detail
+        output["message"] = "success"
+        return json.dumps(output)
 
 
 class NetworkService(BaseService):
@@ -175,6 +194,42 @@ class NetworkService(BaseService):
         stat["min"] = min_meta
         return data_list, stat
 
+    @staticmethod
+    @app.route("/api/network/")
+    def get_network_by_params():
+        args = request.args
+        method = args['method']
+        param = args['param']
+        iters = int(args['iters'])
+        start_year = int(args['start_year']) if args['start_year'] is not None else PolicyDao.START_YEAR
+        end_year = int(args['end_year']) if int(args['end_year']) is not None else PolicyDao.END_YEAR
+        policies = None
+        cascade_text = ""
+        policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
+        if method == 'subject':
+            subject_id = int(param)
+            if subject_id == 0:
+                policies = policy_dao.get_all_policies()
+            else:
+                policies = policy_dao.get_policies_by_subject(subject_id)
+        elif method == 'cluster':
+            policies = policy_dao.get_policies_by_cluster(int(param))
+        elif method == 'state':
+            policies = policy_dao.get_policies_by_state_as_root(int(param))
+        elif method == 'word':
+            policies = policy_dao.get_policies_by_word_match(param)
+        elif method == 'text':
+            policies = policy_dao.get_policies_by_text_similarity(param)
+
+        if policies is not None:
+            cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
+
+        if cascade_text is not "":
+            return json.dumps(computing_service.get_network_by(cascade_text, iters=iters), cls=DecimalEncoder)
+        else:
+            pass
+
+        return json.dumps({})
 
     @staticmethod
     @app.route("/api/network/<policy_id>")
@@ -204,6 +259,8 @@ class NetworkService(BaseService):
         return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
 
 
-class ServiceUtils():
+class ServiceUtils:
     """service utils"""
-    pass
+
+    def __init__(self):
+        pass

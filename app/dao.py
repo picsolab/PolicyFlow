@@ -3,7 +3,6 @@ from .models import Subject, Policy, State, Cascade, Metadata
 from sqlalchemy import text, Integer
 from sqlalchemy.orm.session import Session
 
-
 class BaseDao(object):
     """Base Data Access Object class"""
 
@@ -41,6 +40,10 @@ class CascadeDao(BaseDao):
         """
         return Cascade.query.filter(Cascade.policyId == policy_id)
 
+    @staticmethod
+    def get_cascades_for_policies(policies):
+        pass
+
 
 class SubjectDao(BaseDao):
     """page dao providing page related data"""
@@ -58,7 +61,6 @@ class StateDao(BaseDao):
 
     @staticmethod
     def get_root_count_list_for(subject_id):
-        output = {}
         stmt = text("\
         SELECT r.state_id AS stateId, s.state_name AS stateName, count(r.state_id) AS rootCount \
         FROM policy AS p, root_state AS r, `state` AS s \
@@ -66,14 +68,7 @@ class StateDao(BaseDao):
         GROUP BY r.state_id \
         ")
 
-        query_result = db.session.execute(stmt, {'subject_id': int(subject_id)}).fetchall()
-        for item in query_result:
-            temp_object = {}
-            temp_object["state_id"] = item.stateId
-            temp_object["state_name"] = item.stateName
-            temp_object["num"] = item.rootCount
-            output[item.stateId] = temp_object
-        return output
+        return db.session.execute(stmt, {'subject_id': int(subject_id)}).fetchall()
 
     @staticmethod
     def get_all_state():
@@ -82,6 +77,12 @@ class StateDao(BaseDao):
 
 class PolicyDao(BaseDao):
     """policy dao providing policy related data"""
+    START_YEAR = 0
+    END_YEAR = 9999
+
+    def __init__(self, start_year=START_YEAR, end_year=END_YEAR):
+        self.start_year = start_year
+        self.end_year = end_year
 
     @staticmethod
     def get_all_policies():
@@ -93,43 +94,24 @@ class PolicyDao(BaseDao):
 
     @staticmethod
     def get_policy_by_id(policy_id):
-        output = {}
-        detail = {}
-        result = Policy.query.filter(Policy.policyId == policy_id).first()
-        cascades = result.cascades
-        for item in cascades:
-            detail.setdefault(item.adoptedYear, []).append(item.stateId)
-        years = detail.keys()
-        output["policyId"] = result.policyId
-        output["policyName"] = result.policyName
-        output["policyStart"] = min(years)
-        output["policyEnd"] = max(years)
-        output["detail"] = detail
-        output["message"] = "success"
-        return output
+        return Policy.query.filter(Policy.policyId == policy_id).first()
 
-    @staticmethod
-    def get_policies_by_word_match(word_str):
+    def get_policies_by_word_match(self, word_str):
         pass
 
-    @staticmethod
-    def get_policies_by_text_similarity(policy_id):
+    def get_policies_by_text_similarity(self, policy_id):
         pass
 
-    @staticmethod
-    def get_policies_by_state(state_id):
+    def get_policies_by_state(self, state_id):
         pass
 
-    @staticmethod
-    def get_policies_by_state_as_root(state_id):
+    def get_policies_by_state_as_root(self, state_id):
         pass
 
-    @staticmethod
-    def get_policies_by_subject(subject_id):
-        pass
+    def get_policies_by_subject(self, subject_id):
+        return Policy.query.filter(Policy.policySubjectId == subject_id, Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year).all()
 
-    @staticmethod
-    def get_policies_by_cluster(cluster_id):
+    def get_policies_by_cluster(self, cluster_id):
         pass
 
 

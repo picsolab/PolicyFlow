@@ -1,7 +1,26 @@
 let conf = require('../config.js');
 
 let Conditions = Backbone.Model.extend({
-    defaults: conf.models.conditions.defaults,
+    defaults: {
+        subject: conf.bases.subject.default,
+        // [dev]
+        // policy: 'adcom',
+        // metadata: 'perCapitaIncome',
+        // [prod]
+        policy: conf.bases.policy.default,
+        metadata: conf.bases.yAttributeList[0].id,
+        sequence: conf.bases.xAttributeList[0].id,
+        centrality: conf.bases.centralityList[0].id,
+        cvalidity: true,
+        geoBase: 'state',
+        regionList: [],
+        stateList: [],
+        method: "subject",
+        param: conf.pipe.subjectToId[conf.bases.subject.default],
+        startYear: 0,
+        endYear: 9999,
+        networkIters: 50
+    },
     initialize: () => {},
     setupCentralityValidity() {
         let validity = this.get("metadata") === "centrality" || this.get("sequence") === "centrality";
@@ -21,11 +40,24 @@ let Conditions = Backbone.Model.extend({
     },
     getTractListName() {
         return this.get("geoBase") + "List";
+    },
+    setSubject(subjectStr) {
+        this.set({
+            "subject": subjectStr,
+            "method": "subject",
+            "param": conf.pipe.subjectToId[subjectStr]
+        });
     }
 });
 
 let PolicyOptionsModel = Backbone.Model.extend({
-    url: '/api/subjects'
+    url: '/api/subjects',
+    parse(response, options) {
+        this.set({
+            "pipe": response.pipe,
+            "policies": $.extend({ "All": response.all }, response.policies)
+        });
+    }
 });
 
 let PolicyModel = Backbone.Model.extend({
@@ -73,6 +105,34 @@ let GeoModel = Backbone.Model.extend({
     }
 });
 
+let DynamicNetworkModel = Backbone.Model.extend({
+    initialize() {
+        this.url = conf.api.root + conf.api.networkBase
+    },
+    populate(conditions) {
+        let _self = this;
+        return $.getJSON(_self.url, {
+            "method": conditions.get("method"),
+            "param": conditions.get("param"),
+            "iters": conditions.get("networkIters"),
+            "start_year": conditions.get("startYear"),
+            "end_year": conditions.get("endYear")
+        }).done(data => {
+            edgesInIndices = _.map(data, edge => {
+                return {
+                    "source": conf.pipe.statesToIndices[edge.source],
+                    "target": conf.pipe.statesToIndices[edge.target],
+                    "value": edge.value
+                };
+            });
+            _self.set({
+                "edgesInStateIds": data,
+                "edgesInIndices": edgesInIndices
+            });
+        })
+    }
+});
+
 let NetworkModel = Backbone.Model.extend({
     initialize() {
         this.urlRoot = conf.api.root + conf.api.networkBase;
@@ -87,7 +147,7 @@ let NetworkModel = Backbone.Model.extend({
             let nodes = data.nodes;
             _.mapValues(nodes, (node) => node["centralities"] = centralities[node.stateId]);
             _self.set({
-                edges: conf.static.edgesInStateIds,
+                edges: this.get("edges"),
                 nodes: nodes,
                 stat: data.stat,
                 cstat: centralityStat
@@ -143,6 +203,7 @@ let DiffusionModel = Backbone.Model.extend({
             });
             _self.set({
                 "nodes": nodes,
+                "edges": this.get("edges"),
                 "stat": data.stat,
                 "cstat": centralityStat
             });
@@ -157,6 +218,7 @@ module.exports = {
     PolicyOptionsModel: PolicyOptionsModel,
     GeoModel: GeoModel,
     NetworkModel: NetworkModel,
+    DynamicNetworkModel: DynamicNetworkModel,
     ArcModel: ArcModel,
     DiffusionModel: DiffusionModel,
     StateModel: StateModel

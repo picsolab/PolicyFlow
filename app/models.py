@@ -4,15 +4,17 @@ from sqlalchemy.orm import relationship
 from app import db
 
 STATES = ["AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY",
-              "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY",
-              "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"]
+          "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY",
+          "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"]
 
 
 def get_state_index(state_id):
     return STATES.index(state_id)
 
+
 def get_state_id(state_index):
     return STATES[state_index]
+
 
 class Network(db.Model):
     """Network class"""
@@ -85,7 +87,8 @@ class Policy(db.Model):
 
     def serialize(self):
         """serialize full cascade"""
-        return reduce(lambda x, y: "{}{},{};".format(x, get_state_index(y.stateId), y.adoptedYear), self.cascades, "\n").rstrip(';')
+        return reduce(lambda x, y: "{}{},{},".format(x, get_state_index(y.stateId), y.adoptedYear), self.cascades,
+                      "\n").rstrip(',')
 
 
 class Cascade(db.Model):
@@ -120,3 +123,32 @@ class Metadata(db.Model):
 
     def __repr__(self):
         return '<Metadata of %r>' % (self.stateName)
+
+
+class NetinfNetwork:
+    edges = []
+    norm_edges = []
+    max_margin = 0
+    min_margin = 0
+
+    def __init__(self, network_text=""):
+        if network_text is not "":
+            """
+            < src > 
+            < dst > 
+            < number_trees > 
+            < marginal_gain > 
+            < median_timediff > 
+            < av_timediff >
+            """
+            self.edges = [tuple(x.split("/")) for x in network_text.split("\n")]
+            self.max_margin = map(max, zip(*self.edges))[3]
+            self.min_margin = map(min, zip(*self.edges))[3]
+
+    def normalize(self):
+        diff = self.max_margin - self.min_margin
+        self.norm_edges = [tuple(x[0], x[1], x[2], (x[3] - self.min_margin) / diff, x[4], x[5]) for x in self.edges]
+        return self.norm_edges
+
+    def get_network_object(self):
+        return [{"source": x[0], "target": x[1], "value": round(float(x[3]), 2)} for x in self.edges]
