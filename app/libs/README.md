@@ -23,7 +23,11 @@ Tree edit distance using the [Zhang Shasha algorithm](http://www.grantjenks.com/
 ### compile modified netinf
 
 ```
+# mac
 g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp
+
+# ubuntu
+g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp -lrt -lgomp
 ```
 
 #### refs
