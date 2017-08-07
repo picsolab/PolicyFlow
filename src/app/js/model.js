@@ -118,7 +118,7 @@ let DynamicNetworkModel = Backbone.Model.extend({
             "start_year": conditions.get("startYear"),
             "end_year": conditions.get("endYear")
         }).done(data => {
-            edgesInIndices = _.map(data, edge => {
+            let edgesInIndices = _.map(data, edge => {
                 return {
                     "source": conf.pipe.statesToIndices[edge.source],
                     "target": conf.pipe.statesToIndices[edge.target],
