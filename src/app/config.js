@@ -107,7 +107,7 @@ const Config = {
         geoBase: 'geo/'
     },
     pipe: {
-        subjectToId: { "All": 0, "Administrative Organzation": 1, "Civil Rights": 2, "Conservation": 3, "Corrections": 4, "Education": 5, "Elections": 6, "Health": 7, "Highway": 8, "Labor": 9, "Planning": 10, "Professional Regulation": 11, "Taxes": 12, "Unknown": 13, "Welfare": 14 },
+        subjectToId: { "All": 0, "Macroeconomics": 1, "Civil Rights": 2, "Health": 3, "Agriculture": 4, "Labor": 5, "Education": 6, "Environment": 7, "Energy": 8, "Immigration": 9, "Transportation": 10, "Law and Crime": 12, "Social Welfare": 13, "Housing": 14, "Domestic Commerce": 15, "Defense": 16, "Technology": 17, "Foreign Trade": 18, "International Affairs": 19, "Government Operations": 20, "Public Lands": 21, "Arts and Entertainment": 23, "Government Administration": 24, "Weather": 26, "Fires": 27, "Sports": 29, "Death Notices": 30, "Religion": 31, "Other": 99, "Unknown": 98 },
         sortMethodList: ["year", "metadata", "name"],
         sortMethodId: { "year": 0, "metadata": 1, "name": 2 },
         idToMeta: { "ce": "centrality", "md": "minorityDiversity", "ci": "citizenIdeology", "lp": "legislativeProfessionalism", "pci": "perCapitaIncome", "pd": "populationDensity", "pop": "totalPopulation" },

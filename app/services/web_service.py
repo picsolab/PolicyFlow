@@ -23,13 +23,14 @@ class PageService(BaseService):
         subject_pipe = {}
         policy_set = {}
         policy_pipe = {}
-        subjects = SubjectDao.get_all_subjects()
+        subjects = SubjectDao.get_all_valid_subjects()
         policies = PolicyDao.get_policy_id_name_subject()
         for subject in subjects:
             subject_pipe[subject.subjectId] = subject.subjectName
         for policy in policies:
-            policy_set.setdefault(subject_pipe[policy.policySubjectId], []).append(policy.policyId)
-            policy_pipe[policy.policyId] = policy.policyName
+            if policy.policySubjectId in subject_pipe:
+                policy_set.setdefault(subject_pipe[policy.policySubjectId], []).append(policy.policyId)
+                policy_pipe[policy.policyId] = policy.policyName
         all_policies = reduce(lambda x, y: x + y, map(lambda z: policy_set[z], policy_set), [])
         output["policies"] = policy_set
         output["pipe"] = policy_pipe

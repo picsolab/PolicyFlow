@@ -6,6 +6,91 @@ A workspace to run some data manipulations.
 ## Database change logs
 
 
+### 20170807
+
+update major topics and add lda labels to `policy`
+
+All 773 policies have been altered according to the newest data. According to output log: 464 policies are updated with new major topic, the others are labeled as 98: Unknown. Within these "Unknown"s, 290 policies that are found in the data set haven't been labeled as any major topic, 19 policies are from old data set that do not have new major topic assigned.
+
+Policies from {Agriculture(2), Defense(1), Foreign Trade(1), Immigration(2), Public Lands(2), Technology(1)} are removed due to insufficiency in amount to calculate network.
+
+Script:
+
+- update schema: `./scripts/migrate_0807_add_lda_n_update_subject.sql`
+
+- update subject id: `./scripts/migrate.py -o u`
+
+Dump: `./backup/diffusion2017vis_20170807.sql`
+
+topics in new data are as follow.
+
+```
+>>> df.majortopic.unique().describe()
+                       counts  freqs
+categories
+Macroeconomics              1   0.05
+Civil Rights                1   0.05
+Health                      1   0.05
+Agriculture                 1   0.05
+Labor                       1   0.05
+Education                   1   0.05
+Environment                 1   0.05
+Energy                      1   0.05
+Immigration                 1   0.05
+Transportation              1   0.05
+Law and Crime               1   0.05
+Social Welfare              1   0.05
+Housing                     1   0.05
+Domestic Commerce           1   0.05
+Defense                     1   0.05
+Technology                  1   0.05
+Foreign Trade               1   0.05
+Government Operations       1   0.05
+Public Lands                1   0.05
+NaN                         1   0.05
+```
+
+code book:
+
+```
+{
+    "Macroeconomics": { "id": 1, "valid": 1 },
+    "Civil Rights": { "id": 2, "valid": 1 },
+    "Health": { "id": 3, "valid": 1 },
+    "Agriculture": { "id": 4, "valid": 1 },
+    "Labor": { "id": 5, "valid": 1 },
+    "Education": { "id": 6, "valid": 1 },
+    "Environment": { "id": 7, "valid": 1 },
+    "Energy": { "id": 8, "valid": 1 },
+    "Immigration": { "id": 9, "valid": 1 },
+    "Transportation": { "id": 10, "valid": 1 },
+    "Law and Crime": { "id": 12, "valid": 1 },
+    "Social Welfare": { "id": 13, "valid": 1 },
+    "Housing": { "id": 14, "valid": 1 },
+    "Domestic Commerce": { "id": 15, "valid": 1 },
+    "Defense": { "id": 16, "valid": 1 },
+    "Technology": { "id": 17, "valid": 1 },
+    "Foreign Trade": { "id": 18, "valid": 1 },
+    "International Affairs": { "id": 19, "valid": 1 },
+    "Government Operations": { "id": 20, "valid": 1 },
+    "Public Lands": { "id": 21, "valid": 1 },
+    "Arts and Entertainment": { "id": 23, "valid": 0 },
+    "Government Administration": { "id": 24, "valid": 0 },
+    "Weather": { "id": 26, "valid": 0 },
+    "Fires": { "id": 27, "valid": 0 },
+    "Sports": { "id": 29, "valid": 0 },
+    "Death Notices": { "id": 30, "valid": 0 },
+    "Religion": { "id": 31, "valid": 0 },
+    "Other": { "id": 99, "valid": 0 },
+    "Unknown": { "id": 98, "valid": 1 }
+}
+```
+
+```
+updated: 464, unknown: 290, raw: 19
+```
+
+
 ### 20170801
 
 Create table `policy_text` for policy description text.

@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 import pandas as pd
 from app import db
 from app.models import Policy, Cascade, RootState
+from app.dao import PolicyDao
 
 Session = sessionmaker(bind=db.engine)
 
@@ -74,7 +75,7 @@ def add_policy_n_description():
 
     print """%d of new policy added, %d of overlapping old policy found, and %d of cascaded inserted.""" % (
         len(new_policies_ids), len(old_policies_ids), len(cascades))
-    session.commit()
+    # session.commit()
 
 
 def get_stat_for_0708_update():
@@ -93,6 +94,66 @@ def get_stat_for_0708_update():
             print policy[1]
 
 
+def alter_major_topic():
+    subject_code_book = {
+        "Macroeconomics": {"id": 1, "valid": 1},
+        "Civil Rights": {"id": 2, "valid": 1},
+        "Health": {"id": 3, "valid": 1},
+        "Agriculture": {"id": 4, "valid": 1},
+        "Labor": {"id": 5, "valid": 1},
+        "Education": {"id": 6, "valid": 1},
+        "Environment": {"id": 7, "valid": 1},
+        "Energy": {"id": 8, "valid": 1},
+        "Immigration": {"id": 9, "valid": 1},
+        "Transportation": {"id": 10, "valid": 1},
+        "Law and Crime": {"id": 12, "valid": 1},
+        "Social Welfare": {"id": 13, "valid": 1},
+        "Housing": {"id": 14, "valid": 1},
+        "Domestic Commerce": {"id": 15, "valid": 1},
+        "Defense": {"id": 16, "valid": 1},
+        "Technology": {"id": 17, "valid": 1},
+        "Foreign Trade": {"id": 18, "valid": 1},
+        "International Affairs": {"id": 19, "valid": 1},
+        "Government Operations": {"id": 20, "valid": 1},
+        "Public Lands": {"id": 21, "valid": 1},
+        "Arts and Entertainment": {"id": 23, "valid": 0},
+        "Government Administration": {"id": 24, "valid": 0},
+        "Weather": {"id": 26, "valid": 0},
+        "Fires": {"id": 27, "valid": 0},
+        "Sports": {"id": 29, "valid": 0},
+        "Death Notices": {"id": 30, "valid": 0},
+        "Religion": {"id": 31, "valid": 0},
+        "Other": {"id": 99, "valid": 0},
+        "Unknown": {"id": 98, "valid": 1}
+    }
+    session = Session()
+    df = pd.read_stata(rel_path('../external/raw/0718/policies_with_descriptions_topics.dta'))
+    ddf = df.drop_duplicates('policy', inplace=False)
+    all_policies = PolicyDao.get_all_policies()
+    updated = 0
+    unknown = 0
+    raw_to_unknown = 0
+    for policy in all_policies:
+        major_topic_c = ddf.loc[ddf['policy'] == str(policy.policyId), 'majortopic']
+        if len(major_topic_c) == 1:
+            subject = str(major_topic_c.iat[0])
+            if subject == 'nan':
+                unknown += 1
+                session.execute("UPDATE policy SET policy_subject_id=:policy_subject_id WHERE policy_id=:policy_id",
+                                {'policy_subject_id': 98, 'policy_id': policy.policyId})
+            else:
+                updated += 1
+                subject_id = subject_code_book[str(subject)]["id"]
+                session.execute("UPDATE policy SET policy_subject_id=:policy_subject_id WHERE policy_id=:policy_id",
+                                {'policy_subject_id': subject_id, 'policy_id': policy.policyId})
+        else:
+            raw_to_unknown += 1
+            session.execute("UPDATE policy SET policy_subject_id=:policy_subject_id WHERE policy_id=:policy_id",
+                            {'policy_subject_id': 98, 'policy_id': policy.policyId})
+    # session.commit()
+    print """updated: %d, unknown: %d, raw: %d\n""" % (updated, unknown, raw_to_unknown)
+
+
 if __name__ == '__main__':
     parser = ArgumentParser(description='database migration.')
     parser.add_argument('--operation', '-o', help='specify operation to perform.', required=True)
@@ -104,3 +165,5 @@ if __name__ == '__main__':
         add_policy_n_description()
     if operation == "s":
         get_stat_for_0708_update()
+    if operation == "u":
+        alter_major_topic()

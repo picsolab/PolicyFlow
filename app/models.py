@@ -33,11 +33,12 @@ class Subject(db.Model):
 
     subjectId = db.Column('subject_id', db.Integer, primary_key=True)
     subjectName = db.Column('subject_name', db.String(45), index=True)
+    subjectValid = db.Column('subject_valid', db.Integer)
 
     policies = relationship("Policy", back_populates="subject")
 
     def __repr__(self):
-        return '<Subject %r>' % (self.subjectName)
+        return '<Subject %r>' % self.subjectName
 
 
 class State(db.Model):
@@ -52,7 +53,7 @@ class State(db.Model):
     meta = relationship('Metadata', uselist=False, back_populates="state")
 
     def __repr__(self):
-        return '<State %r>' % (self.stateId)
+        return '<State %r>' % self.stateId
 
 
 class RootState(db.Model):
@@ -65,22 +66,26 @@ class RootState(db.Model):
     policy = relationship('Policy', back_populates="rootStates")
 
     def __repr__(self):
-        return '<RootState %r>' % (self.rootId)
+        return '<RootState %r>' % self.rootId
 
 
 class Policy(db.Model):
     """Policy class"""
     __tablename__ = 'policy'
 
-    policyId = db.Column('policy_id', db.String(45), primary_key=True)
-    policyName = db.Column('policy_name', db.String(150), index=True)
+    policyId = db.Column('policy_id', db.String(80), primary_key=True)
+    policyName = db.Column('policy_name', db.String(250), index=True)
     policySubjectId = db.Column('policy_subject_id', ForeignKey('subject.subject_id'))
     policyStart = db.Column('policy_start', db.Integer)
     policyEnd = db.Column('policy_end', db.Integer)
+    policyDescription = db.Column('policy_description', db.String(250))
+    policyLda1 = db.Column('policy_lda_1', db.Integer)
+    policyLda2 = db.Column('policy_lda_2', db.Integer)
 
     subject = relationship("Subject", back_populates="policies")
     cascades = relationship("Cascade", back_populates="policy")
     rootStates = relationship("RootState", back_populates="policy")
+    policyText = relationship("PolicyText", back_populates="policy")
 
     def __repr__(self):
         return '<Policy %r: %r>' % (self.policyId, self.policyName)
@@ -95,14 +100,14 @@ class Cascade(db.Model):
     """Cascade class"""
     __tablename__ = 'cascade'
 
-    policyId = db.Column('policy_id', db.String(45), ForeignKey('policy.policy_id'), primary_key=True)
+    policyId = db.Column('policy_id', db.String(80), ForeignKey('policy.policy_id'), primary_key=True)
     adoptedYear = db.Column('adopted_year', db.Integer, primary_key=True)
     stateId = db.Column('state_id', db.String(2), ForeignKey('state.state_id'), primary_key=True)
 
     policy = relationship("Policy", back_populates="cascades")
 
     def __repr__(self):
-        return '<Cascade %r>' % (self.policyId)
+        return '<Cascade %r>' % self.policyId
 
 
 class Metadata(db.Model):
@@ -122,7 +127,29 @@ class Metadata(db.Model):
     state = relationship("State", back_populates="meta")
 
     def __repr__(self):
-        return '<Metadata of %r>' % (self.stateName)
+        return '<Metadata of %r>' % self.stateName
+
+
+class PolicyText(db.Model):
+    """PolicyText class"""
+    __tablename__ = 'policy_text'
+
+    policyId = db.Column('policy_id', db.String(80), ForeignKey('policy.policy_id'), primary_key=True)
+    url1 = db.Column('url_1', db.String(500), index=True)
+    url2 = db.Column('url_2', db.String(500), index=True)
+    url3 = db.Column('url_3', db.String(500), index=True)
+    url4 = db.Column('url_4', db.String(500), index=True)
+    url5 = db.Column('url_5', db.String(500), index=True)
+    text1 = db.Column('text_1', db.String(500), index=True)
+    text2 = db.Column('text_2', db.String(500), index=True)
+    text3 = db.Column('text_3', db.String(500), index=True)
+    text4 = db.Column('text_4', db.String(500), index=True)
+    text5 = db.Column('text_5', db.String(500), index=True)
+
+    policy = relationship("Policy", back_populates="policyText")
+
+    def __repr__(self):
+        return '<PolicyText of %r>' % self.policyId
 
 
 class NetinfNetwork:

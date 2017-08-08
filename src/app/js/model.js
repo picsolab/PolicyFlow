@@ -19,7 +19,7 @@ let Conditions = Backbone.Model.extend({
         param: conf.pipe.subjectToId[conf.bases.subject.default],
         startYear: 0,
         endYear: 9999,
-        networkIters: 50
+        networkIters: 25
     },
     initialize: () => {},
     setupCentralityValidity() {

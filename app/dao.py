@@ -52,6 +52,10 @@ class SubjectDao(BaseDao):
     def get_all_subjects():
         return Subject.query.all()
 
+    @staticmethod
+    def get_all_valid_subjects():
+        return Subject.query.filter(Subject.subjectValid == 1)
+
 
 class StateDao(BaseDao):
     @staticmethod
