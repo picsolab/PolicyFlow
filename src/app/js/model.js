@@ -19,7 +19,7 @@ let Conditions = Backbone.Model.extend({
         param: conf.pipe.subjectToId[conf.bases.subject.default],
         startYear: 0,
         endYear: 9999,
-        networkIters: 25
+        networkIters: 50
     },
     initialize: () => {},
     setupCentralityValidity() {
@@ -211,6 +211,11 @@ let DiffusionModel = Backbone.Model.extend({
     }
 });
 
+let PolicyGroupModel = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.policyBase;
+    }
+});
 
 module.exports = {
     Conditions: Conditions,
@@ -221,5 +226,6 @@ module.exports = {
     DynamicNetworkModel: DynamicNetworkModel,
     ArcModel: ArcModel,
     DiffusionModel: DiffusionModel,
-    StateModel: StateModel
+    StateModel: StateModel,
+    PolicyGroupModel: PolicyGroupModel
 };

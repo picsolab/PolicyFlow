@@ -10,6 +10,7 @@ let Router = require('./router.js');
 
 let conditions = new Model.Conditions(),
     policyOptionsModel = new Model.PolicyOptionsModel(),
+    policyGroupModel = new Model.PolicyGroupModel(),
     policyModel = new Model.PolicyModel(),
     geoModel = new Model.GeoModel(),
     networkModel = new Model.NetworkModel(),
@@ -29,8 +30,8 @@ let policyView = new View.PolicyView({
     diffusionView = new View.DiffusionView({
         model: diffusionModel
     }),
-    policyOptionsView = new View.PolicyOptionsView({
-        model: policyOptionsModel
+    policyGroupView = new View.PolicyGroupView({
+        model: policyGroupModel
     });
 
 $(document).ready(() => {

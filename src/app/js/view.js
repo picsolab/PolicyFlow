@@ -882,8 +882,11 @@ let NetworkView = Backbone.View.extend({
     }
 });
 
-let PolicyOptionsView = Backbone.View.extend({
-
+let PolicyGroupView = Backbone.View.extend({
+    el: "#policy-group-table",
+    render() {
+        console.log(this.model.attributes);
+    }
 });
 
 let DiffusionView = Backbone.View.extend({
@@ -1806,5 +1809,5 @@ module.exports = {
     GeoView: GeoView,
     NetworkView: NetworkView,
     DiffusionView: DiffusionView,
-    PolicyOptionsView: PolicyOptionsView
+    PolicyGroupView: PolicyGroupView
 };
