@@ -44,3 +44,4 @@ UPDATE `diffusion2017vis`.`subject` SET `subject_valid`='0' WHERE `subject_id`='
 UPDATE `diffusion2017vis`.`subject` SET `subject_valid`='0' WHERE `subject_id`='9';
 UPDATE `diffusion2017vis`.`subject` SET `subject_valid`='0' WHERE `subject_id`='21';
 UPDATE `diffusion2017vis`.`subject` SET `subject_valid`='0' WHERE `subject_id`='17';
+UPDATE `diffusion2017vis`.`subject` SET `subject_valid`='0' WHERE `subject_id`='19';

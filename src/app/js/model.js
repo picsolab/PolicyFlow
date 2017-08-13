@@ -217,6 +217,23 @@ let PolicyGroupModel = Backbone.Model.extend({
     }
 });
 
+let RingModel = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.ringBase;
+    },
+    toggleUrl(conditions) {
+        this.url = this.urlRoot + conditions.get("method");
+        return this.url;
+    },
+    populate(conditions) {
+        let _self = this;
+        this.toggleUrl(conditions);
+        return $.getJSON(_self.url).done(data => {
+            this.set({ "cluster": data });
+        });
+    }
+});
+
 module.exports = {
     Conditions: Conditions,
     PolicyModel: PolicyModel,
@@ -227,5 +244,6 @@ module.exports = {
     ArcModel: ArcModel,
     DiffusionModel: DiffusionModel,
     StateModel: StateModel,
-    PolicyGroupModel: PolicyGroupModel
+    PolicyGroupModel: PolicyGroupModel,
+    RingModel: RingModel
 };

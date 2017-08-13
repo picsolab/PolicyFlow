@@ -97,6 +97,14 @@ class PolicyDao(BaseDao):
         return Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId).all()
 
     @staticmethod
+    def get_policy_per_lda_cluster():
+        stmt = text("SELECT policy_lda_1 AS policyLda1, policy_lda_2 AS policyLda2, COUNT(*) AS policyCount "
+                    "FROM policy "
+                    "GROUP BY policy_lda_1, policy_lda_2 "
+                    "HAVING policyCount > 5")
+        return db.session.execute(stmt).fetchall()
+
+    @staticmethod
     def get_policy_by_id(policy_id):
         return Policy.query.filter(Policy.policyId == policy_id).first()
 

@@ -13,6 +13,7 @@ let conditions = new Model.Conditions(),
     policyGroupModel = new Model.PolicyGroupModel(),
     policyModel = new Model.PolicyModel(),
     geoModel = new Model.GeoModel(),
+    ringModel = new Model.RingModel(),
     networkModel = new Model.NetworkModel(),
     diffusionModel = new Model.DiffusionModel(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
@@ -23,6 +24,9 @@ let policyView = new View.PolicyView({
     }),
     geoView = new View.GeoView({
         model: geoModel
+    }),
+    ringView = new View.RingView({
+        model: ringModel
     }),
     networkView = new View.NetworkView({
         model: networkModel
@@ -50,6 +54,10 @@ $(document).ready(() => {
 
     geoModel.on("change", () => {
         geoView.render(conditions);
+    });
+
+    ringModel.on("change", () => {
+        ringView.render(conditions);
     });
 
     policyOptionsModel.on("change", () => {
@@ -97,6 +105,9 @@ $(document).ready(() => {
                 diffusionView.update();
             }
         }
+        if (conditions.hasChanged("method")) {
+            ringModel.populate(conditions);
+        }
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
             setupCentralityDropdown();
         }
@@ -123,13 +134,23 @@ $(document).ready(() => {
 });
 
 function initRendering() {
-    // stateModel.fetch();
+    ringModel.populate(conditions);
     policyModel.populate(conditions);
     geoModel.populate(conditions);
     dynamicNetworkModel.populate(conditions);
 }
 
 function bindEvents() {
+    $("#method-tab-wrapper").find('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        let __target = $(e.target) // newly activated tab
+        conditions.set("method", __target.attr("value"));
+    });
+
+    $(ringView.el).on('click', e => {
+        let __target = $(e.target),
+            seq = __target.attr("seq");
+    });
+
     // selected subject to conditions
     $('#subject-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
         let subjectList = Object.keys(policyOptionsModel.get("policies")),

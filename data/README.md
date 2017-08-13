@@ -6,6 +6,17 @@ A workspace to run some data manipulations.
 ## Database change logs
 
 
+### 20170812
+
+update policy LDA clusters. 6 clusters for the first layer, 10 clusters for the second layer. Terms for each cluster are presented at `./raw/lda_term_*.txt`.
+
+Script:
+
+- update `policy`: `./scripts/migrate_0812_update_policy_ldas.sql`
+
+- computation: `./scripts/textLDA.py`
+
+
 ### 20170807
 
 update major topics and add lda labels to `policy`

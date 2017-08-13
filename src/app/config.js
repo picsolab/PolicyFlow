@@ -102,6 +102,7 @@ const Config = {
         test: '/api/success/',
         policyBase: 'policy/',
         networkBase: 'network/',
+        ringBase: 'cluster/',
         arcBase: 'arc/',
         diffusionBase: 'diffusion/',
         geoBase: 'geo/'

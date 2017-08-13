@@ -138,6 +138,27 @@ const GraphSettings = {
             circleSizeRange: [6, 18],
             animationSwitch: true
         }
+    },
+
+    // ring view settings
+    r: {
+        margin: {
+            top: 10,
+            left: 10,
+            bottom: 10,
+            right: 10,
+            tShiftX: 10,
+            tShiftY: 10
+        },
+        size: {
+            height: 500,
+            width: 500,
+            r: 250
+        },
+        multiplier: {
+
+        },
+        config: {}
     }
 }
 

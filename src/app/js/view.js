@@ -5,7 +5,19 @@ let utils = require('./utils.js');
 const printDiagnoseInfo = false;
 
 let colorList = [],
-    colorMap = {};
+    colorMap = {},
+    color10 = [css_variables['--color-a'],
+        css_variables['--color-b'],
+        css_variables['--color-c'],
+        css_variables['--color-d'],
+        css_variables['--color-e'],
+        css_variables['--color-f'],
+        css_variables['--color-g'],
+        css_variables['--color-h'],
+        css_variables['--color-i'],
+        css_variables['--color-j']
+    ];
+
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
     render() {
@@ -1797,6 +1809,151 @@ let DiffusionView = Backbone.View.extend({
     }
 });
 
+let RingView = Backbone.View.extend({
+    el: "#svg-ring-view",
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            clusterObj = _self.model.get("cluster"),
+            method = clusterObj.name,
+            color20c = d3.scale.category20c();
+
+        $(_self.el).empty();
+        $("#ring-tooltip").remove();
+
+        let _width = gs.r.margin.left + gs.r.margin.right + gs.r.size.width,
+            _height = gs.r.margin.top + gs.r.margin.bottom + gs.r.size.height;
+
+        let svg = _attr.svg = d3.select(_self.el)
+            .attr({
+                'preserveAspectRatio': 'xMidYMid meet',
+                'viewBox': ("0 0 " + _width + " " + _height + ""),
+                'class': 'svg-content-responsive'
+            }),
+            ringG = svg.append('g').attr({
+                id: 'ring-group',
+                class: 'ring',
+                transform: "translate(" + (_width / 2) + "," + (_height / 2) + ")"
+            }),
+            labelG = svg.append('g').attr({
+                id: 'ring-label-group',
+                class: 'label-group',
+                transform: "translate(" + (_width / 2) + "," + (_height / 2) + ")"
+            });
+
+        let partition = d3.layout.partition()
+            .sort((a, b) => a.size - b.size)
+            .size([2 * Math.PI, gs.r.size.r * gs.r.size.r])
+            .value(d => d.size),
+            arc = d3.svg.arc()
+            .startAngle(d => d.x)
+            .endAngle(d => d.x + d.dx)
+            .innerRadius(d => Math.sqrt(d.y))
+            .outerRadius(d => Math.sqrt(d.y + d.dy)),
+            tooltip = d3.select("body")
+            .append("div")
+            .attr("id", "ring-tooltip");
+
+        let formatDescription = function(d) {
+                return '<b>' + getHead(d) + '</b></br>' + d.size + '&nbsp;policies';
+            },
+            computeTextRotation = function(d) {
+                let shift = (d.depth === 0 ? 180 : -90);
+                return (d.x + d.dx / 2) * 180 / Math.PI + shift;
+            },
+            getSeqStr = function(d) {
+                let seq = "",
+                    curr = d;
+                while (curr.depth !== 0) {
+                    seq = "-" + (method === "subject" ? curr.id : curr.name) + seq;
+                    curr = curr.parent;
+                }
+                return _.trimStart(seq, "-");
+            },
+            getFullSeqStr = function(d) {
+                return d.depth ? "0-" + getSeqStr(d) : "0";
+            },
+            getHead = function(d) {
+                if (d.depth) {
+                    if (method === "subject") {
+                        return d.name;
+                    } else if (method === "text") {
+                        return getSeqStr(d);
+                    }
+                } else {
+                    return "all";
+                }
+            },
+            longText = function(d) {
+                let text = getHead(d),
+                    thickness = Math.sqrt(d.y + d.dy) - Math.sqrt(d.y);
+                return text.length * 8 < thickness;
+            },
+            mouseOverArc = function(d) {
+                d3.select(this).attr("stroke", "black")
+                tooltip.html(formatDescription(d));
+                return tooltip.transition()
+                    .duration(50)
+                    .style("opacity", 0.9);
+            },
+            mouseOutArc = function() {
+                d3.select(this).attr("stroke", "")
+                return tooltip.style("opacity", 0);
+            },
+            mouseMoveArc = function(d) {
+                return tooltip.style({
+                    top: (d3.event.pageY + gs.r.margin.tShiftY) + "px",
+                    left: (d3.event.pageX + gs.r.margin.tShiftX) + "px"
+                });
+            }
+
+        let paths = ringG.datum(clusterObj).selectAll("path")
+            .data(partition.nodes),
+            labels = labelG.datum(clusterObj).selectAll("text")
+            .data(partition.nodes);
+
+        $.extend(_attr, {
+            ringG: ringG,
+            labelG: labelG
+        });
+
+        paths.enter().append("path")
+            .attr({
+                d: arc,
+                seq: d => getFullSeqStr(d)
+            })
+            .style({
+                stroke: "#fff",
+                fill: d => {
+                    if (d.depth === 0 || d.depth === 1) {
+                        return color20c(d.name);
+                    } else {
+                        return d3.rgb(color20c(d.parent.name)).brighter(d.depth / 10);
+                    }
+                },
+                "fill-rule": "evenodd"
+            })
+            .on("mouseover", mouseOverArc)
+            .on("mousemove", mouseMoveArc)
+            .on("mouseout", mouseOutArc);
+
+        labels.enter().append("text")
+            .attr({
+                transform: d => "rotate(" + computeTextRotation(d) + ")",
+                x: d => Math.sqrt(d.y),
+                dx: 6, // margin
+                dy: ".35em"
+            }) // vertical-align
+            .filter(longText)
+            .text(d => getHead(d));
+
+        return this;
+    }
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -1807,6 +1964,7 @@ d3.selection.prototype.moveToFront = function() {
 module.exports = {
     PolicyView: PolicyView,
     GeoView: GeoView,
+    RingView: RingView,
     NetworkView: NetworkView,
     DiffusionView: DiffusionView,
     PolicyGroupView: PolicyGroupView
