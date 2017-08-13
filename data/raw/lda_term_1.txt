@@ -1,0 +1,6 @@
+0:abort,gun,roe,energi,firearm,disput,fetal,pre,electron,background
+1:seat,trust,belt,wast,estat,low,radioact,helmet,wage,primari
+2:hate,racial,firearm,fair,trade,harass,renew,prison,registr,minimum
+3:trust,seat,belt,lotteri,conserv,estat,energi,dna,appoint,renew
+4:abort,vote,id,drink,welfar,real,campaign,bac,rape,entiti
+5:notif,registr,smoke,divorc,registri,water,river,check,trade,helmet
