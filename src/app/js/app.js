@@ -151,7 +151,7 @@ function bindEvents() {
             "method": __target.attr("value"),
             "policy": conf.bases.policy.default
         });
-        policyGroupView.clear();
+        // policyGroupView.clear();
     });
 
     // ring view click, update policy group

@@ -1876,7 +1876,8 @@ let RingView = Backbone.View.extend({
             _attr = this._attr,
             clusterObj = _self.model.get("cluster"),
             method = clusterObj.name,
-            color20c = d3.scale.category20c();
+            color20c = d3.scale.category20c(),
+            ldaTerms = conf.static.ldaTerms;
 
         $(_self.el).empty();
         $("#ring-tooltip").remove();
@@ -1914,10 +1915,7 @@ let RingView = Backbone.View.extend({
             .append("div")
             .attr("id", "ring-tooltip");
 
-        let formatDescription = function(d) {
-                return '<b>' + getHead(d) + '</b></br>' + d.size + '&nbsp;policies';
-            },
-            computeTextRotation = function(d) {
+        let computeTextRotation = function(d) {
                 let shift = (d.depth === 0 ? 180 : -90);
                 return (d.x + d.dx / 2) * 180 / Math.PI + shift;
             },
@@ -1943,6 +1941,14 @@ let RingView = Backbone.View.extend({
                 } else {
                     return "all";
                 }
+            },
+            formatDescription = function(d) {
+                let ldaTerm = "";
+                if (method === "text") {
+                    let seq = getFullSeqStr(d);
+                    ldaTerm += (seq === "0" ? "" : ldaTerms[seq] + "</br>");
+                }
+                return '<b>' + getHead(d) + '</b></br>' + ldaTerm + d.size + '&nbsp;policies';
             },
             longText = function(d) {
                 let text = getHead(d),
@@ -2009,7 +2015,15 @@ let RingView = Backbone.View.extend({
 
         // init content for policy group view
         $("#ring-group>path[seq='0']").trigger('click');
+        // this.bindTriggers();
         return this;
+    },
+    bindTriggers() {
+        let __svg = $(this.el);
+        __svg.off();
+        __svg.on("mouseout", () => {
+            d3.select("#ring-tooltip").style("opacity", 0);
+        });
     }
 });
 
