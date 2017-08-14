@@ -101,6 +101,7 @@ const Config = {
         root: '/api/',
         test: '/api/success/',
         policyBase: 'policy/',
+        policyGroupBase: 'policies/',
         networkBase: 'network/',
         ringBase: 'cluster/',
         arcBase: 'arc/',

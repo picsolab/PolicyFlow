@@ -896,8 +896,65 @@ let NetworkView = Backbone.View.extend({
 
 let PolicyGroupView = Backbone.View.extend({
     el: "#policy-group-table",
-    render() {
-        console.log(this.model.attributes);
+    initialize() {
+        $(this.el).bootstrapTable({
+            sortClass: "relevance",
+            height: 750,
+            pagination: true,
+            onlyInfoPagination: false,
+            pageSize: 20,
+            pageList: [10, 25, 50, 100, "All"],
+            selectItemName: "policy_id",
+            search: true,
+            strictSearch: false,
+            showColumns: true,
+            showToggle: true,
+            showPaginationSwitch: true,
+            minimumCountColumns: 10,
+            idField: "policy_id",
+            searchAlign: 'left',
+            paginationVAlign: "bottom",
+            clickToSelect: true,
+            singleSelect: true,
+            maintainSelected: true,
+            columns: [{
+                radio: true
+            }, {
+                field: 'policy_id',
+                title: 'Policy ID',
+                sortable: true,
+                searchable: true,
+                clickToSelect: true,
+                visible: false
+            }, {
+                field: 'policy_name',
+                title: 'Policy Name',
+                sortable: true,
+                searchable: true,
+                clickToSelect: true
+            }, {
+                field: 'relevance',
+                title: 'Relevance',
+                titleTooltip: 'Relevance to the selected policy.',
+                sortable: true,
+                searchable: false,
+                clickToSelect: true,
+                order: 'desc',
+                formatter: (v, r, i) => v.toFixed(2)
+            }],
+            formatNoMatches: () => 'Getting start by a click on the pie above.',
+            formatShowingRows: (pageFrom, pageTo, totalRows) => 'Showing ' + pageFrom + ' to ' + pageTo + ' of ' + totalRows + ' policies'
+        });
+    },
+    render(conditions) {
+        let _self = this,
+            policies = this.model.get("policies"),
+            __table = $(_self.el);
+        __table.bootstrapTable('load', policies);
+        __table.bootstrapTable('selectPage', 1);
+    },
+    clear() {
+        $(this.el).bootstrapTable('removeAll');
     }
 });
 

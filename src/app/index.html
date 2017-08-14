@@ -24,7 +24,7 @@
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="nav">
-                    <li class="col-lg-2 col-md-2 col-sm-2">
+                    <!-- <li class="col-lg-2 col-md-2 col-sm-2">
                         <label class="nav-title-label">Subject</label>
                         <div class="select-wrapper" id="subject-select-wrapper">
                             <select name="subject-select" id="subject-select" class="selectpicker show-tick" data-live-search="true" data-container="body" data-width="100%" title="Loading..." disabled></select>
@@ -35,7 +35,7 @@
                         <div class="select-wrapper" id="policy-select-wrapper">
                             <select name="policy-select" id="policy-select" class="selectpicker show-tick" data-live-search="true" data-container="body" data-width="100%" title="Loading..." disabled></select>
                         </div>
-                    </li>
+                    </li> -->
                     <li class="col-lg-2 col-md-2 col-sm-2">
                         <label class="nav-title-label">Attributes</label>
                         <div class="select-wrapper" id="metadata-select-wrapper">
@@ -63,9 +63,9 @@
 
     <div class="container-fluid" id="content-wrapper">
         <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
-            <div class="page-header">
+            <!-- <div class="page-header">
                 <h3 id="page-header"></h3>
-            </div>
+            </div> -->
             <div id="method-tab-wrapper">
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active"><a data-toggle="tab" value="subject">Major Topic</a></li>
@@ -76,12 +76,14 @@
                 <svg id="svg-ring-view"></svg>
             </div>
             <div id="policy-group-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <div id="policy-group-table">
-
-                </div>
+                <table id="policy-group-table">
+                </table>
             </div>
         </div>
         <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12 main">
+            <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 jumbotron">
+                <p>a place holder for policy trend view.</p>
+            </div>
             <div id="network-views-wrapper" class="col-lg-12 col-md-12 col-sm-12">
                 <div id="policy-geo-wrapper" class="col-lg-7 col-md-7 col-sm-12">
                     <svg id="svg-geo-view"></svg>
@@ -98,10 +100,6 @@
                     <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#">
                     <svg id="svg-network-view"></svg>
                 </div>
-            </div>
-
-            <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 jumbotron">
-                <p>a place holder for policy trend view.</p>
             </div>
             <div id="diffusion-views-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
                 <div id="diffusion-wrapper" class="col-lg-7 col-md-7 col-sm-12 col-xs-12">

@@ -71,9 +71,13 @@ $(document).ready(() => {
         diffusionModel.populate(conditions);
     });
 
-    conditions.on('change', () => {
-        updateHeader();
+    policyGroupModel.on("change", () => {
+        policyGroupView.render(conditions);
+    })
 
+    conditions.on('change', () => {
+        // updateHeader();
+        console.log(conditions);
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
             networkModel.populate(conditions);
@@ -107,6 +111,8 @@ $(document).ready(() => {
         }
         if (conditions.hasChanged("method")) {
             ringModel.populate(conditions);
+            preLoading();
+            dynamicNetworkModel.populate(conditions);
         }
         if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
             setupCentralityDropdown();
@@ -120,10 +126,7 @@ $(document).ready(() => {
             networkView.update();
         }
         if (conditions.hasChanged("param") || conditions.hasChanged("startYear") || conditions.hasChanged("endYear")) {
-            networkView.$el.hide();
-            diffusionView.$el.hide();
-            $("#policy-network-wrapper .loader-img").show();
-            $("#diffusion-wrapper .loader-img").show();
+            preLoading();
             dynamicNetworkModel.populate(conditions);
         }
     });
@@ -141,14 +144,47 @@ function initRendering() {
 }
 
 function bindEvents() {
+    // toggle ring view
     $("#method-tab-wrapper").find('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         let __target = $(e.target) // newly activated tab
-        conditions.set("method", __target.attr("value"));
+        conditions.set({
+            "method": __target.attr("value"),
+            "policy": conf.bases.policy.default
+        });
+        policyGroupView.clear();
     });
 
+    // ring view click, update policy group
     $(ringView.el).on('click', e => {
         let __target = $(e.target),
-            seq = __target.attr("seq");
+            seq = __target.attr("seq"),
+            seqList = seq.split("-");
+        policyGroupModel.populate(conditions, seq);
+        switch (conditions.get("method")) {
+            case "subject":
+                let subjectId = 0,
+                    subjectName = "All",
+                    subjectList = ringModel.get("cluster").children;
+                if (seqList.length !== 1) {
+                    subjectId = seqList[1];
+                    subjectName = subjectList.find(e => e.id == subjectId).name;
+                }
+                conditions.set({
+                    "subject": subjectName,
+                    "param": subjectId
+                });
+                break;
+            case "text":
+                conditions.set("param", seq);
+                break;
+            default:
+                break;
+        }
+    });
+
+    $("#policy-group-table").on('check.bs.table', (row) => {
+        let selectedPolicy = $("#policy-group-table").bootstrapTable('getSelections');
+        conditions.set('policy', selectedPolicy[0]["policy_id"]);
     });
 
     // selected subject to conditions
@@ -220,9 +256,16 @@ function initDom() {
     initDropdowns($("#centrality-select"), "centrality-option", conf.bases.centralityList);
     setupCentralityDropdown();
 
-    policyOptionsModel.fetch();
+    // policyOptionsModel.fetch();
 
     bindEvents();
+}
+
+function preLoading() {
+    networkView.$el.hide();
+    diffusionView.$el.hide();
+    $("#policy-network-wrapper .loader-img").show();
+    $("#diffusion-wrapper .loader-img").show();
 }
 
 /**
@@ -250,7 +293,7 @@ function retrieveCascadeHandler(e) {
 
 function recoverDomBy(conditions) {
     // recover subject and policy dropdown
-    updateSubjectAndPolicy(policyOptionsModel, conditions.get("subject"), conditions.get("policy"));
+    // updateSubjectAndPolicy(policyOptionsModel, conditions.get("subject"), conditions.get("policy"));
 
     // recover centrality dropdown
     $("#centrality-select").selectpicker('val', conditions.get("centrality"), { silent: true });

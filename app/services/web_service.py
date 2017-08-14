@@ -1,6 +1,8 @@
 from flask import request, g, json
 from app import app
 
+import random
+
 from .helper import DecimalEncoder
 from .base_service import BaseService
 from .computing_service import ComputingService
@@ -53,7 +55,9 @@ class PageService(BaseService):
             policies = PolicyDao.get_policy_per_lda_cluster()
             for policy in policies:
                 reduced_policy.setdefault(policy[0], []).append({"name": policy[1], "size": policy[2]})
-            output["children"] = reduce(lambda x, y: x + [{"name": y, "children": reduced_policy[y], "size": reduce(lambda a, b: a + b["size"], reduced_policy[y], 0)}], reduced_policy, [])
+            output["children"] = reduce(lambda x, y: x + [{"name": y, "children": reduced_policy[y],
+                                                           "size": reduce(lambda a, b: a + b["size"], reduced_policy[y],
+                                                                          0)}], reduced_policy, [])
             output["size"] = reduce(lambda x, y: x + y["size"], output["children"], 0)
         return json.dumps(output)
 
@@ -112,6 +116,46 @@ class PolicyService(BaseService):
         output["detail"] = detail
         output["message"] = "success"
         return json.dumps(output)
+
+    @staticmethod
+    @app.route("/api/policies/")
+    def get_policies_by_params():
+        args = request.args
+        method = args['method']
+        param = args['param']
+        start_year = int(args['start_year']) if args['start_year'] is not None else PolicyDao.START_YEAR
+        end_year = int(args['end_year']) if int(args['end_year']) is not None else PolicyDao.END_YEAR
+        policies = None
+        policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
+        if method == 'subject':
+            params = param.split("-")
+            if len(params) == 1:
+                policies = policy_dao.get_all_policies_with_valid_subject()
+                if policies is not None:
+                    return json.dumps({"policies": [
+                        {"policy_id": p[0].policyId, "policy_name": p[0].policyName, "relevance": random.uniform(0, 1)}
+                        for p in policies]})
+            else:
+                policies = policy_dao.get_policies_by_subject(int(params[1]))
+        elif method == 'cluster':
+            policies = policy_dao.get_policies_by_cluster(int(param))
+        elif method == 'state':
+            policies = policy_dao.get_policies_by_state_as_root(int(param))
+        elif method == 'word':
+            policies = policy_dao.get_policies_by_word_match(param)
+        elif method == 'text':
+            params = param.split("-")
+            if len(params) == 1:
+                policies = policy_dao.get_all_policies()
+            else:
+                policies = policy_dao.get_policies_by_text_similarity(params)
+
+        if policies is not None:
+            return json.dumps({"policies": [
+                {"policy_id": p.policyId, "policy_name": p.policyName, "relevance": random.uniform(0, 1)}
+                for p in policies]})
+
+        return json.dumps({})
 
 
 class NetworkService(BaseService):
@@ -228,11 +272,15 @@ class NetworkService(BaseService):
         cascade_text = ""
         policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
         if method == 'subject':
-            subject_id = int(param)
-            if subject_id == 0:
-                policies = policy_dao.get_all_policies()
+            params = param.split("-")
+            if len(params) == 1:
+                policies = policy_dao.get_all_policies_with_valid_subject()
+                if policies is not None:
+                    cascade_text = reduce(lambda x, y: x + y[0].serialize(), policies, "")
             else:
-                policies = policy_dao.get_policies_by_subject(subject_id)
+                policies = policy_dao.get_policies_by_subject(params[1])
+                if policies is not None:
+                    cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
         elif method == 'cluster':
             policies = policy_dao.get_policies_by_cluster(int(param))
         elif method == 'state':
@@ -240,10 +288,13 @@ class NetworkService(BaseService):
         elif method == 'word':
             policies = policy_dao.get_policies_by_word_match(param)
         elif method == 'text':
-            policies = policy_dao.get_policies_by_text_similarity(param)
-
-        if policies is not None:
-            cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
+            params = param.split("-")
+            if len(params) == 1:
+                policies = policy_dao.get_all_policies()
+            else:
+                policies = policy_dao.get_policies_by_text_similarity(params)
+            if policies is not None:
+                cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
 
         if cascade_text is not "":
             return json.dumps(computing_service.get_network_by(cascade_text, iters=iters), cls=DecimalEncoder)

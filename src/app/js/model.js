@@ -213,7 +213,18 @@ let DiffusionModel = Backbone.Model.extend({
 
 let PolicyGroupModel = Backbone.Model.extend({
     initialize() {
-        this.urlRoot = conf.api.root + conf.api.policyBase;
+        this.url = conf.api.root + conf.api.policyGroupBase;
+    },
+    populate(conditions, seq) {
+        let _self = this;
+        return $.getJSON(_self.url, {
+            "method": conditions.get("method"),
+            "param": seq,
+            "start_year": conditions.get("startYear"),
+            "end_year": conditions.get("endYear")
+        }).done(data => {
+            this.set(data);
+        });
     }
 });
 

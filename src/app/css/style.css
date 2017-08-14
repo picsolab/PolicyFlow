@@ -120,6 +120,14 @@
 }
 
 
+/* policy group view */
+
+#policy-group-wrapper {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+
 /*policytrend*/
 
 #policy-trend-wrapper {

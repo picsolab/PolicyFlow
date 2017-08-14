@@ -1,7 +1,10 @@
 from app import db, models
 from .models import Subject, Policy, State, Cascade, Metadata
 from sqlalchemy import text, Integer
-from sqlalchemy.orm.session import Session
+from sqlalchemy.orm import sessionmaker
+
+Session = sessionmaker(bind=db.engine)
+
 
 class BaseDao(object):
     """Base Data Access Object class"""
@@ -93,6 +96,11 @@ class PolicyDao(BaseDao):
         return Policy.query.all()
 
     @staticmethod
+    def get_all_policies_with_valid_subject():
+        return Session().query(Policy, Subject).filter(Policy.policySubjectId == Subject.subjectId) \
+            .filter(Subject.subjectValid == 1).all()
+
+    @staticmethod
     def get_policy_id_name_subject():
         return Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId).all()
 
@@ -101,7 +109,7 @@ class PolicyDao(BaseDao):
         stmt = text("SELECT policy_lda_1 AS policyLda1, policy_lda_2 AS policyLda2, COUNT(*) AS policyCount "
                     "FROM policy "
                     "GROUP BY policy_lda_1, policy_lda_2 "
-                    "HAVING policyCount > 5")
+                    "HAVING policyCount >= 5")
         return db.session.execute(stmt).fetchall()
 
     @staticmethod
@@ -111,8 +119,13 @@ class PolicyDao(BaseDao):
     def get_policies_by_word_match(self, word_str):
         pass
 
-    def get_policies_by_text_similarity(self, policy_id):
-        pass
+    def get_policies_by_text_similarity(self, params):
+        if len(params) == 2:
+            return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyStart >= self.start_year,
+                                       Policy.policyEnd <= self.end_year).all()
+        elif len(params) == 3:
+            return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyLda2 == params[2],
+                                       Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year).all()
 
     def get_policies_by_state(self, state_id):
         pass
@@ -121,7 +134,8 @@ class PolicyDao(BaseDao):
         pass
 
     def get_policies_by_subject(self, subject_id):
-        return Policy.query.filter(Policy.policySubjectId == subject_id, Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year).all()
+        return Policy.query.filter(Policy.policySubjectId == subject_id, Policy.policyStart >= self.start_year,
+                                   Policy.policyEnd <= self.end_year).all()
 
     def get_policies_by_cluster(self, cluster_id):
         pass
