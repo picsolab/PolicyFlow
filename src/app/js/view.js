@@ -2007,6 +2007,8 @@ let RingView = Backbone.View.extend({
             .filter(longText)
             .text(d => getHead(d));
 
+        // init content for policy group view
+        $("#ring-group>path[seq='0']").trigger('click');
         return this;
     }
 });

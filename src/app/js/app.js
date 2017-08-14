@@ -77,7 +77,7 @@ $(document).ready(() => {
 
     conditions.on('change', () => {
         // updateHeader();
-        console.log(conditions);
+
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
             networkModel.populate(conditions);
