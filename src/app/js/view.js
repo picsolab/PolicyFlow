@@ -683,7 +683,7 @@ let NetworkView = Backbone.View.extend({
             filteredNodes = {},
             filteredEdges = [],
             colorNeeded = (geoBase === "state" ?
-                (metaType !== 'centrality') && (_attr.c.get("policy") !== 'unselected') :
+                (metaType !== 'centrality') && (_attr.c.get("policy") !== conf.bases.policy.default) :
                 true),
             opacity = css_variables["--opacity-state"],
             meta = 'centrality',
@@ -942,7 +942,7 @@ let PolicyGroupView = Backbone.View.extend({
                 order: 'desc',
                 formatter: (v, r, i) => v.toFixed(2)
             }],
-            formatNoMatches: () => 'Getting start by a click on the pie above.',
+            formatNoMatches: () => 'Loading policies...',
             formatShowingRows: (pageFrom, pageTo, totalRows) => 'Showing ' + pageFrom + ' to ' + pageTo + ' of ' + totalRows + ' policies'
         });
     },
@@ -952,6 +952,15 @@ let PolicyGroupView = Backbone.View.extend({
             __table = $(_self.el);
         __table.bootstrapTable('load', policies);
         __table.bootstrapTable('selectPage', 1);
+        _self.updateSelection(conditions);
+    },
+    updateSelection(conditions) {
+        let _self = this;
+        if (conditions.get("policy") !== conf.bases.policy.default) {
+            $(this.el).bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
+        } else {
+            $(this.el).bootstrapTable("uncheckAll");
+        }
     },
     clear() {
         $(this.el).bootstrapTable('removeAll');
@@ -2013,8 +2022,6 @@ let RingView = Backbone.View.extend({
             .filter(longText)
             .text(d => getHead(d));
 
-        // init content for policy group view
-        $("#ring-group>path[seq='0']").trigger('click');
         // this.bindTriggers();
         return this;
     },

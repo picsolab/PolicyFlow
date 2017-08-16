@@ -215,11 +215,11 @@ let PolicyGroupModel = Backbone.Model.extend({
     initialize() {
         this.url = conf.api.root + conf.api.policyGroupBase;
     },
-    populate(conditions, seq) {
+    populate(conditions) {
         let _self = this;
         return $.getJSON(_self.url, {
             "method": conditions.get("method"),
-            "param": seq,
+            "param": conditions.get("param"),
             "start_year": conditions.get("startYear"),
             "end_year": conditions.get("endYear")
         }).done(data => {

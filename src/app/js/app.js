@@ -1,5 +1,3 @@
-require('bootstrap-select');
-
 const conf = require('../config.js');
 let utils = require('./utils.js');
 
@@ -39,7 +37,87 @@ let policyView = new View.PolicyView({
     });
 
 $(document).ready(() => {
+    setupRenderingTriggers();
 
+    setupRenderingControllers();
+
+    initDom();
+
+    bindDomEvents();
+
+    initRendering();
+});
+
+function setupRenderingControllers() {
+    conditions.on('change', () => {
+        // updateHeader();
+
+        if (conditions.hasChanged('method')) {
+            ringModel.populate(conditions);
+        }
+        if (conditions.hasChanged('policy')) {
+            policyModel.populate(conditions);
+            geoModel.populate(conditions);
+            if (!conditions.hasChanged("param")) {
+                policyGroupView.updateSelection(conditions);
+            }
+            if (!(conditions.hasChanged("param") ||
+                    conditions.hasChanged("startYear") ||
+                    conditions.hasChanged("endYear"))) {
+                networkModel.populate(conditions);
+                diffusionModel.populate(conditions);
+            }
+        } else {
+            if (conditions.hasChanged('centrality')) {
+                if (conditions.get('metadata') === "centrality") {
+                    diffusionView.doSort("metadata");
+                }
+                if (conditions.get('sequence') === "centrality") {
+                    diffusionView.doSort("sequence");
+                }
+                networkView.update();
+            }
+            if (conditions.hasChanged('metadata')) {
+                diffusionView.doSort("metadata");
+                geoView.update();
+                if (conditions.get("geoBase") === "state") {
+                    networkView.update();
+                }
+            }
+            if (conditions.hasChanged('sequence')) {
+                diffusionView.doSort("sequence");
+            }
+            if (conditions.hasChanged('metadata') ||
+                conditions.hasChanged('sequence') ||
+                conditions.hasChanged('centrality')) {
+                diffusionView.update();
+            }
+        }
+        if (conditions.hasChanged("param") ||
+            conditions.hasChanged("startYear") ||
+            conditions.hasChanged("endYear")) {
+            preLoading();
+            dynamicNetworkModel.populate(conditions);
+            policyGroupModel.populate(conditions);
+        }
+        if (conditions.hasChanged('policy') ||
+            conditions.hasChanged('metadata') ||
+            conditions.hasChanged('sequence')) {
+            setupCentralityDropdown();
+        }
+        if (conditions.hasChanged('geoBase')) {
+            geoView.toggleTract();
+            networkView.update();
+        }
+        if (conditions.hasChanged('stateList') ||
+            conditions.hasChanged('regionList')) {
+            geoView.updateSelection();
+            networkView.update();
+        }
+    });
+}
+
+function setupRenderingTriggers() {
     policyModel.on('change', () => {
         policyView.render();
     });
@@ -73,109 +151,50 @@ $(document).ready(() => {
 
     policyGroupModel.on("change", () => {
         policyGroupView.render(conditions);
-    })
-
-    conditions.on('change', () => {
-        // updateHeader();
-
-        if (conditions.hasChanged('policy')) {
-            policyModel.populate(conditions);
-            networkModel.populate(conditions);
-            diffusionModel.populate(conditions);
-            geoModel.populate(conditions);
-        } else {
-            if (conditions.hasChanged('centrality')) {
-                if (conditions.get('metadata') === "centrality") {
-                    diffusionView.doSort("metadata");
-                }
-                if (conditions.get('sequence') === "centrality") {
-                    diffusionView.doSort("sequence");
-                }
-                networkView.update();
-            }
-            if (conditions.hasChanged('metadata')) {
-                diffusionView.doSort("metadata");
-                geoView.update();
-                if (conditions.get("geoBase") === "state") {
-                    networkView.update();
-                }
-            }
-            if (conditions.hasChanged('sequence')) {
-                diffusionView.doSort("sequence");
-            }
-            if (conditions.hasChanged('metadata') ||
-                conditions.hasChanged('sequence') ||
-                conditions.hasChanged('centrality')) {
-                diffusionView.update();
-            }
-        }
-        if (conditions.hasChanged("method")) {
-            ringModel.populate(conditions);
-            preLoading();
-            dynamicNetworkModel.populate(conditions);
-        }
-        if (conditions.hasChanged('policy') || conditions.hasChanged('metadata') || conditions.hasChanged('sequence')) {
-            setupCentralityDropdown();
-        }
-        if (conditions.hasChanged('geoBase')) {
-            geoView.toggleTract();
-            networkView.update();
-        }
-        if (conditions.hasChanged('stateList') || conditions.hasChanged('regionList')) {
-            geoView.updateSelection();
-            networkView.update();
-        }
-        if (conditions.hasChanged("param") || conditions.hasChanged("startYear") || conditions.hasChanged("endYear")) {
-            preLoading();
-            dynamicNetworkModel.populate(conditions);
-        }
     });
-
-    initDom();
-
-    initRendering();
-});
+}
 
 function initRendering() {
     ringModel.populate(conditions);
+    policyGroupModel.populate(conditions);
     policyModel.populate(conditions);
     geoModel.populate(conditions);
     dynamicNetworkModel.populate(conditions);
 }
 
-function bindEvents() {
+function bindDomEvents() {
     // toggle ring view
-    $("#method-tab-wrapper").find('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+    $("#method-tab-wrapper").find('a[data-toggle="tab"]').on('click', function(e) {
         let __target = $(e.target) // newly activated tab
         conditions.set({
             "method": __target.attr("value"),
-            "policy": conf.bases.policy.default
+            "policy": conf.bases.policy.default,
+            "param": "0"
         });
         // policyGroupView.clear();
     });
 
     // ring view click, update policy group
     $(ringView.el).on('click', e => {
-        let __target = $(e.target),
-            seq = __target.attr("seq"),
+        let seq = $(e.target).attr("seq"),
             seqList = seq.split("-");
-        policyGroupModel.populate(conditions, seq);
         switch (conditions.get("method")) {
             case "subject":
-                let subjectId = 0,
-                    subjectName = "All",
-                    subjectList = ringModel.get("cluster").children;
-                if (seqList.length !== 1) {
-                    subjectId = seqList[1];
-                    subjectName = subjectList.find(e => e.id == subjectId).name;
-                }
+                let subjectId = (seqList.length === 1 ?
+                        conf.bases.subject.id :
+                        seqList[1]),
+                    subjectName = conf.pipe.subjectIdToName[subjectId];
                 conditions.set({
                     "subject": subjectName,
-                    "param": subjectId
+                    "param": seq,
+                    "policy": conf.bases.policy.default
                 });
                 break;
             case "text":
-                conditions.set("param", seq);
+                conditions.set({
+                    "param": seq,
+                    "policy": conf.bases.policy.default
+                });
                 break;
             default:
                 break;
@@ -185,33 +204,6 @@ function bindEvents() {
     $("#policy-group-table").on('check.bs.table', (row) => {
         let selectedPolicy = $("#policy-group-table").bootstrapTable('getSelections');
         conditions.set('policy', selectedPolicy[0]["policy_id"]);
-    });
-
-    // selected subject to conditions
-    $('#subject-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        let subjectList = Object.keys(policyOptionsModel.get("policies")),
-            selectedSubject = $(event.target).find('option')[clickedIndex].value,
-            policies = policyOptionsModel.get("policies"),
-            pipe = policyOptionsModel.get("pipe");
-
-        conditions.setSubject(subjectList[clickedIndex - 1]);
-        // stateModel.populate(conditions);
-
-        // reload policy select drop down
-        $('#policy-select option.policy-option').remove();
-        appendPolicyDefault();
-        policies[selectedSubject].forEach(policyId => {
-            $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
-        });
-        $('#policy-select').selectpicker('refresh');
-        $('#policy-select').selectpicker('val', conf.bases.policy.default);
-        conditions.set('policy', conf.bases.policy.default);
-    });
-
-    // selected policy to conditions
-    $('#policy-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        let selectedPolicy = clickedIndex == 1 ? conf.bases.policy.default : policyOptionsModel.get("policies")[conditions.get("subject")][clickedIndex - 2]
-        conditions.set('policy', selectedPolicy);
     });
 
     // selected metadata to conditions
@@ -229,10 +221,6 @@ function bindEvents() {
         conditions.set("centrality", conf.bases.centralityList[clickedIndex - 1].id);
     });
 
-    $("#select-sort").on("change", (event) => {
-        arcView.render(event.target.selectedIndex);
-    });
-
     $("#add-snapshot").on("click", (event) => {
         sc.add(diffusionView, conditions);
     });
@@ -245,7 +233,6 @@ function bindEvents() {
 }
 
 function initDom() {
-
     // attributes select drop down
     initDropdowns($('#metadata-select'), "metadata-option", conf.bases.yAttributeList);
 
@@ -255,10 +242,6 @@ function initDom() {
     // centrality select drop down
     initDropdowns($("#centrality-select"), "centrality-option", conf.bases.centralityList);
     setupCentralityDropdown();
-
-    // policyOptionsModel.fetch();
-
-    bindEvents();
 }
 
 function preLoading() {
@@ -295,6 +278,9 @@ function recoverDomBy(conditions) {
     // recover subject and policy dropdown
     // updateSubjectAndPolicy(policyOptionsModel, conditions.get("subject"), conditions.get("policy"));
 
+    // recover method tab, ring view
+    $("#method-tab-wrapper a[value=" + conditions.get("method") + "]").tab('show');
+
     // recover centrality dropdown
     $("#centrality-select").selectpicker('val', conditions.get("centrality"), { silent: true });
 
@@ -306,43 +292,12 @@ function recoverDomBy(conditions) {
 
 }
 
-function updateSubjectAndPolicy(policyOptionsModel, subjectSelected, policySelected) {
-    let pipe = policyOptionsModel.get("pipe"),
-        policies = policyOptionsModel.get("policies");
-
-    // subject select drop down
-    $('#subject-select option.subject-option').remove();
-    Object.keys(policies).forEach(subjectName => {
-        $('#subject-select').append("<option class='subject-option' data-subtext=(" + policies[subjectName].length + ") value='" + subjectName + "'>" + (subjectName) + "</option>");
-    });
-    $('#subject-select').val(subjectSelected);
-    $('#subject-select').prop('disabled', false);
-    $('#subject-select').selectpicker('refresh');
-
-    // policy select drop down
-    $('#policy-select option.policy-option').remove();
-    appendPolicyDefault();
-    policies[subjectSelected].forEach(policyId => {
-        $('#policy-select').append("<option class='policy-option' value='" + policyId + "'>" + pipe[policyId] + "</option>");
-    });
-    $('#policy-select').val(policySelected);
-    $('#policy-select').prop('disabled', false);
-    $('#policy-select').selectpicker('refresh');
-
-    // headers
-    updateHeader();
-}
-
 // Update page header when conditions change
 function updateHeader() {
     let headerStr = conditions.get("policy") === conf.bases.policy.default ?
         "Select a policy to get started." :
         policyOptionsModel.get("pipe")[conditions.get("policy")] + "<br/><small>" + conditions.get("subject") + "</small>";
     $('#page-header').html(headerStr);
-}
-
-function appendPolicyDefault() {
-    $('#policy-select').append("<option class='policy-option' value='" + conf.bases.policy.default+"'>" + conf.bases.policy.description + "</option>");
 }
 
 function initDropdowns($element, className, attrList) {
@@ -355,7 +310,7 @@ function initDropdowns($element, className, attrList) {
 }
 
 function setupCentralityDropdown() {
-    let isPolicyUnselected = conditions.get("policy") === "unselected";
+    let isPolicyUnselected = conditions.get("policy") === conf.bases.policy.default;
     if (isPolicyUnselected) {
         if ($('#sequence-select').selectpicker('val') !== "centrality") {
             $('#sequence-select').val("centrality");

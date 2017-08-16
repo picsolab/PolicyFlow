@@ -1,7 +1,8 @@
 const Config = {
     bases: {
         subject: {
-            default: "All"
+            default: "All",
+            id: 0
         },
         policy: {
             // [prod]
@@ -110,6 +111,7 @@ const Config = {
     },
     pipe: {
         subjectToId: { "All": 0, "Macroeconomics": 1, "Civil Rights": 2, "Health": 3, "Agriculture": 4, "Labor": 5, "Education": 6, "Environment": 7, "Energy": 8, "Immigration": 9, "Transportation": 10, "Law and Crime": 12, "Social Welfare": 13, "Housing": 14, "Domestic Commerce": 15, "Defense": 16, "Technology": 17, "Foreign Trade": 18, "International Affairs": 19, "Government Operations": 20, "Public Lands": 21, "Arts and Entertainment": 23, "Government Administration": 24, "Weather": 26, "Fires": 27, "Sports": 29, "Death Notices": 30, "Religion": 31, "Other": 99, "Unknown": 98 },
+        subjectIdToName: { "0": "All", "1": "Macroeconomics", "2": "Civil Rights", "3": "Health", "4": "Agriculture", "5": "Labor", "6": "Education", "7": "Environment", "8": "Energy", "9": "Immigration", "10": "Transportation", "12": "Law and Crime", "13": "Social Welfare", "14": "Housing", "15": "Domestic Commerce", "16": "Defense", "17": "Technology", "18": "Foreign Trade", "19": "International Affairs", "20": "Government Operations", "21": "Public Lands", "23": "Arts and Entertainment", "24": "Government Administration", "26": "Weather", "27": "Fires", "29": "Sports", "30": "Death Notices", "31": "Religion", "99": "Other", "98": "Unknown" },
         sortMethodList: ["year", "metadata", "name"],
         sortMethodId: { "year": 0, "metadata": 1, "name": 2 },
         idToMeta: { "ce": "centrality", "md": "minorityDiversity", "ci": "citizenIdeology", "lp": "legislativeProfessionalism", "pci": "perCapitaIncome", "pd": "populationDensity", "pop": "totalPopulation" },

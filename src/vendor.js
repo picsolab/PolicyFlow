@@ -7,6 +7,7 @@ require('bootstrap-table');
 require('../node_modules/bootstrap-table/dist/bootstrap-table.min.css')
 
 // Bootstrap-select
+require('bootstrap-select');
 require('../node_modules/bootstrap-select/dist/css/bootstrap-select.min.css');
 
 // collapse extension for Bootstrap
