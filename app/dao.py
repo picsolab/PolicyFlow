@@ -1,6 +1,6 @@
 from app import db, models
 from .models import Subject, Policy, State, Cascade, Metadata
-from sqlalchemy import text, Integer
+from sqlalchemy import text, Integer, func, tuple_
 from sqlalchemy.orm import sessionmaker
 
 Session = sessionmaker(bind=db.engine)
@@ -97,16 +97,24 @@ class PolicyDao(BaseDao):
 
     @staticmethod
     def get_all_policies_with_valid_cluster_count():
-        stmt = text("SELECT policy_id AS policyId, policy_name AS policyName "
-                    "FROM policy AS p0 "
-                    "WHERE (p0.policy_lda_1, p0.policy_lda_2) IN ("
-                    "SELECT p1.policy_lda_1, p1.policy_lda_2 FROM ("
-                    "SELECT policy_lda_1, policy_lda_2, COUNT(*) AS cluster_count FROM policy "
-                    "GROUP BY policy_lda_1, policy_lda_2 "
-                    "HAVING cluster_count > 5 "
-                    ") AS p1)")
-        return db.session.execute(stmt).fetchall()
-
+        policy_count = func.count().label('policy_count')
+        policy_lda1 = Policy.policyLda1.label('policyLda1')
+        policy_lda2 = Policy.policyLda2.label('policyLda2')
+        lda_tuple = tuple_(Policy.policyLda1, Policy.policyLda2)
+        sq_policy = Session().query(policy_lda1, policy_lda2, policy_count) \
+            .group_by(policy_lda1, policy_lda2) \
+            .having(policy_count > 5) \
+            .subquery()
+        valid_lda_tuples = Session().query(sq_policy.c.policyLda1, sq_policy.c.policyLda2).subquery()
+        policy_with_valid_lda_labels = Session().query(Policy).filter(lda_tuple.in_(valid_lda_tuples))
+        # stmt = text("SELECT * FROM policy AS p0 "
+        #             "WHERE (p0.policy_lda_1, p0.policy_lda_2) IN ("
+        #             "SELECT p1.policy_lda_1, p1.policy_lda_2 FROM ("
+        #             "SELECT policy_lda_1, policy_lda_2, COUNT(*) AS cluster_count FROM policy "
+        #             "GROUP BY policy_lda_1, policy_lda_2 "
+        #             "HAVING cluster_count > 5 "
+        #             ") AS p1)")
+        return policy_with_valid_lda_labels.all()
 
     @staticmethod
     def get_all_policies_with_valid_subject():
