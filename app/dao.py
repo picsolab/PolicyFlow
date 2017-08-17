@@ -96,6 +96,19 @@ class PolicyDao(BaseDao):
         return Policy.query.all()
 
     @staticmethod
+    def get_all_policies_with_valid_cluster_count():
+        stmt = text("SELECT policy_id AS policyId, policy_name AS policyName "
+                    "FROM policy AS p0 "
+                    "WHERE (p0.policy_lda_1, p0.policy_lda_2) IN ("
+                    "SELECT p1.policy_lda_1, p1.policy_lda_2 FROM ("
+                    "SELECT policy_lda_1, policy_lda_2, COUNT(*) AS cluster_count FROM policy "
+                    "GROUP BY policy_lda_1, policy_lda_2 "
+                    "HAVING cluster_count > 5 "
+                    ") AS p1)")
+        return db.session.execute(stmt).fetchall()
+
+
+    @staticmethod
     def get_all_policies_with_valid_subject():
         return Session().query(Policy, Subject).filter(Policy.policySubjectId == Subject.subjectId) \
             .filter(Subject.subjectValid == 1).all()

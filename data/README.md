@@ -5,10 +5,18 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
+### 20170817
+
+update improved policy LDA clusters: add `policy_lda_3`;
+
+Script: 
+
+- update `policy`: `./scripts/migrate_0817_update_policy_ldas.sql`
+
 
 ### 20170812
 
-update policy LDA clusters. 6 clusters for the first layer, 10 clusters for the second layer. Terms for each cluster are presented at `./raw/lda_term_*.txt`.
+update policy LDA clusters. 6 clusters for the first layer, 10 clusters for the second layer. Terms for each cluster are presented at `./raw/lda_term/0/lda_term_*.txt`.
 
 Script:
 

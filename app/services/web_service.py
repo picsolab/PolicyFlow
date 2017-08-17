@@ -146,7 +146,7 @@ class PolicyService(BaseService):
         elif method == 'text':
             params = param.split("-")
             if len(params) == 1:
-                policies = policy_dao.get_all_policies()
+                policies = policy_dao.get_all_policies_with_valid_cluster_count()
             else:
                 policies = policy_dao.get_policies_by_text_similarity(params)
 
@@ -290,7 +290,7 @@ class NetworkService(BaseService):
         elif method == 'text':
             params = param.split("-")
             if len(params) == 1:
-                policies = policy_dao.get_all_policies()
+                policies = policy_dao.get_all_policies_with_valid_cluster_count()
             else:
                 policies = policy_dao.get_policies_by_text_similarity(params)
             if policies is not None:
