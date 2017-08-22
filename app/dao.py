@@ -107,13 +107,6 @@ class PolicyDao(BaseDao):
             .subquery()
         valid_lda_tuples = Session().query(sq_policy.c.policyLda1, sq_policy.c.policyLda2).subquery()
         policy_with_valid_lda_labels = Session().query(Policy).filter(lda_tuple.in_(valid_lda_tuples))
-        # stmt = text("SELECT * FROM policy AS p0 "
-        #             "WHERE (p0.policy_lda_1, p0.policy_lda_2) IN ("
-        #             "SELECT p1.policy_lda_1, p1.policy_lda_2 FROM ("
-        #             "SELECT policy_lda_1, policy_lda_2, COUNT(*) AS cluster_count FROM policy "
-        #             "GROUP BY policy_lda_1, policy_lda_2 "
-        #             "HAVING cluster_count > 5 "
-        #             ") AS p1)")
         return policy_with_valid_lda_labels.all()
 
     @staticmethod

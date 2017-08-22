@@ -54,6 +54,13 @@ function setupRenderingControllers() {
 
         if (conditions.hasChanged('method')) {
             ringModel.populate(conditions);
+            if (!conditions.hasChanged('param')) {
+                // force loading
+                policyGroupView.clear();
+                preLoading();
+                policyGroupModel.populate(conditions);
+                dynamicNetworkModel.populate(conditions);
+            }
         }
         if (conditions.hasChanged('policy')) {
             policyModel.populate(conditions);
@@ -96,9 +103,10 @@ function setupRenderingControllers() {
         if (conditions.hasChanged("param") ||
             conditions.hasChanged("startYear") ||
             conditions.hasChanged("endYear")) {
+            policyGroupView.clear();
             preLoading();
-            dynamicNetworkModel.populate(conditions);
             policyGroupModel.populate(conditions);
+            dynamicNetworkModel.populate(conditions);
         }
         if (conditions.hasChanged('policy') ||
             conditions.hasChanged('metadata') ||

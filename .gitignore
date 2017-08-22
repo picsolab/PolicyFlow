@@ -43,7 +43,7 @@ data/out/*
 data/replication
 
 # database backup
-data/backup
+# data/backup
 
 # byte codes
 *.pyc

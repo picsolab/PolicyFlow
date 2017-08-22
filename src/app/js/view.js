@@ -1879,6 +1879,9 @@ let RingView = Backbone.View.extend({
     el: "#svg-ring-view",
     initialize() {
         this._attr = {};
+        $(this.el).on('mouseleave', () => {
+            $("#ring-tooltip").css("opacity", 0);
+        });
     },
     render(conditions) {
         let _self = this,
