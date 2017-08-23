@@ -5,6 +5,15 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
+### 20170823
+
+create `policy_similarity` table.
+
+Script:
+
+- ddl: `./scripts/migrate_0823_add_policy_similarity_table.sql`
+
+
 ### 20170817
 
 update improved policy LDA clusters: add `policy_lda_3`;
