@@ -5,13 +5,13 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
-### 20170823
+### 20170825
 
 create `policy_similarity` table.
 
 Script:
 
-- ddl: `./scripts/migrate_0823_add_policy_similarity_table.sql`
+- ddl: `./scripts/migrate_0825_add_policy_similarity_table.sql`
 
 
 ### 20170817
