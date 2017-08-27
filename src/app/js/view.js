@@ -899,7 +899,7 @@ let PolicyGroupView = Backbone.View.extend({
     initialize() {
         $(this.el).bootstrapTable({
             sortClass: "relevance",
-            height: 750,
+            height: 400,
             pagination: true,
             onlyInfoPagination: false,
             pageSize: 20,

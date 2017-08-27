@@ -6,7 +6,7 @@ const GraphSettings = {
             top: 20,
             left: 35,
             right: 25,
-            bottom: 10,
+            bottom: 20,
             xPadding: 0.7, // horizontal padding between rects
             yPadding: 1, // vertical padding between rects
             xOuterPadding: 0.1,
@@ -15,8 +15,8 @@ const GraphSettings = {
                 // modify .text-tip in style.css to adjust text style
         },
         size: {
-            width: 230,
-            height: 630
+            width: 270,
+            height: 600
         },
         multiplier: {
 

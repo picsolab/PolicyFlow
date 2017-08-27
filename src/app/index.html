@@ -51,9 +51,6 @@
 
     <div class="container-fluid" id="content-wrapper">
         <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
-            <!-- <div class="page-header">
-                <h3 id="page-header"></h3>
-            </div> -->
             <div id="method-tab-wrapper">
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active"><a data-toggle="tab" value="subject">Major Topic</a></li>
@@ -63,52 +60,63 @@
             <div id="ring-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
                 <svg id="svg-ring-view"></svg>
             </div>
-            <div id="policy-group-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <table id="policy-group-table">
-                </table>
-            </div>
         </div>
         <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12 main">
-            <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 jumbotron">
-                <p>a place holder for policy trend view.</p>
-            </div>
-            <div id="network-views-wrapper" class="col-lg-12 col-md-12 col-sm-12">
-                <div id="policy-geo-wrapper" class="col-lg-7 col-md-7 col-sm-12">
-                    <svg id="svg-geo-view"></svg>
-                    <div id="policy-geo-controller-wrapper" class="btn-group" data-toggle="buttons">
-                        <label class="btn btn-default active">
-                        <input type="radio" name="policy-geo-controller-options" id="geo-option-state" value="state" autocomplete="off" checked> State-wise
-                    </label>
-                        <label class="btn btn-default">
-                        <input type="radio" name="policy-geo-controller-options" id="geo-option-region" value="region" autocomplete="off"> Regional
-                    </label>
+            <div id="policy-explore-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#network-views-wrapper" aria-controls="network-views-wrapper" role="tab" data-toggle="tab">Diffusion Network</a></li>
+                    <li role="presentation"><a href="#diffusion-views-wrapper" aria-controls="diffusion-views-wrapper" role="tab" data-toggle="tab">Diffusion Inspection</a></li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div id="network-views-wrapper" role="tabpanel" class="tab-pane fade in active">
+                        <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 jumbotron">
+                            <p>a place holder for policy trend view.</p>
+                        </div>
+                        <div id="policy-geo-wrapper" class="col-lg-7 col-md-7 col-sm-12">
+                            <svg id="svg-geo-view"></svg>
+                            <div id="policy-geo-controller-wrapper" class="btn-group" data-toggle="buttons">
+                                <label class="btn btn-default active">
+                                            <input type="radio" name="policy-geo-controller-options" id="geo-option-state" value="state" autocomplete="off" checked> State-wise
+                                        </label>
+                                <label class="btn btn-default">
+                                            <input type="radio" name="policy-geo-controller-options" id="geo-option-region" value="region" autocomplete="off"> Regional
+                                        </label>
+                            </div>
+                        </div>
+                        <div id="policy-network-wrapper" class="col-lg-5 col-md-5 col-sm-12">
+                            <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#">
+                            <svg id="svg-network-view"></svg>
+                        </div>
+                    </div>
+                    <div id="diffusion-views-wrapper" role="tabpanel" class="tab-pane fade">
+                        <div id="diffusion-wrapper" class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
+                            <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#">
+                            <svg id="svg-diffusion-view"></svg>
+                            <div class="btn-group" role="group" aria-label="...">
+                                <button id="add-snapshot" type="button" class="btn btn-default">add</button>
+                                <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
+                            </div>
+                        </div>
+                        <div id="policy-cascade-wrapper" class="col-lg-3 col-md-3 col-sm-7 col-xs-7">
+                            <div id="policy-unselected-notitication" class="jumbotron">
+                                <p>
+                                    Please select a policy.
+                                </p>
+                            </div>
+                            <svg id="svg-cascade-view" style="display:none;"></svg>
+                        </div>
+                        <div id="snapshot-wrapper" class="col-lg-2 col-md-2 col-sm-5 col-xs-5">
+                        </div>
                     </div>
                 </div>
-                <div id="policy-network-wrapper" class="col-lg-5 col-md-5 col-sm-12">
-                    <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#">
-                    <svg id="svg-network-view"></svg>
-                </div>
             </div>
-            <div id="diffusion-views-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <div id="diffusion-wrapper" class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
-                    <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#">
-                    <svg id="svg-diffusion-view"></svg>
-                    <div class="btn-group" role="group" aria-label="...">
-                        <button id="add-snapshot" type="button" class="btn btn-default">add</button>
-                        <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
-                    </div>
-                </div>
-                <div id="policy-cascade-wrapper" class="col-lg-2 col-md-2 col-sm-6 col-xs-6">
-                    <div id="policy-unselected-notitication" class="jumbotron">
-                        <p>
-                            Please select a policy.
-                        </p>
-                    </div>
-                    <svg id="svg-cascade-view" style="display:none;"></svg>
-                </div>
-                <div id="snapshot-wrapper" class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
-                </div>
-            </div>
+        </div>
+        <div id="policy-group-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <table id="policy-group-table">
+            </table>
         </div>
     </div>
     <!-- footer -->
