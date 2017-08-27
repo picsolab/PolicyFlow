@@ -5,17 +5,32 @@ let utils = require('./utils.js');
 const printDiagnoseInfo = false;
 
 let colorList = [],
-    colorMap = {},
-    color10 = [css_variables['--color-a'],
-        css_variables['--color-b'],
-        css_variables['--color-c'],
-        css_variables['--color-d'],
-        css_variables['--color-e'],
-        css_variables['--color-f'],
-        css_variables['--color-g'],
-        css_variables['--color-h'],
+    colorMap = {};
+const color15 = [
+        css_variables['--color-cb-9'],
+        css_variables['--color-cb-a'],
         css_variables['--color-i'],
+        css_variables['--color-cb-10'],
+        css_variables['--color-cb-8'],
+        css_variables['--color-cb-7'],
+        css_variables['--color-cb-6'],
+        css_variables['--color-cb-5'],
+        css_variables['--color-cb-4'],
+        css_variables['--color-cb-3'],
+        css_variables['--color-cb-2'],
+        css_variables['--color-cb-1'],
+        css_variables['--color-cb-0'],
+        css_variables['--color-c'],
         css_variables['--color-j']
+    ],
+    color7 = [
+        css_variables['--color-cb-9'],
+        css_variables['--color-cb-a'],
+        css_variables['--color-cb-0'],
+        css_variables['--color-cb-1'],
+        css_variables['--color-cb-3'],
+        css_variables['--color-cb-4'],
+        css_variables['--color-cb-7']
     ];
 
 let PolicyView = Backbone.View.extend({
@@ -1889,6 +1904,10 @@ let RingView = Backbone.View.extend({
             clusterObj = _self.model.get("cluster"),
             method = clusterObj.name,
             color20c = d3.scale.category20c(),
+            nameDomain = _.concat(method, clusterObj.children.map((d) => d.name)),
+            colorSchema = d3.scale.ordinal()
+            .domain(nameDomain)
+            .range(method === "subject" ? color15 : color7),
             ldaTerms = conf.static.ldaTerms;
 
         $(_self.el).empty();
@@ -1916,13 +1935,19 @@ let RingView = Backbone.View.extend({
 
         let partition = d3.layout.partition()
             .sort((a, b) => a.size - b.size)
-            .size([2 * Math.PI, gs.r.size.r * gs.r.size.r])
+            .size(method === "subject" ? [2 * Math.PI, 2 * gs.r.size.r] : [2 * Math.PI, gs.r.size.r * gs.r.size.r])
             .value(d => d.size),
-            arc = d3.svg.arc()
-            .startAngle(d => d.x)
-            .endAngle(d => d.x + d.dx)
-            .innerRadius(d => Math.sqrt(d.y))
-            .outerRadius(d => Math.sqrt(d.y + d.dy)),
+            arc = (method === "subject" ?
+                d3.svg.arc()
+                .startAngle(d => d.x)
+                .endAngle(d => d.x + d.dx)
+                .innerRadius(d => d.depth * d.y / 2)
+                .outerRadius(d => (d.depth * (d.y) + d.dy) / 2) :
+                d3.svg.arc()
+                .startAngle(d => d.x)
+                .endAngle(d => d.x + d.dx)
+                .innerRadius(d => Math.sqrt(d.y))
+                .outerRadius(d => Math.sqrt(d.y + d.dy))),
             tooltip = d3.select("body")
             .append("div")
             .attr("id", "ring-tooltip");
@@ -1962,10 +1987,16 @@ let RingView = Backbone.View.extend({
                 }
                 return '<b>' + getHead(d) + '</b></br>' + ldaTerm + d.size + '&nbsp;policies';
             },
-            longText = function(d) {
+            displayText = function(d) {
                 let text = getHead(d),
-                    thickness = Math.sqrt(d.y + d.dy) - Math.sqrt(d.y);
-                return text.length * 8 < thickness;
+                    thickness = (method === "subject" ?
+                        (d.dy) / 2 :
+                        Math.sqrt(d.y + d.dy) - Math.sqrt(d.y));
+                if (text.length * 8 < thickness) {
+                    return text;
+                } else {
+                    return text.split(" ")[0] + " ..."
+                }
             },
             mouseOverArc = function(d) {
                 d3.select(this).attr("stroke", "black")
@@ -2004,9 +2035,9 @@ let RingView = Backbone.View.extend({
                 stroke: "#fff",
                 fill: d => {
                     if (d.depth === 0 || d.depth === 1) {
-                        return color20c(d.name);
+                        return colorSchema(d.name);
                     } else {
-                        return d3.rgb(color20c(d.parent.name)).brighter(d.depth / 10);
+                        return d3.rgb(colorSchema(d.parent.name)).brighter(d.depth / 8);
                     }
                 },
                 "fill-rule": "evenodd"
@@ -2018,12 +2049,13 @@ let RingView = Backbone.View.extend({
         labels.enter().append("text")
             .attr({
                 transform: d => "rotate(" + computeTextRotation(d) + ")",
-                x: d => Math.sqrt(d.y),
+                x: d => (method === "subject" ?
+                    d.depth * d.y / 2 :
+                    Math.sqrt(d.y)),
                 dx: 6, // margin
                 dy: ".35em"
             }) // vertical-align
-            .filter(longText)
-            .text(d => getHead(d));
+            .text(d => displayText(d));
 
         // this.bindTriggers();
         return this;

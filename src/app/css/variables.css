@@ -27,15 +27,18 @@
     --color-h: #6ab975;
     --color-i: #a173d1;
     --color-j: #bbbbbb;
-    --color-ag: #008744;
-    --color-ab: #0057e7;
-    --color-ar: #d62d20;
-    --color-ao: #ffa700;
-    --color-ba: #c51162;
-    --color-bb: #6200ea;
-    --color-bc: #304ffe;
-    --color-bd: #00bfa5;
-    --color-be: #00b8d4;
+    --color-cb-0: #67001f;
+    --color-cb-1: #b2182b;
+    --color-cb-2: #d6604d;
+    --color-cb-3: #f4a582;
+    --color-cb-4: #fddbc7;
+    --color-cb-5: #f7f7f7;
+    --color-cb-6: #d1e5f0;
+    --color-cb-7: #92c5de;
+    --color-cb-8: #4393c3;
+    --color-cb-9: #2166ac;
+    --color-cb-10: #053061;
+    --color-cb-a: #313695;
     --opacity-state: 1;
     --opacity-region: 1;
 }
