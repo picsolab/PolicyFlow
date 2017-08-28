@@ -133,7 +133,9 @@ class PolicyService(BaseService):
                 policies = policy_dao.get_all_policies_with_valid_subject()
                 if policies is not None:
                     return json.dumps({"policies": [
-                        {"policy_id": p[0].policyId, "policy_name": p[0].policyName, "relevance": random.uniform(0, 1)}
+                        {"policy_id": p[0].policyId, "policy_name": p[0].policyName,
+                         "subject": p[0].subject.subjectName, "policy_start": p[0].policyStart,
+                         "policy_end": p[0].policyEnd}
                         for p in policies]})
             else:
                 policies = policy_dao.get_policies_by_subject(int(params[1]))
@@ -152,7 +154,8 @@ class PolicyService(BaseService):
 
         if policies is not None:
             return json.dumps({"policies": [
-                {"policy_id": p.policyId, "policy_name": p.policyName, "relevance": random.uniform(0, 1)}
+                {"policy_id": p.policyId, "policy_name": p.policyName, "subject": p.subject.subjectName,
+                 "policy_start": p.policyStart, "policy_end": p.policyEnd}
                 for p in policies]})
 
         return json.dumps({})

@@ -948,14 +948,29 @@ let PolicyGroupView = Backbone.View.extend({
                 searchable: true,
                 clickToSelect: true
             }, {
-                field: 'relevance',
-                title: 'Relevance',
-                titleTooltip: 'Relevance to the selected policy.',
+                field: 'subject',
+                title: 'Subject',
+                titleTooltip: 'Subject to which a policy belongs.',
                 sortable: true,
                 searchable: false,
                 clickToSelect: true,
-                order: 'desc',
-                formatter: (v, r, i) => v.toFixed(2)
+                order: 'asc'
+            }, {
+                field: 'policy_start',
+                title: 'First Adopt',
+                titleTooltip: 'The year that the first adoption occurred.',
+                sortable: true,
+                searchable: false,
+                clickToSelect: true,
+                order: 'asc'
+            }, {
+                field: 'policy_end',
+                title: 'Last Adopt',
+                titleTooltip: 'The year that the last adoption occurred.',
+                sortable: true,
+                searchable: false,
+                clickToSelect: true,
+                order: 'asc'
             }],
             formatNoMatches: () => 'Loading policies...',
             formatShowingRows: (pageFrom, pageTo, totalRows) => 'Showing ' + pageFrom + ' to ' + pageTo + ' of ' + totalRows + ' policies'
@@ -2001,9 +2016,7 @@ let RingView = Backbone.View.extend({
             mouseOverArc = function(d) {
                 d3.select(this).attr("stroke", "black")
                 tooltip.html(formatDescription(d));
-                return tooltip.transition()
-                    .duration(50)
-                    .style("opacity", 0.9);
+                return tooltip.style("opacity", 0.9);
             },
             mouseOutArc = function() {
                 d3.select(this).attr("stroke", "")
