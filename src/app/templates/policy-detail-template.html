@@ -15,7 +15,7 @@
 <div id="policy-snippet-wrapper" class="table-responsive">
     <table id="policy-snippet-table" class="table table-hover table-condensed">
         <tbody>
-            <% _.each(snippets, (snippet, index, list) => { %>
+            <% _.each(snippets, function(snippet, index, list) { %>
                 <tr>
                     <th scope="row">
                         <a href="<%= snippet.url %>">
@@ -50,7 +50,7 @@
                                 <th>Similarity</th>
                             </tr>
                         </thead>
-                        <% _.each(text_similarities, (policy, index, list) => { %>
+                        <% _.each(text_similarities, function(policy, index, list) { %>
                             <tr>
                                 <td>
                                     <%= policy.policy_name %>
@@ -74,7 +74,7 @@
                                 <th>Similarity</th>
                             </tr>
                         </thead>
-                        <% _.each(cascade_similarities, (policy, index, list) => { %>
+                        <% _.each(cascade_similarities, function(policy, index, list) { %>
                             <tr>
                                 <td>
                                     <%= policy.policy_name %>
