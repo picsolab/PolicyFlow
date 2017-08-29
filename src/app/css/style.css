@@ -103,6 +103,16 @@
  */
 
 
+/* policy detail view */
+
+#policy-snippet-wrapper,
+#similarity-by-text-wrapper,
+#similarity-by-cascade-wrapper {
+    height: 200px;
+    overflow-y: scroll;
+}
+
+
 /* ring view */
 
 #ring-group path {

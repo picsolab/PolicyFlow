@@ -1,5 +1,5 @@
 from app import db, models
-from .models import Subject, Policy, State, Cascade, Metadata
+from .models import Subject, Policy, State, Cascade, Metadata, PolicyText, PolicySimilarity
 from sqlalchemy import text, Integer, func, tuple_
 from sqlalchemy.orm import sessionmaker
 
@@ -82,6 +82,14 @@ class StateDao(BaseDao):
         return State.query.all()
 
 
+class PolicyTextDao(BaseDao):
+    """policy text dao providing policy text related data"""
+
+    @staticmethod
+    def get_policy_text_by_policy_id(policy_id):
+        return PolicyText.query.filter(PolicyText.policyId == policy_id).first()
+
+
 class PolicyDao(BaseDao):
     """policy dao providing policy related data"""
     START_YEAR = 0
@@ -94,25 +102,6 @@ class PolicyDao(BaseDao):
     @staticmethod
     def get_all_policies():
         return Policy.query.all()
-
-    @staticmethod
-    def get_all_policies_with_valid_cluster_count():
-        policy_count = func.count().label('policy_count')
-        policy_lda1 = Policy.policyLda1.label('policyLda1')
-        policy_lda2 = Policy.policyLda2.label('policyLda2')
-        lda_tuple = tuple_(Policy.policyLda1, Policy.policyLda2)
-        sq_policy = Session().query(policy_lda1, policy_lda2, policy_count) \
-            .group_by(policy_lda1, policy_lda2) \
-            .having(policy_count > 5) \
-            .subquery()
-        valid_lda_tuples = Session().query(sq_policy.c.policyLda1, sq_policy.c.policyLda2).subquery()
-        policy_with_valid_lda_labels = Session().query(Policy).filter(lda_tuple.in_(valid_lda_tuples))
-        return policy_with_valid_lda_labels.all()
-
-    @staticmethod
-    def get_all_policies_with_valid_subject():
-        return Session().query(Policy, Subject).filter(Policy.policySubjectId == Subject.subjectId) \
-            .filter(Subject.subjectValid == 1).all()
 
     @staticmethod
     def get_policy_id_name_subject():
@@ -130,29 +119,51 @@ class PolicyDao(BaseDao):
     def get_policy_by_id(policy_id):
         return Policy.query.filter(Policy.policyId == policy_id).first()
 
-    def get_policies_by_word_match(self, word_str):
-        pass
+    def get_q_all_policies_with_valid_cluster_count(self):
+        policy_count = func.count().label('policy_count')
+        policy_lda1 = Policy.policyLda1.label('policyLda1')
+        policy_lda2 = Policy.policyLda2.label('policyLda2')
+        lda_tuple = tuple_(Policy.policyLda1, Policy.policyLda2)
+        sq_policy = Session().query(policy_lda1, policy_lda2, policy_count) \
+            .group_by(policy_lda1, policy_lda2) \
+            .having(policy_count > 5) \
+            .subquery()
+        valid_lda_tuples = Session().query(sq_policy.c.policyLda1, sq_policy.c.policyLda2).subquery()
+        return Session().query(Policy).filter(lda_tuple.in_(valid_lda_tuples),
+                                              Policy.policyStart >= self.start_year,
+                                              Policy.policyEnd <= self.end_year)
 
-    def get_policies_by_text_similarity(self, params):
+    def get_q_all_policies_with_valid_subject(self):
+        return Session().query(Policy).join(Subject).filter(Policy.policySubjectId == Subject.subjectId,
+                                                            Policy.policyStart >= self.start_year,
+                                                            Policy.policyEnd <= self.end_year,
+                                                            Subject.subjectValid == 1)
+
+    def get_q_policies_by_subject(self, subject_id):
+        return Policy.query.filter(Policy.policySubjectId == subject_id, Policy.policyStart >= self.start_year,
+                                   Policy.policyEnd <= self.end_year)
+
+    def get_q_policies_by_text_similarity(self, params):
         if len(params) == 2:
             return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyStart >= self.start_year,
-                                       Policy.policyEnd <= self.end_year).all()
+                                       Policy.policyEnd <= self.end_year)
         elif len(params) == 3:
             return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyLda2 == params[2],
-                                       Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year).all()
+                                       Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year)
 
-    def get_policies_by_state(self, state_id):
-        pass
-
-    def get_policies_by_state_as_root(self, state_id):
-        pass
-
-    def get_policies_by_subject(self, subject_id):
-        return Policy.query.filter(Policy.policySubjectId == subject_id, Policy.policyStart >= self.start_year,
-                                   Policy.policyEnd <= self.end_year).all()
-
-    def get_policies_by_cluster(self, cluster_id):
-        pass
+    def get_top_similar_policies(self, q_policies, policy_id, top_count):
+        p_id_1 = PolicySimilarity.policyId1.label('policyId1')
+        p_id_2 = PolicySimilarity.policyId2.label('policyId2')
+        p_ts = PolicySimilarity.policyTextSimilarity.label('policyTextSimilarity')
+        p_cs = PolicySimilarity.policyCascadeSimilarity.label('policyCascadeSimilarity')
+        p_name = Policy.policyName.label('policyName')
+        all_filtered_policies = Session().query(PolicySimilarity) \
+            .filter(p_id_1 == policy_id, p_id_2.in_(q_policies.from_self(Policy.policyId).subquery()))
+        text_top = all_filtered_policies.from_self(p_id_2, p_name, p_ts) \
+            .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_ts.desc()).limit(top_count)
+        cascade_top = all_filtered_policies.from_self(p_id_2, p_name, p_cs) \
+            .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_cs.desc()).limit(top_count)
+        return text_top, cascade_top
 
 
 class TextQueryDao(BaseDao):

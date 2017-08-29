@@ -10,6 +10,7 @@ let conditions = new Model.Conditions(),
     policyOptionsModel = new Model.PolicyOptionsModel(),
     policyGroupModel = new Model.PolicyGroupModel(),
     policyModel = new Model.PolicyModel(),
+    policyDetailModel = new Model.PolicyDetailModel(),
     geoModel = new Model.GeoModel(),
     ringModel = new Model.RingModel(),
     networkModel = new Model.NetworkModel(),
@@ -19,6 +20,9 @@ let conditions = new Model.Conditions(),
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
         model: policyModel
+    }),
+    policyDetailView = new View.PolicyDetailView({
+        model: policyDetailModel
     }),
     geoView = new View.GeoView({
         model: geoModel
@@ -63,6 +67,7 @@ function setupRenderingControllers() {
             }
         }
         if (conditions.hasChanged('policy')) {
+            policyDetailModel.populate(conditions);
             policyModel.populate(conditions);
             geoModel.populate(conditions);
             if (!conditions.hasChanged("param")) {
@@ -150,6 +155,10 @@ function setupRenderingTriggers() {
         updateSubjectAndPolicy(policyOptionsModel, conf.bases.subject.default, conf.bases.policy.default);
     });
 
+    policyDetailModel.on("change", () => {
+        policyDetailView.render(conditions);
+    });
+
     dynamicNetworkModel.on("change", () => {
         networkModel.set("edges", dynamicNetworkModel.get("edgesInStateIds"), { silent: true });
         diffusionModel.set("edges", dynamicNetworkModel.get("edgesInIndices"), { silent: true });
@@ -163,6 +172,7 @@ function setupRenderingTriggers() {
 }
 
 function initRendering() {
+    policyDetailView.render(conditions);
     ringModel.populate(conditions);
     policyGroupModel.populate(conditions);
     policyModel.populate(conditions);
@@ -179,7 +189,6 @@ function bindDomEvents() {
             "policy": conf.bases.policy.default,
             "param": "0"
         });
-        // policyGroupView.clear();
     });
 
     // ring view click, update policy group

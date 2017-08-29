@@ -3,10 +3,6 @@ let conf = require('../config.js');
 let Conditions = Backbone.Model.extend({
     defaults: {
         subject: conf.bases.subject.default,
-        // [dev]
-        // policy: 'adcom',
-        // metadata: 'perCapitaIncome',
-        // [prod]
         policy: conf.bases.policy.default,
         metadata: conf.bases.yAttributeList[0].id,
         sequence: conf.bases.xAttributeList[0].id,
@@ -67,7 +63,7 @@ let PolicyModel = Backbone.Model.extend({
     },
     populate(conditions) {
         let _self = this;
-        if (conditions.get("policy") === 'unselected') {
+        if (conditions.get("policy") === conf.bases.policy.default) {
             _self.set({ "message": conf.bases.policy.default });
         } else {
             this.url = this.urlRoot + conditions.get("policy");
@@ -75,6 +71,25 @@ let PolicyModel = Backbone.Model.extend({
                 _self.set(data);
             });
         }
+    }
+});
+
+let PolicyDetailModel = Backbone.Model.extend({
+    initialize() {
+        this.url = conf.api.root + conf.api.policyBase + conf.api.policyDetailBase;
+    },
+    populate(conditions) {
+        let _self = this;
+        return $.getJSON(_self.url, {
+            "method": conditions.get("method"),
+            "param": conditions.get("param"),
+            "start_year": conditions.get("startYear"),
+            "end_year": conditions.get("endYear"),
+            "policy": conditions.get("policy")
+        }).done(data => {
+            this.set(data);
+            this.trigger('change');
+        });
     }
 });
 
@@ -249,6 +264,7 @@ module.exports = {
     Conditions: Conditions,
     PolicyModel: PolicyModel,
     PolicyOptionsModel: PolicyOptionsModel,
+    PolicyDetailModel: PolicyDetailModel,
     GeoModel: GeoModel,
     NetworkModel: NetworkModel,
     DynamicNetworkModel: DynamicNetworkModel,

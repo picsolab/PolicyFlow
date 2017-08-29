@@ -5,12 +5,8 @@ const Config = {
             id: 0
         },
         policy: {
-            // [prod]
             default: 'unselected',
             description: '---'
-                // [dev]
-                // default: 'adcom',
-                // description: 'Advertising Commissions'
         },
         yAttributeList: [
             // the first element will be choosen as the default
@@ -102,6 +98,7 @@ const Config = {
         root: '/api/',
         test: '/api/success/',
         policyBase: 'policy/',
+        policyDetailBase: 'detail/',
         policyGroupBase: 'policies/',
         networkBase: 'network/',
         ringBase: 'cluster/',

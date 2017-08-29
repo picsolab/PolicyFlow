@@ -151,6 +151,27 @@ class PolicyText(db.Model):
     def __repr__(self):
         return '<PolicyText of %r>' % self.policyId
 
+    def serialize(self):
+        """serialize policy text"""
+        return [{"url": self.url1, "text": self.text1},
+                {"url": self.url2, "text": self.text2},
+                {"url": self.url3, "text": self.text3},
+                {"url": self.url4, "text": self.text4},
+                {"url": self.url5, "text": self.text5}]
+
+
+class PolicySimilarity(db.Model):
+    """PolicySimilarity class"""
+    __tablename__ = 'policy_similarity'
+
+    policyId1 = db.Column('policy_id_1', db.String(80), ForeignKey('policy.policy_id'), primary_key=True)
+    policyId2 = db.Column('policy_id_2', db.String(80), ForeignKey('policy.policy_id'), primary_key=True)
+    policyTextSimilarity = db.Column('policy_text_similarity', db.Float)
+    policyCascadeSimilarity = db.Column('policy_cascade_similarity', db.Float)
+
+    def __repr__(self):
+        return '<PolicySimilarity of %r and %r>' % (self.policyId1, self.policyId2)
+
 
 class NetinfNetwork:
     edges = []

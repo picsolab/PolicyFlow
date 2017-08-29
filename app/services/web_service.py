@@ -6,7 +6,7 @@ import random
 from .helper import DecimalEncoder
 from .base_service import BaseService
 from .computing_service import ComputingService
-from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao
+from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao
 
 computing_service = ComputingService()
 
@@ -99,6 +99,35 @@ class PolicyService(BaseService):
         pass
 
     @staticmethod
+    def parse_args(args):
+        method = args['method']
+        param = args['param']
+        start_year = int(args['start_year']) if args['start_year'] is not None else PolicyDao.START_YEAR
+        end_year = int(args['end_year']) if int(args['end_year']) is not None else PolicyDao.END_YEAR
+        return method, param, start_year, end_year
+
+    @staticmethod
+    def get_q_policy_group(method, param, start_year, end_year):
+        policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
+        if method == 'subject':
+            params = param.split("-")
+            if len(params) == 1:
+                return policy_dao.get_q_all_policies_with_valid_subject()
+            else:
+                return policy_dao.get_q_policies_by_subject(int(params[1]))
+        elif method == 'text':
+            params = param.split("-")
+            if len(params) == 1:
+                return policy_dao.get_q_all_policies_with_valid_cluster_count()
+            else:
+                return policy_dao.get_q_policies_by_text_similarity(params)
+        return None
+
+    @staticmethod
+    def get_policy_group(method, param, start_year, end_year):
+        return PolicyService.get_q_policy_group(method, param, start_year, end_year).all()
+
+    @staticmethod
     @app.route("/api/policy/<policy_id>")
     def get_policy_by_id(policy_id):
         """get_policy_by_id"""
@@ -120,37 +149,8 @@ class PolicyService(BaseService):
     @staticmethod
     @app.route("/api/policies/")
     def get_policies_by_params():
-        args = request.args
-        method = args['method']
-        param = args['param']
-        start_year = int(args['start_year']) if args['start_year'] is not None else PolicyDao.START_YEAR
-        end_year = int(args['end_year']) if int(args['end_year']) is not None else PolicyDao.END_YEAR
-        policies = None
-        policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
-        if method == 'subject':
-            params = param.split("-")
-            if len(params) == 1:
-                policies = policy_dao.get_all_policies_with_valid_subject()
-                if policies is not None:
-                    return json.dumps({"policies": [
-                        {"policy_id": p[0].policyId, "policy_name": p[0].policyName,
-                         "subject": p[0].subject.subjectName, "policy_start": p[0].policyStart,
-                         "policy_end": p[0].policyEnd}
-                        for p in policies]})
-            else:
-                policies = policy_dao.get_policies_by_subject(int(params[1]))
-        elif method == 'cluster':
-            policies = policy_dao.get_policies_by_cluster(int(param))
-        elif method == 'state':
-            policies = policy_dao.get_policies_by_state_as_root(int(param))
-        elif method == 'word':
-            policies = policy_dao.get_policies_by_word_match(param)
-        elif method == 'text':
-            params = param.split("-")
-            if len(params) == 1:
-                policies = policy_dao.get_all_policies_with_valid_cluster_count()
-            else:
-                policies = policy_dao.get_policies_by_text_similarity(params)
+        method, param, start_year, end_year = PolicyService.parse_args(request.args)
+        policies = PolicyService.get_policy_group(method, param, start_year, end_year)
 
         if policies is not None:
             return json.dumps({"policies": [
@@ -159,6 +159,33 @@ class PolicyService(BaseService):
                 for p in policies]})
 
         return json.dumps({})
+
+    @staticmethod
+    @app.route("/api/policy/detail/")
+    def get_policy_detail():
+        args = request.args
+        policy_id = args['policy']
+        output = {}
+        if policy_id == "unselected":
+            return json.dumps(output)
+
+        method, param, start_year, end_year = PolicyService.parse_args(args);
+        policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
+        policy_db_obj = PolicyDao.get_policy_by_id(policy_id)
+        output["snippets"] = PolicyTextDao.get_policy_text_by_policy_id(policy_id).serialize()
+        output["policy_id"] = policy_db_obj.policyId
+        output["policy_name"] = policy_db_obj.policyName
+        output["subject"] = policy_db_obj.subject.subjectName
+
+        q_policies = PolicyService.get_q_policy_group(method, param, start_year, end_year)
+        text_top, cascade_top = policy_dao.get_top_similar_policies(q_policies, policy_id, 5)
+        text_similarities = [{"policy_id": item.policyId2, "policy_name": item.policyName,
+                              "policy_text_similarity": item.policyTextSimilarity} for item in text_top]
+        cascade_similarities = [{"policy_id": item.policyId2, "policy_name": item.policyName,
+                                 "policy_cascade_similarity": item.policyCascadeSimilarity} for item in cascade_top]
+        output["text_similarities"] = text_similarities
+        output["cascade_similarities"] = cascade_similarities
+        return json.dumps(output, cls=DecimalEncoder)
 
 
 class NetworkService(BaseService):
@@ -266,43 +293,13 @@ class NetworkService(BaseService):
     @app.route("/api/network/")
     def get_network_by_params():
         args = request.args
-        method = args['method']
-        param = args['param']
         iters = int(args['iters'])
-        start_year = int(args['start_year']) if args['start_year'] is not None else PolicyDao.START_YEAR
-        end_year = int(args['end_year']) if int(args['end_year']) is not None else PolicyDao.END_YEAR
-        policies = None
-        cascade_text = ""
-        policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
-        if method == 'subject':
-            params = param.split("-")
-            if len(params) == 1:
-                policies = policy_dao.get_all_policies_with_valid_subject()
-                if policies is not None:
-                    cascade_text = reduce(lambda x, y: x + y[0].serialize(), policies, "")
-            else:
-                policies = policy_dao.get_policies_by_subject(params[1])
-                if policies is not None:
-                    cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
-        elif method == 'cluster':
-            policies = policy_dao.get_policies_by_cluster(int(param))
-        elif method == 'state':
-            policies = policy_dao.get_policies_by_state_as_root(int(param))
-        elif method == 'word':
-            policies = policy_dao.get_policies_by_word_match(param)
-        elif method == 'text':
-            params = param.split("-")
-            if len(params) == 1:
-                policies = policy_dao.get_all_policies_with_valid_cluster_count()
-            else:
-                policies = policy_dao.get_policies_by_text_similarity(params)
-            if policies is not None:
-                cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
+        method, param, start_year, end_year = PolicyService.parse_args(args)
+        policies = PolicyService.get_policy_group(method, param, start_year, end_year)
 
-        if cascade_text is not "":
+        if policies is not None:
+            cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
             return json.dumps(computing_service.get_network_by(cascade_text, iters=iters), cls=DecimalEncoder)
-        else:
-            pass
 
         return json.dumps({})
 

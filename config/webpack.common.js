@@ -28,6 +28,14 @@ module.exports = {
                 test: /\.css$/,
                 include: helpers.root('src', 'app'),
                 loader: ExtractTextPlugin.extract({ fallbackLoader: 'style-loader', loader: 'css-loader' })
+            },
+            {
+                test: /\.html$/,
+                include: helpers.root('src', 'app', 'templates'),
+                loader: "underscore-template-loader",
+                query: {
+                    engine: 'lodash',
+                }
             }
         ]
     },

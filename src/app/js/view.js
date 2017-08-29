@@ -242,6 +242,19 @@ let PolicyView = Backbone.View.extend({
     }
 });
 
+let PolicyDetailView = Backbone.View.extend({
+    el: "#policy-detail-wrapper",
+    template: require('../templates/policy-detail-template.html'),
+    render(conditions) {
+        let _self = this;
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            this.$el.html(require('../templates/policy-detail-empty-template.html'));
+        } else {
+            this.$el.html(_self.template(_self.model.attributes));
+        }
+    }
+});
+
 let GeoView = Backbone.View.extend({
     el: '#svg-geo-view',
     initialize() {
@@ -2014,12 +2027,12 @@ let RingView = Backbone.View.extend({
                 }
             },
             mouseOverArc = function(d) {
-                d3.select(this).attr("stroke", "black")
+                d3.select(this).style("stroke", "black");
                 tooltip.html(formatDescription(d));
                 return tooltip.style("opacity", 0.9);
             },
             mouseOutArc = function() {
-                d3.select(this).attr("stroke", "")
+                d3.select(this).style("stroke", "");
                 return tooltip.style("opacity", 0);
             },
             mouseMoveArc = function(d) {
@@ -2027,7 +2040,15 @@ let RingView = Backbone.View.extend({
                     top: (d3.event.pageY + gs.r.margin.tShiftY) + "px",
                     left: (d3.event.pageX + gs.r.margin.tShiftX) + "px"
                 });
-            }
+            },
+            mouseClickArc = function() {
+                let __target = $(d3.event.target),
+                    __prevSelected = $("#ring-group .hovered-item");
+                $("#ring-group path").removeClass("hovered-item");
+                if (__prevSelected[0] !== __target[0]) {
+                    __target.addClass("hovered-item");
+                }
+            };
 
         let paths = ringG.datum(clusterObj).selectAll("path")
             .data(partition.nodes),
@@ -2057,7 +2078,8 @@ let RingView = Backbone.View.extend({
             })
             .on("mouseover", mouseOverArc)
             .on("mousemove", mouseMoveArc)
-            .on("mouseout", mouseOutArc);
+            .on("mouseout", mouseOutArc)
+            .on("click", mouseClickArc);
 
         labels.enter().append("text")
             .attr({
@@ -2091,6 +2113,7 @@ d3.selection.prototype.moveToFront = function() {
 
 module.exports = {
     PolicyView: PolicyView,
+    PolicyDetailView: PolicyDetailView,
     GeoView: GeoView,
     RingView: RingView,
     NetworkView: NetworkView,
