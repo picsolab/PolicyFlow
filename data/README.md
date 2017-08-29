@@ -5,6 +5,12 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
+### 20170829
+
+backup.
+
+Dump: `./backup/diffusion2017vis_20170829.sql`
+
 ### 20170825
 
 create `policy_similarity` table.
