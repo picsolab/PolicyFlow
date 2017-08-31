@@ -2,11 +2,37 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
-const eedges = conf.static.edges,
-    printDiagnoseInfo = false;
+const printDiagnoseInfo = false;
 
 let colorList = [],
     colorMap = {};
+const color15 = [
+        css_variables['--color-cb-9'],
+        css_variables['--color-cb-a'],
+        css_variables['--color-i'],
+        css_variables['--color-cb-10'],
+        css_variables['--color-cb-8'],
+        css_variables['--color-cb-7'],
+        css_variables['--color-cb-6'],
+        css_variables['--color-cb-5'],
+        css_variables['--color-cb-4'],
+        css_variables['--color-cb-3'],
+        css_variables['--color-cb-2'],
+        css_variables['--color-cb-1'],
+        css_variables['--color-cb-0'],
+        css_variables['--color-c'],
+        css_variables['--color-j']
+    ],
+    color7 = [
+        css_variables['--color-cb-9'],
+        css_variables['--color-cb-a'],
+        css_variables['--color-cb-0'],
+        css_variables['--color-cb-1'],
+        css_variables['--color-cb-3'],
+        css_variables['--color-cb-4'],
+        css_variables['--color-cb-7']
+    ];
+
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
     render() {
@@ -216,690 +242,862 @@ let PolicyView = Backbone.View.extend({
     }
 });
 
-let NetworkView = Backbone.View.extend({
-    el: '#svg-network-view',
-    render() {
-        var _self = this;
+let PolicyDetailView = Backbone.View.extend({
+    el: "#policy-detail-wrapper",
+    template: require('../templates/policy-detail-template.html'),
+    render(conditions) {
+        let _self = this;
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            this.$el.html(require('../templates/policy-detail-empty-template.html'));
+        } else {
+            this.$el.html(_self.template(_self.model.attributes));
+        }
+    }
+});
+
+let PolicyTrendView = Backbone.View.extend({
+    el: "#policy-trend-wrapper",
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            adoptionList = this.model.get("list").map(e => {
+                return {
+                    "year": new Date(e.year, 0, 1),
+                    "count": +e.count
+                };
+            }),
+            yearList = adoptionList.map(e => e.year),
+            countList = adoptionList.map(e => e.count),
+            yearDomain = [_.min(yearList), _.max(yearList)],
+            countDomain = [_.min(countList), _.max(countList)];
+
+        let _width = gs.t.margin.left + gs.t.margin.right + gs.t.size.width,
+            _height = gs.t.margin.top + gs.t.margin.bottom + gs.t.size.height;
+
+        let xScale = d3.time.scale()
+            .domain(yearDomain),
+            yScale = d3.scale.linear()
+            .domain(countDomain);
+
+        let ndx = crossfilter(adoptionList),
+            dimension = ndx.dimension(d => d.year),
+            group = dimension.group().reduceSum(d => d.count);
+
+        let chart = dc.barChart(_self.el)
+            .width(_width)
+            .height(_height)
+            .useViewBoxResizing(true)
+            .margins(gs.t.margin)
+            .x(xScale)
+            .y(yScale)
+            .xUnits(d3.time.years)
+            .dimension(dimension)
+            .group(group);
+
+        $.extend(_attr, {
+            chart: chart,
+            ndx: ndx,
+            c: conditions
+        });
+
+        chart.render();
+
+        _self.bindTriggers();
+    },
+    bindTriggers() {
+        let _self = this,
+            _attr = _self._attr,
+            chart = _attr.chart,
+            __target = $(_self.el);
+        __target.off();
+        __target.on('mouseup', () => {
+            let startYearDate = chart.dimension().bottom(1)[0].year,
+                startYear = startYearDate.getFullYear(),
+                endYearDate = chart.dimension().top(1)[0].year,
+                endYear = endYearDate.getFullYear(),
+                dataList = chart.group().all(),
+                length = dataList.length,
+                totalCount = 0;
+
+            _attr.c.set({
+                "startYear": startYear,
+                "endYear": endYear,
+                "policy": conf.bases.policy.default
+            });
+        });
+    }
+});
+
+let GeoView = Backbone.View.extend({
+    el: '#svg-geo-view',
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            stateTopo = this.model.get("topo"),
+            nodes = _self.model.get("nodes"),
+            stat = _self.model.get("stat"),
+            projection = d3.geo.albersUsa().scale([1150]),
+            pathBuilder = d3.geo.path().projection(projection),
+            regionDef = conf.static.regions,
+            stateFeatures = topojson.feature(stateTopo, stateTopo.objects.states).features,
+            stateBorder = topojson.mesh(stateTopo, stateTopo.objects.states, (a, b) => a !== b),
+            regionTopo = {},
+            regionFeatures = [],
+            regionGeos = [],
+            regionBorder = {},
+            regionColorMap = gs.g.config.regionColorMap,
+            _altIndexForWest = 47;
+
+        // TO FIND OUT INDEX FOR UT
+        //  - use centroid of NV as alternative for west region
+        // stateFeatures.forEach((feature, i) => {
+        //     feature.properties.id === "UT" && console.log(i);
+        // });
+
+        _.forEach(regionDef, (theRegion, key) => {
+            let theGeo = topojson.merge(stateTopo, stateTopo.objects.states.geometries.filter((d) => d3.set(theRegion).has(d.properties.id)));
+            regionGeos.push(theGeo);
+            regionFeatures.push({
+                type: "Feature",
+                geometry: theGeo,
+                id: key
+            });
+        });
+        regionTopo = topojson.topology(regionGeos);
+        regionBorder = topojson.mesh(regionTopo);
 
         $(_self.el).empty();
 
-        var tip = d3tip()
-            .attr('class', 'd3-tip-network')
-            .offset([-10, 0])
-            .html(function(d) {
-                return "State: <span style='color:orangered; font-weight:bold'>" + d.stateName + "</span> <p>" + d.metaName + ": <span style='color:white'>" + d.metadata + "</span></p ><p>Adopted year: <span style='color:white'>" + (d.adoptedYear < 9999 ? d.adoptedYear : "Haven't adopted") + "</span></p >";
-            });
+        let _width = gs.g.margin.left + gs.g.margin.right + gs.g.size.mapWidth,
+            _height = gs.g.margin.top + gs.g.margin.bottom + gs.g.size.mapHeight;
 
-        var force = d3.layout.force()
-            .charge(-100)
-            .gravity(0)
-            .size([1500, 600]);
-
-        var svg = d3.select(_self.el)
-            .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("-250 -250 2200 1200"));
-
-        _self.udpate(svg, tip, force);
-    },
-    udpate(svg, tip, force) {
-        /**
-         * NOTES: modifications made:
-         * 1. tip class name: d3-tip-network;
-         * 2. color and opacity: locate by search:  .attr("fill", (d) => {
-         * 3. move gradient definition to seperate function named defineGradient
-         * 4. remove duplicated svg definition
-         */
-        var _self = this,
-            nnodes = _self.model.get("detail");
-
-        svg.call(tip);
-
-        nnodes.forEach(function(d) {
-            d.state_id = d.stateId;
-            d.x = +d.longtitude;
-            d.x = 15 * (180 + d.x) - 600;
-            d.y = +d.latitude;
-            d.y = 20 * (80 - d.y) - 400;
-            d.gravity_x = d.x * 1.5;
-            d.gravity_y = d.y;
-            if (d.normalizedMetadata < 0) {
-                d.r = 20;
-            } else d.r = d.normalizedMetadata * 100;
-        });
-
-        nnodes = nnodes.slice(0, 50)
-
-        force
-            .nodes(nnodes)
-            //.links(eedges)
-            .start()
-            .on("end", function(e) {
-                var d3line = d3.svg.line()
-                    .x(function(d) {
-                        return d.x;
-                    })
-                    .y(function(d) {
-                        return d.y;
-                    });
-                var fbundling = d3.ForceEdgeBundling().nodes(nnodes).edges(eedges);
-                var results = fbundling();
-
-                var defs = svg.append("defs");
-                _self.defineGradient(defs);
-
-                var texts = $("#svg-network-view text");
-                // console.log("texts", texts[3].innerHTML);
-
-                for (var i = 0; i < results.length; i++) {
-                    // console.log("results", results[i]);
-
-                    svg.append("svg:defs").selectAll("marker")
-                        .data(["end"]) // Different link/path types can be defined here
-                        .enter().append("svg:marker") // This section adds in the arrows
-                        .attr("id", String)
-                        .attr("viewBox", "0 -5 12 12")
-                        .attr("refX", 0)
-                        .attr("refY", 0)
-                        .attr("markerWidth", 4)
-                        .attr("markerHeight", 3)
-                        .style("fill", "red")
-                        .style('opacity', 0.3)
-                        .attr("orient", "auto")
-                        .append("svg:path")
-                        .attr("d", "M0,-5L10,0L0,5");
-
-                    if (results[i][0].adoptedYear != 9999 && results[i][results[i].length - 1].adoptedYear != 9999) {
-                        svg.append("path")
-                            .attr("d", d3line(results[i]))
-                            .attr("id", String(i))
-                            .style("stroke-width", 10)
-                            .attr('stroke-linecap', 'round')
-                            .style("stroke", function(d) {
-                                if (results[i][0].adoptedYear > results[i][results[i].length - 1].adoptedYear) {
-                                    return "black";
-                                } else if (results[i][0].x < results[i][results[i].length - 1].x) {
-                                    return "url(#gradient_1)";
-                                } else if (results[i][0].x >= results[i][results[i].length - 1].x) {
-                                    return "url(#gradient_2)";
-                                }
-                            })
-                            //.style("stroke", function(d) {if (results[i][0].adoptedYear < results[i][results[i].length-1].adoptedYear == -1)  {return "grey";} })
-                            .style("fill", "none")
-                            .style('stroke-opacity', 0.3)
-                            .attr("marker-end", "url(#end)")
-
-                        .on("mouseover", function() {
-                            var temp = parseInt(d3.select(this).attr("id"));
-                            var temp_len = results[temp].length;
-
-                            $(_self.el).find("text").css("fill", "Silver");
-                            d3.select(this).style('stroke-opacity', 1).style("stroke-width", 15);
-                            d3.selectAll("marker").style("opacity", 1);
-                            for (var j = 0; j < texts.length; j++) {
-                                if (texts[j].innerHTML == results[temp][0].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 50).style("fill", "black").style("font-weight", "bold").moveToFront();
-                                }
-                                if (texts[j].innerHTML == results[temp][temp_len - 1].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 50).style("fill", "black").style("font-weight", "bold").moveToFront();
-                                }
-                            }
-                        })
-
-                        .on("mouseout", function() {
-                            var temp = parseInt(d3.select(this).attr("id"));
-                            var temp_len = results[temp].length;
-
-                            $(_self.el).find("text").css("fill", "black");
-                            d3.select(this).style('stroke-opacity', 0.4).style("stroke-width", 10);
-                            d3.selectAll("marker").style("opacity", 0.3);
-                            for (var j = 0; j < texts.length; j++) {
-                                if (texts[j].innerHTML == results[temp][0].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 30);
-                                }
-                                if (texts[j].innerHTML == results[temp][temp_len - 1].state_id) {
-                                    d3.select(texts[j]).attr("font-size", 30);
-                                }
-                            }
-                        })
-                    }
-                }
-            })
-            .on("tick", function(e) {
-
-                var k = e.alpha,
-                    kg = k * .02,
-                    spaceAround = 0.;
-
-                nnodes.forEach(function(a, i) {
-                    // Apply gravity forces.
-                    a.x += (a.gravity_x - a.x) * kg;
-                    a.y += (a.gravity_y - a.y) * kg;
-
-                    a.overlapCount = 0;
-
-                    nnodes.slice(i + 1).forEach(function(b) {
-
-                        dx = (a.x - b.x)
-                        dy = (a.y - b.y)
-
-                        adx = Math.abs(dx)
-                        ady = Math.abs(dy)
-
-                        mdx = (1 + spaceAround) * (a.r + b.r) / 2
-                        mdy = (1 + spaceAround) * (a.r + b.r) / 2
-
-                        if (adx < mdx && ady < mdy) {
-                            l = Math.sqrt(dx * dx + dy * dy)
-
-                            lx = (adx - mdx) / l * k
-                            ly = (ady - mdy) / l * k
-
-                            // choose the direction with less overlap
-                            if (lx > ly && ly > 0) lx = 0;
-                            else if (ly > lx && lx > 0) ly = 0;
-
-                            dx *= lx;
-                            dy *= ly;
-                            a.x -= dx;
-                            a.y -= dy;
-                            b.x += dx;
-                            b.y += dy;
-
-                            a.overlapCount++;
-                        }
-                    });
-                    //node.for each braces
-                })
-
-                svg.selectAll("text")
-                    .data(nnodes)
-                    .attr("x", function(d) {
-                        return d.x - d.r / 2;
-                    })
-                    .attr("y", function(d) {
-                        return d.y - d.r / 2;
-                    });
-
-                svg.selectAll("circle")
-                    .data(nnodes)
-                    .attr("cx", function(d) {
-                        return d.x - d.r / 2;
-                    })
-                    .attr("cy", function(d) {
-                        return d.y - d.r / 2;
-                    });
-                //tick braces
-            });
-
-        //Run the FDEB algorithm using default values on the data 
-        svg.selectAll('.node')
-            .data(d3.entries(nnodes))
-            .enter()
-            .append('circle')
-            .attr("opacity", 0.8)
-            .attr("fill", (d) => {
-                d = d.value;
-                return d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
-            })
+        // dom element and groups
+        let svg = _attr.svg = d3.select(_self.el)
             .attr({
-                'r': function(d) {
-                    return d.value.r;
-                }
-            })
-            .on("mouseover", function(d, i) {
-                tip.show(d, i);
-                d3.select(".d3-tip-network")
-                    .style("opacity", 0.9);
-            })
-            .on('mouseout', tip.hide);
+                'preserveAspectRatio': 'xMidYMid meet',
+                'viewBox': ("0 0 " + _width + " " + _height + ""),
+                'class': 'svg-content-responsive'
+            }),
+            legendG = svg.append('g').attr({
+                id: 'geo-legend-group',
+                class: 'legend',
+                transform: "translate(" + (gs.g.margin.left + gs.g.margin.legendXShift) + "," + gs.g.margin.top + ")"
+            }),
+            stateTractG = svg.append('g').attr({
+                id: 'state-tract-group',
+                class: 'tract-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            stateBorderG = svg.append('g').attr({
+                id: 'state-border-group',
+                class: 'border-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            stateLabelG = svg.append('g').attr({
+                id: 'state-label-group',
+                class: 'label-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            regionTractG = svg.append('g').attr({
+                id: 'region-tract-group',
+                class: 'tract-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            regionBorderG = svg.append('g').attr({
+                id: 'region-border-group',
+                class: 'border-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            regionLabelG = svg.append('g').attr({
+                id: 'region-label-group',
+                class: 'label-group',
+                transform: "translate(" + gs.g.margin.left + "," + gs.g.margin.top + ")"
+            }),
+            defs = svg.append('defs');
 
-        svg.selectAll('.node')
-            .data(d3.entries(nnodes))
-            .enter()
-            .append('text')
-            .attr("fill", "black")
-            .attr("font-size", function(d) {
-                return 30;
-            })
-            .attr("font-family", "Trebuchet MS")
-            .attr("text-anchor", "middle")
-            .text(function(d, i) {
-                return d.value.state_id;
-            })
-            .on("mouseover", function(d, i) {
-                tip.show(d, i);
-                d3.select(".d3-tip-network")
-                    .style("opacity", 0.9);
-            })
-            .on('mouseout', tip.hide);
-    },
-    defineGradient(defs) {
-        var gradient_1 = defs.append("linearGradient")
-            .attr("id", "gradient_1")
-            .attr("x1", "0%")
-            .attr("y1", "0%")
-            .attr("x2", "100%")
-            .attr("y2", "0%")
-            .attr("spreadMethod", "pad");
-
-        gradient_1.append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", "darkblue")
-            .attr("stop-opacity", 0.15);
-
-        gradient_1.append("stop")
-            .attr("offset", "50%")
-            .attr("stop-color", "grey")
-            .attr("stop-opacity", 0.3);
-
-        gradient_1.append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", "red")
-            .attr("stop-opacity", 1);
-
-        var gradient_2 = defs.append("linearGradient")
-            .attr("id", "gradient_2")
-            .attr("x1", "0%")
-            .attr("y1", "0%")
-            .attr("x2", "100%")
-            .attr("y2", "0%")
-            .attr("spreadMethod", "pad");
-
-        gradient_2.append("stop")
-            .attr("offset", "0%")
-            .attr("stop-color", "red")
-            .attr("stop-opacity", 1);
-
-        gradient_2.append("stop")
-            .attr("offset", "50%")
-            .attr("stop-color", "grey")
-            .attr("stop-opacity", 0.3);
-
-        gradient_2.append("stop")
-            .attr("offset", "100%")
-            .attr("stop-color", "darkblue")
-            .attr("stop-opacity", 0.15);
-    }
-
-});
-
-// @Deprecated
-let StatBarView = Backbone.View.extend({
-    el: '#svg-stat-bar-view',
-    render() {
-        //prepare params
-        let _self = this,
-            data = _self.model.get("detail");
-
-        $(_self.el).empty();
-
-        var tip = d3tip()
-            .attr('class', 'd3-tip')
-            .offset([-10, 0])
-            .html(function(d) {
-                return "<span style='color:red'>" + d.state_name + "</span><strong> root number:</strong> <span style='color:black'>" + d.num + "</span>";
-            });
-
-        // set the dimensions of the canvas
-        var svg = d3.select(_self.el)
-            .attr("height", "100")
-            .attr("width", "1200");
-
-        svg.call(tip);
-
-        // load the data
-        data.forEach(function(d) {
-            d.state_id = d.state_id;
-            d.num = +d.num;
-            d.state_name = d.state_name;
+        $.extend(_attr, {
+            legendG: legendG,
+            stateTractG: stateTractG,
+            stateBorderG: stateBorderG,
+            stateLabelG: stateLabelG,
+            regionTractG: regionTractG,
+            regionBorderG: regionBorderG,
+            regionLabelG: regionLabelG,
+            defs: defs,
+            regionColorMap: regionColorMap,
+            c: conditions,
+            nodes: nodes,
+            stat: stat
         });
 
-        // Add bar chart
-        svg.selectAll("bar")
-            .data(data)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("width", "20")
-            .attr("x", function(d, i) { return (i * 22) })
-            .attr("y", "0")
-            .attr("fill", "#bcbddc")
-            .attr("height", function(d, i) { return (d.num * 3) })
-            .on('mouseover', tip.show)
-            .on('mouseout', tip.hide);
+        let states = _attr.stateTractG.selectAll("path")
+            .data(stateFeatures),
+            regions = regionTractG.selectAll("path")
+            .data(regionFeatures);
 
-        svg.selectAll("text")
-            .data(data)
-            .enter()
-            .append("text")
-            .text(function(d) { return d.state_id; })
-            .attr("x", function(d, i) { return (i * 22) })
-            .attr("y", function(d, i) { return (10 + d.num * 3) })
-            .attr("font-family", "sans-serif")
-            .attr("font-size", "11px")
-            .attr("fill", "black");
-
-    }
-});
-
-let PolicyOptionsView = Backbone.View.extend({
-
-});
-
-// @Deprecated
-let ArcView = Backbone.View.extend({
-    el: "#svg-arc-view",
-    render(sortMethod) {
-        // console.log("rendering arc: " + sortMethod);
-        let _self = this,
-            nodes = this.model.get("nodes"),
-            links = conf.static.edges,
-            τ = 2 * Math.PI; // http://tauday.com/tau-manifesto
-
-        let svg = d3.select(_self.el)
-            .attr("width", gs.a.size.width)
-            .attr("height", gs.a.size.height)
-            .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("0 0 " + gs.a.size.width + " " + gs.a.size.height + ""))
-            .classed('svg-content-responsive', true);
-
-        // Set each node's value to the sum of all incoming and outgoing link values
-        let nodeValMin = 100000000,
-            nodeValMax = 0;
-        for (i = 0; i < nodes.length; i++) {
-            nodes[i].displayOrder = i;
-        }
-        for (i = 0; i < nodes.length; i++) {
-            nodeValMin = Math.min(nodeValMin, nodes[i].metadata);
-            nodeValMax = Math.max(nodeValMax, nodes[i].metadata);
-        }
-
-        // define arc builder
-        let arcBuilder = d3.svg.arc()
-            .startAngle(-τ / 4)
-            .endAngle(τ / 4);
-
-        arcBuilder.setRadii = function(d) {
-            let arcHeight = 0.5 * Math.abs(d.x2 - d.x1);
-            this.innerRadius(arcHeight - d.thickness / 2)
-                .outerRadius(arcHeight + d.thickness / 2);
-        };
-
-        nodes = this.doSort(nodes, sortMethod);
-
-        let pathG = svg.select('.arcs'),
-            circleG = svg.select('.circles'),
-            labelG = svg.select('.labels');
-
-        // DATA JOIN
-        let path = pathG.selectAll("path")
-            .data(links);
-
-        // UPDATE
-        path.transition()
-            .duration(gs.a.transitionTime)
-            .call(_self.pathTween, this, arcBuilder, nodes);
-
-        // ENTER
-        path.enter()
+        states.enter()
             .append("path")
             .attr({
-                "transform": (d, i) => {
-                    d.x1 = _self.nodeDisplayX(nodes[d.target]);
-                    d.x2 = _self.nodeDisplayX(nodes[d.source]);
-                    return _self.arcTranslation(d);
-                },
-                "d": (d, i) => {
-                    d.thickness = gs.a.margin.arcThickness;
-                    arcBuilder.setRadii(d);
-                    return arcBuilder();
-                },
-                class: (d, i) => {
-                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
-                        isFollowingNetworkRule = +nodes[d.source].adoptedYear < +nodes[d.target].adoptedYear;
-                    if (isValid) {
-                        if (isFollowingNetworkRule) {
-                            return "follow-the-rule";
-                        } else {
-                            return "violate-the-rule";
-                        }
+                class: "tract state-tract",
+                d: pathBuilder,
+                title: (d) => {
+                    return d.stateId = d.properties.id;
+                }
+            })
+            .style({
+                fill: (d) => {
+                    if (d.stateId === "NE") {
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     } else {
-                        return "invalid-arc";
+                        return d3.rgb(css_variables["--color-unadopted"]);
                     }
                 },
-                target: (d) => d.target,
-                source: (d) => d.source
-            });
-
-        // DATA JOIN
-        let circle = circleG.selectAll("circle")
-            .data(nodes);
-
-        // UPDATE
-        circle.transition()
-            .duration(gs.a.transitionTime)
-            .attr("cx", (d, i) => _self.nodeDisplayX(d));
-
-        // ENTER
-        circle.enter()
-            .append("circle")
-            .attr({
-                cy: gs.a.nodeY,
-                cx: (d, i) => _self.nodeDisplayX(d),
-                r: (d, i) => _self.mapRange(d.metadata, nodeValMin, nodeValMax, gs.a.multiplier.outMin, gs.a.multiplier.outMax),
-                fill: (d, i) => d.valid ? colorMap[d.adoptedYear] : css_variables["--color-unadopted"],
-                stroke: (d, i) => d.valid ? d3.rgb(colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1),
-                id: (d, i) => "node_" + i
-            });
-
-        // DATA JOIN
-        let text = labelG.selectAll("text")
-            .data(nodes);
-        // UPDATE
-        text.transition()
-            .duration(gs.a.transitionTime)
-            .attr({
-                x: (d, i) => _self.nodeDisplayX(d),
-                transform: (d, i) => _self.textTransform(d)
-            });
-        // ENTER
-        text.enter()
-            .append("text")
-            .attr({
-                y: gs.a.nodeY + gs.a.margin.textYShift,
-                x: (d, i) => _self.nodeDisplayX(d),
-                transform: (d, i) => _self.textTransform(d)
+                opacity: css_variables["--opacity-state"]
             })
-            .text((d, i) => d.stateName);
+            .append("title")
+            .text((d) => d.properties.id);
 
-        _self.bindTriggers(nodes);
+        stateLabelG.selectAll("text")
+            .data(stateFeatures).enter()
+            .append("text")
+            .filter(d => {
+                d.centroid = pathBuilder.centroid(d);
+                return _.isFinite(d.centroid[0]);
+            })
+            .text(d => d.properties.id)
+            .attr({
+                x: d => d.centroid[0],
+                y: d => d.centroid[1]
+            })
 
+        stateBorderG.append("path")
+            .datum(stateBorder)
+            .attr({
+                id: 'geo-state-border',
+                class: "tract-border state-tract-border",
+                d: pathBuilder
+            });
+
+        regions.enter()
+            .append("path")
+            .attr({
+                class: "tract region-tract",
+                d: pathBuilder,
+                title: (d) => d.id
+            })
+            .style({
+                fill: (d) => regionColorMap[d.id],
+                opacity: css_variables["--opacity-region"]
+            })
+            .append("title")
+            .text((d) => d.id);
+
+        regionBorderG.append("path")
+            .datum(regionBorder)
+            .attr({
+                id: 'geo-region-border',
+                class: "tract-border region-tract-border",
+                d: pathBuilder
+            });
+
+        regionLabelG.selectAll("text")
+            .data(regionFeatures).enter()
+            .append("text")
+            .text(d => {
+                let feature = (d.id !== "west" ? d : stateFeatures[_altIndexForWest]),
+                    bbox = topojson.bbox(topojson.topology(feature)),
+                    centroid = [_.mean([bbox[0], bbox[2]]), _.mean([bbox[1], bbox[3]])];
+                d.centroid = projection(centroid);
+                return d.id;
+            })
+            .attr({
+                x: d => d.centroid[0],
+                y: d => d.centroid[1]
+            });
+
+        this.createLegendGradient();
+
+        this.update();
+        this.bindTriggers();
+        this.toggleTract({ silent: true });
+        return this;
     },
-    pathTween(transition, _self, arcBuilder, nodes) {
-        transition.attrTween("d", (d) => {
-            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target])),
-                interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
-            return function(t) {
-                d.x1 = interpolateX1(t);
-                d.x2 = interpolateX2(t);
-                arcBuilder.setRadii(d);
-                return arcBuilder();
-            };
-        });
+    update() {
+        let _self = this,
+            _attr = _self._attr,
+            meta = 'centrality',
+            colorNeeded = (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected'),
+            colorScale;
 
-        transition.attrTween("transform", (d) => {
-            let interpolateX1 = d3.interpolate(d.x1, _self.nodeDisplayX(nodes[d.target]));
-            let interpolateX2 = d3.interpolate(d.x2, _self.nodeDisplayX(nodes[d.source]));
-            return function(t) {
-                d.x1 = interpolateX1(t);
-                d.x2 = interpolateX2(t);
-                return _self.arcTranslation(d);
-            };
-        });
-    },
-    doSort(nodes, sortMethod) {
-        let nodeMap = [],
-            sortFunciton;
+        $(this.el).find("#geo-legend-group").empty();
 
-        nodes.forEach((node, i) => {
-            nodeMap.push($.extend({ index: i }, node));
-        });
+        if (colorNeeded) {
+            meta = conf.pipe.metaToId[_attr.c.get("metadata")];
+            let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
+                colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]]
+            colorScale = d3.scale.linear()
+                .domain(valueDomain)
+                .interpolate(d3.interpolateRgb)
+                .range(colorRange);
 
-        if (sortMethod == 0) {
-            // ADOPTION YEAR
-            sortFunction = (a, b) => {
-                return b.adoptedYear - a.adoptedYear;
-            };
-        } else if (sortMethod == 1) {
-            // METADATA
-            sortFunction = (a, b) => {
-                return b.metadata - a.metadata;
-            };
-        } else if (sortMethod == 2) {
-            // NAME
-            sortFunction = (a, b) => {
-                return a.stateName.localeCompare(b.stateName)
-            };
+            // render a legend
+            let legendScale = d3.scale.linear()
+                .domain(valueDomain)
+                .range([0, gs.g.size.legendWidth]),
+                legendAxis = d3.svg.axis()
+                .scale(legendScale)
+                .orient("bottom")
+                .ticks(gs.g.config.legendTickNumber)
+                .tickSize(gs.g.size.legendTickSize)
+                .tickFormat(d3.format(".2f"))
+                .tickPadding(gs.g.margin.legendTickPadding);
+
+            _attr.legendG.append('rect')
+                .attr({
+                    id: 'geo-legend-bar',
+                    height: gs.g.size.legendHeight,
+                    width: gs.g.size.legendWidth
+                })
+                .style({
+                    fill: "url(#geo-legend-linear-gradient)"
+                });
+
+            _attr.legendG.call(legendAxis).select(".domain").remove();
         }
 
-        nodeMap.sort(sortFunction);
-        nodeMap.forEach((node, i) => {
-            nodes[node.index].displayOrder = i;
+        let stateTracts = $("#state-tract-group path");
+        stateTracts.each(i => {
+            let __tract = $(stateTracts[i]),
+                title = __tract.attr("title");
+            __tract.css("fill", () => {
+                if (title === "NE") {
+                    return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                } else if (colorNeeded) {
+                    let node = _attr.nodes[title];
+                    if (!d3.set(conf.static.states).has(title) || _self.isNodeDefault(node)) {
+                        return css_variables["--color-unadopted"];
+                    } else {
+                        return node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                    }
+                } else if (meta === 'centrality') {
+                    return d3.rgb(css_variables["--color-unadopted"]);
+                }
+            });
+        });
+        return this;
+    },
+    isNodeDefault(node) {
+        return node.valid && node.adoptedYear === 9999;
+    },
+    bindTriggers() {
+        let _self = this,
+            _attr = this._attr,
+            __svg = $(this.el);
+
+        let regionTractClickHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target);
+                if (_curr.hasClass("region-tract")) {
+                    _attr.c.toggleTractList(_curr.attr("title"));
+                }
+            },
+            stateTractClickHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target);
+                if (_curr.hasClass("state-tract")) {
+                    _attr.c.toggleTractList(_curr.attr("title"));
+                }
+            };
+
+        __svg.off();
+
+        __svg.on('click', regionTractClickHandler);
+        __svg.on('click', stateTractClickHandler);
+    },
+    toggleTract() {
+        let c = this._attr.c;
+        switch (c.get("geoBase")) {
+            case "state":
+                if (arguments.length !== 0 && arguments[0].silent) {
+                    $("#region-tract-group").hide();
+                    $("#region-label-group").hide();
+                    $("#state-tract-group").show();
+                    $("#state-label-group").show();
+                } else {
+                    $("#region-tract-group").fadeOut();
+                    $("#region-label-group").fadeOut();
+                    $("#state-tract-group").fadeIn();
+                    $("#state-label-group").fadeIn();
+                }
+                $("#geo-legend-group").show();
+                c.set("stateList", []);
+                $("#region-tract-group path").removeClass("hovered-item");
+                break;
+            case "region":
+                if (arguments.length !== 0 && arguments[0].silent) {
+                    $("#region-tract-group").show();
+                    $("#region-label-group").show();
+                    $("#state-tract-group").hide();
+                    $("#state-label-group").hide();
+                } else {
+                    $("#region-tract-group").fadeIn();
+                    $("#region-label-group").fadeIn();
+                    $("#state-tract-group").fadeOut();
+                    $("#state-label-group").fadeOut();
+                }
+                $("#geo-legend-group").hide();
+                c.set("regionList", []);
+                $("#state-tract-group path").removeClass("hovered-item");
+                break;
+            default:
+                console.log("[invalid geoBase] - Congratulations on toggling a bug!");
+        }
+    },
+    updateSelection() {
+        let c = this._attr.c,
+            theListName = c.getTractListName(),
+            theList = c.getTractList(),
+            geoBase = c.get("geoBase"),
+            previousList = c.previousAttributes()[theListName],
+            currentList = c.get(theListName),
+            isAppendingNewElement = previousList.length < currentList.length,
+            theTract = (isAppendingNewElement ?
+                _.difference(currentList, previousList)[0] :
+                _.difference(previousList, currentList)[0]),
+            __tractG = $("#" + geoBase + "-tract-group"),
+            __domElement = __tractG.find("path[title=" + theTract + "]");
+
+        if (isAppendingNewElement) {
+            __domElement.addClass("hovered-item");
+        } else {
+            __domElement.removeClass("hovered-item");
+        }
+    },
+    createLegendGradient() {
+        let grad = this._attr.defs.append("linearGradient")
+            .attr({
+                id: "geo-legend-linear-gradient",
+                x1: 0,
+                x2: 1,
+                spreadMethod: "pad"
+            });
+
+        grad.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", css_variables["--color-value-out"])
+            .attr("stop-opacity", 1);
+
+        grad.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", css_variables["--color-value-in"])
+            .attr("stop-opacity", 1);
+
+        return grad;
+    }
+});
+
+let NetworkView = Backbone.View.extend({
+    el: "#svg-network-view",
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            nodes = this.model.get("nodes"),
+            edges = this.model.get("edges"),
+            stat = this.model.get("stat"),
+            cstat = this.model.get("cstat");
+
+        $(_self.el).empty();
+
+        let _width = gs.n.margin.left + gs.n.margin.right + gs.n.size.width,
+            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height;
+
+        // dom element and groups
+        let svg = _attr.svg = d3.select(_self.el)
+            .attr({
+                'preserveAspectRatio': 'xMidYMid meet',
+                'viewBox': ("0 0 " + _width + " " + _height + ""),
+                'class': 'svg-content-responsive'
+            }),
+            edgeG = svg.append('g').attr({
+                'id': 'network-edge-group',
+                'class': 'edge-group',
+                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
+            }),
+            nodeG = svg.append('g').attr({
+                'id': 'network-node-group',
+                'class': 'node-group',
+                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
+            }),
+            labelG = svg.append('g').attr({
+                'id': 'network-label-group',
+                'class': 'label-group',
+                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
+            }),
+            defs = svg.append('defs');
+
+        let force = d3.layout.force()
+            .size([_width, _height])
+            .linkDistance(100)
+            .charge(-500)
+            .gravity(0.4)
+            .friction(0.9);
+
+        $.extend(_attr, {
+            svg: svg,
+            edgeG: edgeG,
+            nodeG: nodeG,
+            labelG: labelG,
+            defs: defs,
+            c: conditions,
+            nodes: nodes,
+            edges: edges,
+            stat: stat,
+            cstat: cstat,
+            force: force
         });
 
-        return nodes;
+        return this.update();;
     },
-    bindTriggers(nodes) {
+    update() {
         let _self = this,
-            _arrow = d3.select(_self.el).append('g').attr("class", "arrow"),
-            _indicator = d3.svg.symbol().type('triangle-down'),
-            nodeMap = {};
+            _attr = this._attr,
+            nodes = _attr.nodes,
+            edges = _attr.edges,
+            stat = _attr.stat,
+            cstat = _attr.cstat,
+            geoBase = _attr.c.get("geoBase"),
+            metaType = _attr.c.get("metadata"),
+            cType = _attr.c.get("centrality"),
+            selectedIdList = d3.set(_self.getSelectedIds(_attr.c)),
+            isAValidEdge = function(edge) {
+                return (nodes[edge.source].valid && nodes[edge.target].valid) &&
+                    (geoBase === "state" ?
+                        selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :
+                        selectedIdList.has(edge.source) && selectedIdList.has(edge.target));
+            },
+            filteredNodes = {},
+            filteredEdges = [],
+            colorNeeded = (geoBase === "state" ?
+                (metaType !== 'centrality') && (_attr.c.get("policy") !== conf.bases.policy.default) :
+                true),
+            opacity = css_variables["--opacity-state"],
+            meta = 'centrality',
+            colorScale;
 
-        $("#svg-arc-view .arcs path").on("mouseover", (event) => {
-            if (!$(event.target).hasClass("invalid-arc")) {
-                let x = _self.nodeDisplayX(nodes[+$(event.target).attr("target")]),
-                    _sourceNode = $("#node_" + $(event.target).attr("source")),
-                    _targetNode = $("#node_" + $(event.target).attr("target"));
-                _arrow.append("path")
-                    .attr({
-                        d: _indicator,
-                        transform: "translate(" + x + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
-                        fill: $(event.target).hasClass("follow-the-rule") ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
-                    });
-                _sourceNode.addClass("hovered-item");
-                _targetNode.addClass("hovered-item");
+        if (colorNeeded) {
+            meta = conf.pipe.metaToId[_attr.c.get("metadata")];
+            switch (geoBase) {
+                case "state":
+                    let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
+                        colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]];
+                    colorScale = d3.scale.linear()
+                        .domain(valueDomain)
+                        .interpolate(d3.interpolateRgb)
+                        .range(colorRange);
+                    break;
+                case "region":
+                    colorScale = gs.g.config.regionColorMap
+                    opacity = css_variables["--opacity-region"]
+                    break;
+                default:
+                    // won't happen
+            }
+        }
+
+        $.extend(_attr, {
+            filteredEdges: filteredEdges,
+            filteredNodes: filteredNodes
+        });
+
+        let sizeScale = d3.scale.linear()
+            .domain([cstat.min[cType], cstat.max[cType]])
+            .range(gs.n.config.circleSizeRange),
+            force = _attr.force.on("tick", tick),
+            drag = force.drag()
+            .on("dragstart", dragstart);
+
+        edges.forEach(edge => {
+            if (isAValidEdge(edge)) {
+                let newEdge = {
+                    source: filteredNodes[edge.source] || (filteredNodes[edge.source] = nodes[edge.source]),
+                    target: filteredNodes[edge.target] || (filteredNodes[edge.target] = nodes[edge.target])
+                }
+                $.extend(newEdge, {
+                    validity: _self.isFollowingNetworkRule(newEdge),
+                    name: newEdge.source.stateId + "-" + newEdge.target.stateId
+                })
+                filteredEdges.push(newEdge);
             }
         });
 
-        $("#svg-arc-view .arcs path").on("mouseout", (event) => {
-            let _sourceNode = $("#node_" + $(event.target).attr("source")),
-                _targetNode = $("#node_" + $(event.target).attr("target"));
-            $("#svg-arc-view .arrow path").remove();
-            _sourceNode.removeClass("hovered-item");
-            _targetNode.removeClass("hovered-item");
-        });
+        force.nodes(d3.values(filteredNodes))
+            .links(filteredEdges)
+            .start();
 
-        $("#svg-arc-view .circles circle").on("mouseover", (event) => {
-            let nodeId = event.target.id.split('_')[1],
-                _arcG = $("#svg-arc-view .arcs"),
-                _asSource = _arcG.find("path[source=" + nodeId + "]"),
-                _asTarget = _arcG.find("path[target=" + nodeId + "]");
-            nodeMap = {};
-            targetMap = {};
-            nodeMap[nodeId] = true;
+        let links = _attr.edgeG.selectAll("path")
+            .data(force.links(), (d) => d.name),
+            circles = _attr.nodeG.selectAll(".network-node")
+            .data(force.nodes(), (d) => d.stateId),
+            texts = _attr.labelG.selectAll("text")
+            .data(force.nodes(), (d) => d.stateId);
 
-            _asSource.each((i) => {
-                let arc = _asSource[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    nodeMap[$(arc).attr("target")] = true;
-                    $(arc).addClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
+        // Per-type markers, as they don't inherit styles.
+        _attr.defs.selectAll("marker")
+            .data(["follow-the-rule", "violate-the-rule"])
+            .enter().append("marker")
+            .attr({
+                "id": d => d,
+                "viewBox": "0 -5 10 10",
+                "refX": 15,
+                "refY": -1.5,
+                "markerWidth": 6,
+                "markerHeight": 6,
+                "orient": "auto"
+            })
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
 
-                    let x = _self.nodeDisplayX(nodes[$(arc).attr("target")]);
-                    _arrow.append("path")
-                        .attr({
-                            d: _indicator,
-                            transform: "translate(" + x + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
-                            fill: $(arc).hasClass("follow-the-rule") ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
-                        });
-                }
+        links.exit().remove();
+        circles.exit().transition()
+            .attr("r", 0).remove();
+        texts.exit().remove();
+
+        links.enter().append("path")
+            .attr({
+                "class": d => "network-link " + _self.getLinkValidityClass(d),
+                "marker-end": d => "url(#" + _self.getLinkValidityClass(d) + ")"
             });
 
-            let existArcFollowTheRule = true;
+        circles.enter().append("circle")
+            .attr({
+                class: "network-node",
+                title: (d) => d.stateId
+            })
+            .on("dblclick", dblclick)
+            .call(drag);
 
-            _asTarget.each((i) => {
-                let arc = _asTarget[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    nodeMap[$(arc).attr("source")] = true;
-                    existArcFollowTheRule = $(arc).hasClass("follow-the-rule");
-                    $(arc).addClass(existArcFollowTheRule ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
-                }
+        circles.attr({
+                r: d => sizeScale(nodes[d.stateId].centralities[cType])
+            })
+            .style({
+                fill: (d) => {
+                    switch (geoBase) {
+                        case "state":
+                            if (d.stateId === "NE") {
+                                d.fill = d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                            } else if (colorNeeded) {
+                                let node = _attr.nodes[d.stateId];
+                                if (!d3.set(conf.static.states).has(d.stateId) || _self.isNodeDefault(node)) {
+                                    d.fill = css_variables["--color-unadopted"];
+                                } else {
+                                    d.fill = node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                                }
+                            } else if (meta === 'centrality') {
+                                d.fill = d3.rgb(css_variables["--color-unadopted"]);
+                            }
+                            break;
+                        case "region":
+                            d.fill = colorScale[conf.pipe.regionOf[d.stateId]];
+                            break;
+                        default:
+                            // won't ever happen
+                    }
+                    return d.fill;
+                },
+                stroke: (d) => d3.rgb(d.fill).darker(1),
+                opacity: opacity
             });
 
-            if (_asTarget.length > 0 && !$(_asTarget[0]).hasClass("invalid-arc")) {
-                _arrow.append("path")
-                    .attr({
-                        d: _indicator,
-                        transform: "translate(" + _self.nodeDisplayX(nodes[nodeId]) + "," + (gs.a.nodeY - gs.a.margin.arrowYShift) + ")",
-                        fill: existArcFollowTheRule ? css_variables['--color-follow-the-rule'] : css_variables['--color-violate-the-rule']
-                    });
+        texts.enter().append("text")
+            .attr({
+                "y": ".31em"
+            })
+            .text(d => d.stateId);
+
+        texts.attr({
+            "x": d => {
+                let r = sizeScale(nodes[d.stateId].centralities[cType]);
+                if (r > 10) {
+                    return -5;
+                } else {
+                    return gs.n.margin.labelXShift + r;
+                }
             }
-
-            Object.keys(nodeMap).forEach((nodeId) => {
-                $("#node_" + nodeId).addClass("hovered-item");
-            });
         });
 
-        $("#svg-arc-view .circles circle").on("mouseout", (event) => {
-            let nodeId = event.target.id.split('_')[1],
-                _arcG = $("#svg-arc-view .arcs"),
-                _asSource = _arcG.find("path[source=" + nodeId + "]"),
-                _asTarget = _arcG.find("path[target=" + nodeId + "]");
+        // this is MAGIC
+        while (!gs.n.config.animationSwitch && force.alpha() > 1e-5) { force.tick(); }
 
-            _asSource.each((i) => {
-                let arc = _asSource[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
-                }
+        // Use elliptical arc path segments to doubly-encode directionality.
+        function tick() {
+            links.attr({
+                d: (d) => {
+                    let dx = d.target.x - d.source.x,
+                        dy = d.target.y - d.source.y,
+                        dr = Math.sqrt(dx * dx + dy * dy);
+                    return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+                },
+                x1: (d) => d.source.x,
+                y1: (d) => d.source.y,
+                x2: (d) => d.target.x,
+                y2: (d) => d.target.y
             });
-
-            _asTarget.each((i) => {
-                let arc = _asTarget[i];
-                if (!$(arc).hasClass("invalid-arc")) {
-                    $(arc).removeClass($(arc).hasClass("follow-the-rule") ? "hovered-follow-the-rule" : "hovered-violate-the-rule");
-                }
+            circles.attr({
+                cx: (d) => d.x,
+                cy: (d) => d.y
             });
+            texts.attr("transform", (d) => "translate(" + d.x + "," + d.y + ")");
+        }
 
-            $("#svg-arc-view .arrow path").remove();
+        function dragstart(d) {
+            d3.select(this).classed("fixed", d.fixed = true);
+        }
 
-            Object.keys(nodeMap).forEach((nodeId) => {
-                $("#node_" + nodeId).removeClass("hovered-item");
-            });
+        function dblclick(d) {
+            d3.select(this).classed("fixed", d.fixed = false);
+        }
+        _self.postRender();
+        return this;
+    },
+    preRender() {
+        this.$el.hide();
+        $("#policy-network-wrapper .loader-img").show();
+    },
+    postRender() {
+        $("#policy-network-wrapper .loader-img").hide();
+        this.$el.show();
+    },
+    getSelectedIds(conditions) {
+        if ((conditions.get("regionList").length === 0 && conditions.get("stateList").length === 0) ||
+            conditions.get("policy") === "unselected") {
+            return _.flatMap(conf.static.regions);
+        }
+        switch (conditions.get("geoBase")) {
+            case "state":
+                return conditions.get("stateList");
+            case "region":
+                return _.flatten(conditions.get("regionList").map(region => conf.static.regions[region]))
+            default:
+                //shouldn't happen
+        }
+    },
+    getLinkValidityClass(edge) {
+        return (edge.validity ?
+            "follow-the-rule" :
+            "violate-the-rule");
+    },
+    isFollowingNetworkRule(edge) {
+        let nodes = this._attr.nodes;
+        return +edge.source.adoptedYear <= +edge.target.adoptedYear;
+    },
+    isNodeDefault(node) {
+        return node.valid && node.adoptedYear === 9999;
+    }
+});
+
+let PolicyGroupView = Backbone.View.extend({
+    el: "#policy-group-table",
+    initialize() {
+        $(this.el).bootstrapTable({
+            sortClass: "relevance",
+            height: 400,
+            pagination: true,
+            onlyInfoPagination: false,
+            pageSize: 20,
+            pageList: [10, 25, 50, 100, "All"],
+            selectItemName: "policy_id",
+            search: true,
+            strictSearch: false,
+            showColumns: true,
+            showToggle: true,
+            showPaginationSwitch: true,
+            minimumCountColumns: 10,
+            idField: "policy_id",
+            searchAlign: 'left',
+            paginationVAlign: "bottom",
+            clickToSelect: true,
+            singleSelect: true,
+            maintainSelected: true,
+            columns: [{
+                radio: true
+            }, {
+                field: 'policy_id',
+                title: 'Policy ID',
+                sortable: true,
+                searchable: true,
+                clickToSelect: true,
+                visible: false
+            }, {
+                field: 'policy_name',
+                title: 'Policy Name',
+                sortable: true,
+                searchable: true,
+                clickToSelect: true
+            }, {
+                field: 'subject',
+                title: 'Subject',
+                titleTooltip: 'Subject to which a policy belongs.',
+                sortable: true,
+                searchable: false,
+                clickToSelect: true,
+                order: 'asc'
+            }, {
+                field: 'policy_start',
+                title: 'First Adopt',
+                titleTooltip: 'The year that the first adoption occurred.',
+                sortable: true,
+                searchable: false,
+                clickToSelect: true,
+                order: 'asc'
+            }, {
+                field: 'policy_end',
+                title: 'Last Adopt',
+                titleTooltip: 'The year that the last adoption occurred.',
+                sortable: true,
+                searchable: false,
+                clickToSelect: true,
+                order: 'asc'
+            }],
+            formatLoadingMessage: () => 'Loading policies, please wait...',
+            formatNoMatches: () => 'Oops! No matching policies. Please try to adjust your time range.',
+            formatShowingRows: (pageFrom, pageTo, totalRows) => 'Showing ' + pageFrom + ' to ' + pageTo + ' of ' + totalRows + ' policies'
         });
 
-
+        $('#policy-group-wrapper .fixed-table-toolbar .columns').append('<button id="policy-group-uncheck-btn" class="btn btn-default" type="button" name="Uncheck" title="Uncheck selection">Uncheck</button>');
+        $(this.el).bootstrapTable('showLoading');
     },
-    mapRange(value, inMin, inMax, outMin, outMax) {
-        let inVal = Math.min(Math.max(value, inMin), inMax);
-        return outMin + (outMax - outMin) * ((inVal - inMin) / (inMax - inMin));
-    },
-    arcTranslation(d) {
-        return "translate(" + (d.x1 + d.x2) / 2 + "," + gs.a.nodeY + ")";
-    },
-    nodeDisplayX(node) {
-        return node.displayOrder * gs.a.margin.spacing + gs.a.margin.margin;
-    },
-    textTransform(node) {
-        return ("rotate(90 " + (this.nodeDisplayX(node) - 5) + " " + (gs.a.nodeY + 12) + ")");
-    },
-    empty() {
-        this.$el.empty();
+    render(conditions) {
         let _self = this,
-            svg = d3.select(_self.el);
-        svg.append('g')
-            .attr('class', 'arcs');
-        svg.append('g')
-            .attr('class', 'circles');
-        svg.append('g')
-            .attr('class', 'labels');
+            policies = this.model.get("policies"),
+            __table = $(_self.el);
+        __table.bootstrapTable('load', policies);
+        __table.bootstrapTable('hideLoading');
+        __table.bootstrapTable('resetSearch', "");
+        __table.bootstrapTable('selectPage', 1);
+        _self.updateSelection(conditions);
+    },
+    updateSelection(conditions) {
+        let _self = this;
+        if (conditions.get("policy") !== conf.bases.policy.default) {
+            $(this.el).bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
+        } else {
+            $(this.el).bootstrapTable("uncheckAll");
+        }
+    },
+    clear() {
+        $(this.el).bootstrapTable('removeAll');
+    },
+    preRender() {
+        this.$el.bootstrapTable('showLoading');
     }
 });
 
@@ -987,17 +1185,10 @@ let DiffusionView = Backbone.View.extend({
 
         // data join
         let nodes = _self.model.get("nodes"),
-            links = conf.static.edges,
+            links = _self.model.get("edges"),
             stat = _self.model.get("stat"),
-            cstat = _self.model.get("cstat");
-
-        // compute color list based on length of year list
-        let _yearList = _.uniq(nodes.map((node) => node.adoptedYear)).sort(),
-            _colorList = utils.generateColor(css_variables["--color-trans-out"], css_variables["--color-trans-in"], _yearList.length),
-            _colorMap = {};
-        _yearList.forEach((year, index) => {
-            _colorMap[year] = _colorList[index];
-        });
+            cstat = _self.model.get("cstat"),
+            _colorMap = utils.getColorMap(nodes, css_variables["--color-trans-out"], css_variables["--color-trans-in"]);
 
         $.extend(_attr, {
             getPrefix: () => {
@@ -1256,7 +1447,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
                 stroke: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
-                opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.source]) ?
+                opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.target]) ?
                     0.25 :
                     0.6)
             });
@@ -1293,8 +1484,16 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .call(_self.barTween, _attr, "bottom");
         _self.createBars(bottomBars, "bottom");
-
+        _self.postRender();
         return this;
+    },
+    preRender() {
+        this.$el.hide();
+        $("#diffusion-wrapper .loader-img").show();
+    },
+    postRender() {
+        $("#diffusion-wrapper .loader-img").hide();
+        this.$el.show();
     },
     getPathColor(source, target) {
         if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
@@ -1539,196 +1738,186 @@ let DiffusionView = Backbone.View.extend({
     },
     bindTriggers() {
         let _self = this,
-            _attr = this._attr;
+            _attr = this._attr,
+            __svg = $(this.el);
 
-        pathOverHandler = function(e) {
-            e.stopPropagation();
-            let _curr = $(e.target),
-                pathId = _curr.attr("id"),
-                className = _curr.attr("class"),
-                classNameList = className.split(' '),
-                isStroke = (classNameList[0] === 'diffusion-strokes'),
-                isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+        let pathOverHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target),
+                    pathId = _curr.attr("id"),
+                    className = _curr.attr("class"),
+                    classNameList = className.split(' '),
+                    isStroke = (classNameList[0] === 'diffusion-strokes'),
+                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
 
-            if (isStroke && isValidPath) {
-                // why does it firing twice ???????
-                // console.log(e);
-                // console.log(e.type);
-                // console.log(className);
-                let validityCategory = classNameList[1];
+                if (isStroke && isValidPath) {
+                    // why does it firing twice ???????
+                    // console.log(e);
+                    // console.log(e.type);
+                    // console.log(className);
+                    let validityCategory = classNameList[1];
 
-                [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-                    // add ref lines
-                    _self.drawRefLines(+nodeId, validityCategory);
+                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                        // add ref lines
+                        _self.drawRefLines(+nodeId, validityCategory);
 
-                    // light up bars
-                    _self.lightUpBars(validityCategory, nodeId);
+                        // light up bars
+                        _self.lightUpBars(validityCategory, nodeId);
 
-                    // light up circles
-                    $("#diffusion-node-" + nodeId).addClass("hovered-item");
+                        // light up circles
+                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
 
-                    // move mouseovered nodes to front
-                    // d3.select("#diffusion-node-" + nodeId).moveToFront();
-                });
+                        // move mouseovered nodes to front
+                        // d3.select("#diffusion-node-" + nodeId).moveToFront();
+                    });
 
-                // light up mouseovered path
-                _curr.addClass("hovered-item");
+                    // light up mouseovered path
+                    _curr.addClass("hovered-item");
 
-                // move mouseovered to front
-                // d3.select("#" + pathId).moveToFront();
+                    // move mouseovered to front
+                    // d3.select("#" + pathId).moveToFront();
 
-            }
-        }
-        pathOutHandler = function(e) {
-            e.stopPropagation();
-            let _curr = $(e.target),
-                className = _curr.attr("class"),
-                classNameList = className.split(' '),
-                isStroke = (classNameList[0] === 'diffusion-strokes'),
-                isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+                }
+            },
+            pathOutHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target),
+                    className = _curr.attr("class"),
+                    classNameList = className.split(' '),
+                    isStroke = (classNameList[0] === 'diffusion-strokes'),
+                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
 
-            if (isStroke && isValidPath) {
-                let _curr = $(e.target);
+                if (isStroke && isValidPath) {
+                    let _curr = $(e.target);
 
-                // remove ref lines
-                $("#diffusion-ref-line-group").empty();
+                    // remove ref lines
+                    $("#diffusion-ref-line-group").empty();
 
-                [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
 
-                    // recover lighted bars
-                    $(".bar-" + nodeId).removeClass("hovered-item");
-
-                    // recover up circles
-                    $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-                });
-
-                // recover lighted path
-                _curr.removeClass("hovered-item");
-
-            }
-        }
-
-        circleOverHandler = function(e) {
-            e.stopPropagation();
-            let _curr = $(e.target),
-                className = _curr.attr("class"),
-                isCircle = (className === "diffusion-circles");
-            if (isCircle) {
-                let nodeId = _curr.attr("nodeId"),
-                    _pathG = $("#diffusion-path-group"),
-                    _asSource = _pathG.find("path[source=" + nodeId + "]"),
-                    _asTarget = _pathG.find("path[target=" + nodeId + "]");
-
-                let nodeMap = {},
-                    targetMap = {};
-                nodeMap[nodeId] = true;
-
-                _asSource.each((i) => {
-                    let _theStroke = $(_asSource[i]);
-                    if (!_theStroke.hasClass("invalid-arc")) {
-                        nodeMap[_theStroke.attr("target")] = true;
-                        _theStroke.addClass("hovered-item");
-
-                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                            let validityCategory = _theStroke.attr("class").split(' ')[1];
-                            // add ref lines
-                            _self.drawRefLines(+nodeId, validityCategory);
-                            // light up bars
-                            _self.lightUpBars(validityCategory, nodeId);
-                        });
-                    }
-                });
-
-                _asTarget.each((i) => {
-                    let _theStroke = $(_asTarget[i]);
-                    if (!_theStroke.hasClass("invalid-arc")) {
-                        nodeMap[_theStroke.attr("source")] = true;
-                        _theStroke.addClass("hovered-item");
-
-                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                            let validityCategory = _theStroke.attr("class").split(' ')[1];
-                            // add ref lines
-                            _self.drawRefLines(+nodeId, validityCategory);
-                            // light up bars
-                            _self.lightUpBars(validityCategory, nodeId);
-                        });
-                    }
-                });
-
-                Object.keys(nodeMap).forEach((nodeId) => {
-                    $("#diffusion-node-" + nodeId).addClass("hovered-item");
-                });
-            }
-        };
-        circleOutHandler = function(e) {
-            e.stopPropagation();
-            let _curr = $(e.target),
-                className = _curr.attr("class"),
-                classNameList = className.split(' '),
-                isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
-
-            if (isCircle) {
-                let nodeId = _curr.attr("nodeId"),
-                    _pathG = $("#diffusion-path-group"),
-                    _asSource = _pathG.find("path[source=" + nodeId + "]"),
-                    _asTarget = _pathG.find("path[target=" + nodeId + "]");
-
-                let nodeMap = {},
-                    targetMap = {};
-                nodeMap[nodeId] = true;
-
-                _asSource.each((i) => {
-                    let _theStroke = $(_asSource[i]);
-                    if (!_theStroke.hasClass("invalid-arc")) {
-                        nodeMap[_theStroke.attr("target")] = true;
-                        _theStroke.removeClass("hovered-item");
                         // recover lighted bars
-                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                            $(".bar-" + nodeId).removeClass("hovered-item");
-                        });
-                    }
-                });
+                        $(".bar-" + nodeId).removeClass("hovered-item");
 
-                _asTarget.each((i) => {
-                    let _theStroke = $(_asTarget[i]);
-                    if (!_theStroke.hasClass("invalid-arc")) {
-                        nodeMap[_theStroke.attr("source")] = true;
-                        _theStroke.removeClass("hovered-item");
-                        // recover lighted bars
-                        [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                            $(".bar-" + nodeId).removeClass("hovered-item");
-                        });
-                    }
-                });
+                        // recover up circles
+                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+                    });
 
-                // remove ref lines
-                $("#diffusion-ref-line-group").empty();
+                    // recover lighted path
+                    _curr.removeClass("hovered-item");
 
-                Object.keys(nodeMap).forEach((nodeId) => {
-                    $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-                });
-            }
-        };
+                }
+            },
+            circleOverHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target),
+                    className = _curr.attr("class"),
+                    isCircle = (className === "diffusion-circles");
+                if (isCircle) {
+                    let nodeId = _curr.attr("nodeId"),
+                        _pathG = $("#diffusion-path-group"),
+                        _asSource = _pathG.find("path[source=" + nodeId + "]"),
+                        _asTarget = _pathG.find("path[target=" + nodeId + "]");
 
-        barOverHandler = function(notATypo) {
+                    let nodeMap = {},
+                        targetMap = {};
+                    nodeMap[nodeId] = true;
 
-        }
-        barOutHandler = function(aTypo) {
+                    _asSource.each((i) => {
+                        let _theStroke = $(_asSource[i]);
+                        if (!_theStroke.hasClass("invalid-arc")) {
+                            nodeMap[_theStroke.attr("target")] = true;
+                            _theStroke.addClass("hovered-item");
 
-        }
+                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                                let validityCategory = _theStroke.attr("class").split(' ')[1];
+                                // add ref lines
+                                _self.drawRefLines(+nodeId, validityCategory);
+                                // light up bars
+                                _self.lightUpBars(validityCategory, nodeId);
+                            });
+                        }
+                    });
 
-        this.el.removeEventListener('mouseover', pathOverHandler, false);
-        this.el.removeEventListener('mouseout', pathOutHandler, false);
-        this.el.removeEventListener('mouseover', circleOverHandler, false);
-        this.el.removeEventListener('mouseout', circleOutHandler, false);
+                    _asTarget.each((i) => {
+                        let _theStroke = $(_asTarget[i]);
+                        if (!_theStroke.hasClass("invalid-arc")) {
+                            nodeMap[_theStroke.attr("source")] = true;
+                            _theStroke.addClass("hovered-item");
+
+                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                                let validityCategory = _theStroke.attr("class").split(' ')[1];
+                                // add ref lines
+                                _self.drawRefLines(+nodeId, validityCategory);
+                                // light up bars
+                                _self.lightUpBars(validityCategory, nodeId);
+                            });
+                        }
+                    });
+
+                    Object.keys(nodeMap).forEach((nodeId) => {
+                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
+                    });
+                }
+            },
+            circleOutHandler = function(e) {
+                e.stopPropagation();
+                let _curr = $(e.target),
+                    className = _curr.attr("class"),
+                    classNameList = className.split(' '),
+                    isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
+
+                if (isCircle) {
+                    let nodeId = _curr.attr("nodeId"),
+                        _pathG = $("#diffusion-path-group"),
+                        _asSource = _pathG.find("path[source=" + nodeId + "]"),
+                        _asTarget = _pathG.find("path[target=" + nodeId + "]");
+
+                    let nodeMap = {},
+                        targetMap = {};
+                    nodeMap[nodeId] = true;
+
+                    _asSource.each((i) => {
+                        let _theStroke = $(_asSource[i]);
+                        if (!_theStroke.hasClass("invalid-arc")) {
+                            nodeMap[_theStroke.attr("target")] = true;
+                            _theStroke.removeClass("hovered-item");
+                            // recover lighted bars
+                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                                $(".bar-" + nodeId).removeClass("hovered-item");
+                            });
+                        }
+                    });
+
+                    _asTarget.each((i) => {
+                        let _theStroke = $(_asTarget[i]);
+                        if (!_theStroke.hasClass("invalid-arc")) {
+                            nodeMap[_theStroke.attr("source")] = true;
+                            _theStroke.removeClass("hovered-item");
+                            // recover lighted bars
+                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
+                                $(".bar-" + nodeId).removeClass("hovered-item");
+                            });
+                        }
+                    });
+
+                    // remove ref lines
+                    $("#diffusion-ref-line-group").empty();
+
+                    Object.keys(nodeMap).forEach((nodeId) => {
+                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+                    });
+                }
+            };
+
+        __svg.off();
 
         // mouseover events
-        this.el.addEventListener('mouseover', pathOverHandler, false);
-        this.el.addEventListener('mouseover', circleOverHandler, false);
+        __svg.on('mouseover', pathOverHandler);
+        __svg.on('mouseover', circleOverHandler);
 
         // mouseout events
-        this.el.addEventListener('mouseout', pathOutHandler, false);
-        this.el.addEventListener('mouseout', circleOutHandler, false);
+        __svg.on('mouseout', pathOutHandler);
+        __svg.on('mouseout', circleOutHandler);
 
     },
     drawRefLines(nodeId, validityCategory) {
@@ -1826,6 +2015,192 @@ let DiffusionView = Backbone.View.extend({
     }
 });
 
+let RingView = Backbone.View.extend({
+    el: "#svg-ring-view",
+    initialize() {
+        this._attr = {};
+        $(this.el).on('mouseleave', () => {
+            $("#ring-tooltip").css("opacity", 0);
+        });
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            clusterObj = _self.model.get("cluster"),
+            method = clusterObj.name,
+            color20c = d3.scale.category20c(),
+            nameDomain = _.concat(method, clusterObj.children.map((d) => d.name)),
+            colorSchema = d3.scale.ordinal()
+            .domain(nameDomain)
+            .range(method === "subject" ? color15 : color7),
+            ldaTerms = conf.static.ldaTerms;
+
+        $(_self.el).empty();
+        $("#ring-tooltip").remove();
+
+        let _width = gs.r.margin.left + gs.r.margin.right + gs.r.size.width,
+            _height = gs.r.margin.top + gs.r.margin.bottom + gs.r.size.height;
+
+        let svg = _attr.svg = d3.select(_self.el)
+            .attr({
+                'preserveAspectRatio': 'xMidYMid meet',
+                'viewBox': ("0 0 " + _width + " " + _height + ""),
+                'class': 'svg-content-responsive'
+            }),
+            ringG = svg.append('g').attr({
+                id: 'ring-group',
+                class: 'ring',
+                transform: "translate(" + (_width / 2) + "," + (_height / 2) + ")"
+            }),
+            labelG = svg.append('g').attr({
+                id: 'ring-label-group',
+                class: 'label-group',
+                transform: "translate(" + (_width / 2) + "," + (_height / 2) + ")"
+            });
+
+        let partition = d3.layout.partition()
+            .sort((a, b) => a.size - b.size)
+            .size(method === "subject" ? [2 * Math.PI, 2 * gs.r.size.r] : [2 * Math.PI, gs.r.size.r * gs.r.size.r])
+            .value(d => d.size),
+            arc = (method === "subject" ?
+                d3.svg.arc()
+                .startAngle(d => d.x)
+                .endAngle(d => d.x + d.dx)
+                .innerRadius(d => d.depth * d.y / 2)
+                .outerRadius(d => (d.depth * (d.y) + d.dy) / 2) :
+                d3.svg.arc()
+                .startAngle(d => d.x)
+                .endAngle(d => d.x + d.dx)
+                .innerRadius(d => Math.sqrt(d.y))
+                .outerRadius(d => Math.sqrt(d.y + d.dy))),
+            tooltip = d3.select("body")
+            .append("div")
+            .attr("id", "ring-tooltip");
+
+        let computeTextRotation = function(d) {
+                let shift = (d.depth === 0 ? 180 : -90);
+                return (d.x + d.dx / 2) * 180 / Math.PI + shift;
+            },
+            getSeqStr = function(d) {
+                let seq = "",
+                    curr = d;
+                while (curr.depth !== 0) {
+                    seq = "-" + (method === "subject" ? curr.id : curr.name) + seq;
+                    curr = curr.parent;
+                }
+                return _.trimStart(seq, "-");
+            },
+            getFullSeqStr = function(d) {
+                return d.depth ? "0-" + getSeqStr(d) : "0";
+            },
+            getHead = function(d) {
+                if (d.depth) {
+                    if (method === "subject") {
+                        return d.name;
+                    } else if (method === "text") {
+                        return getSeqStr(d);
+                    }
+                } else {
+                    return "all";
+                }
+            },
+            formatDescription = function(d) {
+                let ldaTerm = "";
+                if (method === "text") {
+                    let seq = getFullSeqStr(d);
+                    ldaTerm += (seq === "0" ? "" : ldaTerms[seq] + "</br>");
+                }
+                return '<b>' + getHead(d) + '</b></br>' + ldaTerm + d.size + '&nbsp;policies';
+            },
+            displayText = function(d) {
+                let text = getHead(d),
+                    thickness = (method === "subject" ?
+                        (d.dy) / 2 :
+                        Math.sqrt(d.y + d.dy) - Math.sqrt(d.y));
+                if (text.length * 8 < thickness) {
+                    return text;
+                } else {
+                    return text.split(" ")[0] + " ..."
+                }
+            },
+            mouseOverArc = function(d) {
+                d3.select(this).style("stroke", "black");
+                tooltip.html(formatDescription(d));
+                return tooltip.style("opacity", 0.9);
+            },
+            mouseOutArc = function() {
+                d3.select(this).style("stroke", "");
+                return tooltip.style("opacity", 0);
+            },
+            mouseMoveArc = function(d) {
+                return tooltip.style({
+                    top: (d3.event.pageY + gs.r.margin.tShiftY) + "px",
+                    left: (d3.event.pageX + gs.r.margin.tShiftX) + "px"
+                });
+            },
+            mouseClickArc = function() {
+                let __target = $(d3.event.target),
+                    __prevSelected = $("#ring-group .hovered-item");
+                $("#ring-group path").removeClass("hovered-item");
+                if (__prevSelected[0] !== __target[0]) {
+                    __target.addClass("hovered-item");
+                }
+            };
+
+        let paths = ringG.datum(clusterObj).selectAll("path")
+            .data(partition.nodes),
+            labels = labelG.datum(clusterObj).selectAll("text")
+            .data(partition.nodes);
+
+        $.extend(_attr, {
+            ringG: ringG,
+            labelG: labelG
+        });
+
+        paths.enter().append("path")
+            .attr({
+                d: arc,
+                seq: d => getFullSeqStr(d)
+            })
+            .style({
+                stroke: "#fff",
+                fill: d => {
+                    if (d.depth === 0 || d.depth === 1) {
+                        return colorSchema(d.name);
+                    } else {
+                        return d3.rgb(colorSchema(d.parent.name)).brighter(d.depth / 8);
+                    }
+                },
+                "fill-rule": "evenodd"
+            })
+            .on("mouseover", mouseOverArc)
+            .on("mousemove", mouseMoveArc)
+            .on("mouseout", mouseOutArc)
+            .on("click", mouseClickArc);
+
+        labels.enter().append("text")
+            .attr({
+                transform: d => "rotate(" + computeTextRotation(d) + ")",
+                x: d => (method === "subject" ?
+                    d.depth * d.y / 2 :
+                    Math.sqrt(d.y)),
+                dx: 6, // margin
+                dy: ".35em"
+            }) // vertical-align
+            .text(d => displayText(d));
+
+        // this.bindTriggers();
+        return this;
+    },
+    bindTriggers() {
+        let __svg = $(this.el);
+        __svg.off();
+        __svg.on("mouseout", () => {
+            d3.select("#ring-tooltip").style("opacity", 0);
+        });
+    }
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -1835,9 +2210,11 @@ d3.selection.prototype.moveToFront = function() {
 
 module.exports = {
     PolicyView: PolicyView,
+    PolicyDetailView: PolicyDetailView,
+    PolicyTrendView: PolicyTrendView,
+    GeoView: GeoView,
+    RingView: RingView,
     NetworkView: NetworkView,
-    StatBarView: StatBarView,
-    ArcView: ArcView,
     DiffusionView: DiffusionView,
-    PolicyOptionsView: PolicyOptionsView
+    PolicyGroupView: PolicyGroupView
 };

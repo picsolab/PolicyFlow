@@ -1,3 +1,4 @@
+const css_variables = require('!css-variables-loader!../css/variables.css');
 const GraphSettings = {
     // policy view settings
     p: {
@@ -5,7 +6,7 @@ const GraphSettings = {
             top: 20,
             left: 35,
             right: 25,
-            bottom: 10,
+            bottom: 20,
             xPadding: 0.7, // horizontal padding between rects
             yPadding: 1, // vertical padding between rects
             xOuterPadding: 0.1,
@@ -14,8 +15,8 @@ const GraphSettings = {
                 // modify .text-tip in style.css to adjust text style
         },
         size: {
-            width: 230,
-            height: 630
+            width: 270,
+            height: 600
         },
         multiplier: {
 
@@ -59,6 +60,37 @@ const GraphSettings = {
 
     },
 
+    // geo view setings
+    g: {
+        margin: {
+            top: 40,
+            left: 10,
+            bottom: 10,
+            right: 10,
+            legendXShift: 650,
+            legendTickPadding: 2
+        },
+        size: {
+            mapHeight: 580,
+            mapWidth: 940,
+            legendWidth: 200,
+            legendHeight: 10,
+            legendTickSize: 13
+        },
+        multiplier: {
+
+        },
+        config: {
+            legendTickNumber: 5,
+            regionColorMap: {
+                "northeast": css_variables["--color-a"],
+                "midwest": css_variables["--color-b"],
+                "south": css_variables["--color-c"],
+                "west": css_variables["--color-d"]
+            }
+        }
+    },
+
     // arc view settings
     a: {
         size: {
@@ -80,14 +112,64 @@ const GraphSettings = {
         nodeY: 380,
     },
 
-    // bar view settings
-    b: {
-
+    // policy trend view settings
+    t: {
+        margin: {
+            top: 10,
+            left: 30,
+            right: 10,
+            bottom: 50
+        },
+        size: {
+            width: 2200,
+            height: 100
+        },
+        multiplier: {},
+        config: {}
     },
 
     // network view settings
     n: {
+        margin: {
+            top: 10,
+            left: 10,
+            bottom: 10,
+            right: 10,
+            labelXShift: 2
+        },
+        size: {
+            height: 500,
+            width: 500
+        },
+        multiplier: {
 
+        },
+        config: {
+            circleSizeDefault: 6,
+            circleSizeRange: [6, 18],
+            animationSwitch: true
+        }
+    },
+
+    // ring view settings
+    r: {
+        margin: {
+            top: 10,
+            left: 10,
+            bottom: 10,
+            right: 10,
+            tShiftX: 10,
+            tShiftY: 10
+        },
+        size: {
+            height: 500,
+            width: 500,
+            r: 250
+        },
+        multiplier: {
+
+        },
+        config: {}
     }
 }
 

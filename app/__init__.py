@@ -3,18 +3,17 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_compress import Compress
-#from werkzeug.serving import WSGIRequestHandler
 
-#WSGIRequestHandler.protocol_version = "HTTP/1.1"
+# from werkzeug.serving import WSGIRequestHandler
+
+# WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 app = Flask(__name__)
 app.config.from_pyfile('_config.py')
 db = SQLAlchemy(app)
 
-from app import views
-from .service import PageService
-
-page_service = PageService()
+import views
+import service
 
 Compress(app)
 

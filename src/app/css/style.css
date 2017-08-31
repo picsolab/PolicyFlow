@@ -15,7 +15,7 @@
         margin-top: 5px;
     }
     #content-wrapper {
-        margin-top: 60px;
+        margin-top: 70px;
     }
 }
 
@@ -50,32 +50,8 @@
     padding-left: 15px;
 }
 
-
-/*
- * Vis panels
- */
-
-
-/*policytrend*/
-
-#policy-trend-wrapper {
-    height: 300px;
-    background: lightgray;
-}
-
-
-/*snapshot panel*/
-
-#snapshot-wrapper {
-    overflow: scroll;
-    height: 160px;
-}
-
-.snapshot-wrapper {
-    cursor: pointer;
-    float: left;
-    width: 175px;
-    height: 150px;
+#policy-explore-wrapper {
+    padding: 0;
 }
 
 
@@ -84,6 +60,7 @@
 .hovered-item {
     fill: var(--color-hovered) !important;
     stroke: var(--color-hovered) !important;
+    opacity: 0.8 !important;
 }
 
 .follow-the-rule {
@@ -105,10 +82,101 @@
     stroke: lightslategray;
 }
 
+.label-group text {
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+.loader-img {
+    display: inline-block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+    z-index: 50;
+}
+
+
+/*
+ * Vis panels
+ */
+
+
+/* policy detail view */
+
+#policy-snippet-wrapper,
+#similarity-by-text-wrapper,
+#similarity-by-cascade-wrapper {
+    height: 200px;
+    overflow-y: scroll;
+}
+
+
+/* ring view */
+
+#ring-group path {
+    cursor: pointer;
+}
+
+#ring-tooltip {
+    background-color: white;
+    padding: 3px 5px;
+    border: 1px solid black;
+    text-align: center;
+    position: absolute;
+    z-index: inherit 10;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#ring-label-group text {
+    pointer-events: none;
+}
+
+
+/* policy group view */
+
+#policy-group-wrapper {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+
+/*policy trend*/
+
+#policy-trend-wrapper {
+    height: 60px;
+}
+
+#policy-trend-wrapper>svg .axis text {
+    font: 10px sans-serif;
+    font-weight: 400;
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+
+/*snapshot panel*/
+
+#snapshot-wrapper {
+    overflow: scroll;
+    height: 480px;
+}
+
+.snapshot-wrapper {
+    cursor: pointer;
+    float: left;
+    width: 135px;
+    height: 115px;
+}
+
 
 /*diffusion view panel*/
 
-#diffusion-path-group path {}
+#diffusion-wrapper {
+    min-height: 300px;
+}
 
 .guidances path {
     fill: none;
@@ -163,19 +231,74 @@
 }
 
 
-/*policy network panel*/
+/*policy geo panel*/
 
-circle:hover {
-    fill: var(--color-hovered);
+#svg-geo-view {
+    stroke-linejoin: "round";
+    stroke-linecap: "round";
 }
 
-.d3-tip-network {
-    line-height: 1;
-    padding: 12px;
-    background: #2F4F4F;
-    color: #fff;
-    border-radius: 1px;
-    z-index: 1001;
+.tract:hover {
+    cursor: pointer;
+}
+
+.tract-border {
+    fill: none;
+    stroke: var(--color-map-border);
+    pointer-events: none;
+}
+
+#region-tract-group {
+    pointer-events: visible;
+}
+
+#geo-legend-group line {
+    stroke: #fff;
+}
+
+#geo-legend-group text {
+    fill: #000;
+}
+
+#svg-geo-view text {
+    font: 15px sans-serif;
+    font-weight: 400;
+}
+
+
+/* policy network panel */
+
+#policy-network-wrapper {
+    min-height: 300px;
+}
+
+.network-link {
+    fill: none;
+    stroke: var(--color-dark-gray);
+    stroke-width: 1.5px;
+}
+
+.network-link.violate-the-rule {
+    stroke-dasharray: 0, 2 1;
+}
+
+#network-node-group circle {
+    fill: var(--color-unadopted);
+    stroke: var(--color-unadopted-darker);
+    stroke-width: 1.5px;
+}
+
+#network-label-group text {
+    font: 10px sans-serif;
+}
+
+.network-node {
+    cursor: move;
+}
+
+.network-node.fixed {
+    fill: var(--color-hovered) !important;
+    stroke: var(--color-unadopted-darker) !important;
 }
 
 

@@ -21,11 +21,15 @@
 
 # compiled output
 app/static
+app/templates/
 
 # server
 app/env
 app/*.pyc
 app/db_repository
+app/libs/*
+!/app/libs/netinf
+/app/libs/netinf/netinf
 
 # credentials
 app/_config.py
@@ -34,7 +38,15 @@ app/_config.py
 /node_modules
 
 # data files
-rplayground/*.json
+data/external
+data/out/*
+data/replication
+
+# database backup
+data/backup
+
+# byte codes
+*.pyc
 
 # IDEs and editors
 /.idea
@@ -71,3 +83,12 @@ Thumbs.db
 
 # npm log
 npm-debug.log
+
+# nohup log
+nohup.out
+
+# shell script
+deploy
+
+# exclude
+!**/README.md

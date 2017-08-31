@@ -1,33 +1,19 @@
 from app import db, models
-from .models import Subject, Policy, State, Cascade, Metadata
-from sqlalchemy import text, Integer
-from sqlalchemy.orm.session import Session
+from .models import Subject, Policy, State, Cascade, Metadata, PolicyText, PolicySimilarity
+from sqlalchemy import text, Integer, func, tuple_
+from sqlalchemy.orm import sessionmaker
+
+Session = sessionmaker(bind=db.engine)
+
 
 class BaseDao(object):
     """Base Data Access Object class"""
+
     def __init__(self):
         pass
 
-    def get_all_subjects(self):
-        return Subject.query.all()
-
-    def get_all_policies(self):
-        return Policy.query.all()
-
-    def get_all_state(self):
-        return State.query.all()
-
-    def get_state_id_names(self):
-        return db.session.execute(\
-            text("SELECT state.state_id AS stateId, state_name AS stateName FROM `state`")).fetchall()
-
-    def get_metadata_by_year(self, year):
-        return Metadata.query.filter(Metadata.year == year)
-
-    def get_cascade_by_policy_id(self, policy_id):
-        return Cascade.query.filter(Cascade.policyId == policy_id)
-
-    def helper_get_valid_year(self, year):
+    @staticmethod
+    def helper_get_valid_year(year):
         max_year = 1999
         min_year = 1960
         if year < max_year:
@@ -36,46 +22,52 @@ class BaseDao(object):
             year = max_year
         return year
 
-    def helper_normalizer(self, cur, min_val, max_val):
-        return round((cur - min_val)/(max_val - min_val), 4)
+    @staticmethod
+    def helper_normalizer(cur, min_val, max_val):
+        return round((cur - min_val) / (max_val - min_val), 4)
 
-class PageDao(BaseDao):
+
+class MetadataDao(BaseDao):
+    @staticmethod
+    def get_metadata_by_year(year):
+        return Metadata.query.filter(Metadata.year == year)
+
+
+class CascadeDao(BaseDao):
+    @staticmethod
+    def get_cascade_by_policy_id(policy_id):
+        """
+        data from those states who:
+            - were affected by the specified policy
+            - without time limitations
+        """
+        return Cascade.query.filter(Cascade.policyId == policy_id)
+
+    @staticmethod
+    def get_cascades_for_policies(policies):
+        pass
+
+
+class SubjectDao(BaseDao):
     """page dao providing page related data"""
+
     @staticmethod
     def get_all_subjects():
-        subjects = Subject.query.all()
-        output = {}
-        policies = {}
-        pipe = {}
-        for subject in subjects:
-            for policy in subject.policies:
-                policies.setdefault(subject.subjectName, []).append(policy.policyId)
-                pipe[policy.policyId] = policy.policyName
-        output["policies"] = policies
-        output["pipe"] = pipe
-        return output
+        return Subject.query.all()
 
-    def get_all_policies(self):
-        output = {}
-        subject_pipe = {}
-        policy_set = {}
-        policy_pipe = {}
-        subjects = super(PageDao, self).get_all_subjects()
-        policies = Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId).all()
-        for subject in subjects:
-            subject_pipe[subject.subjectId] = subject.subjectName
-        for policy in policies:
-            policy_set.setdefault(subject_pipe[policy.policySubjectId], []).append(policy.policyId)
-            policy_pipe[policy.policyId] = policy.policyName
-        output["policies"] = policy_set
-        output["pipe"] = policy_pipe
-        return output
+    @staticmethod
+    def get_all_valid_subjects():
+        return Subject.query.filter(Subject.subjectValid == 1)
+
 
 class StateDao(BaseDao):
-    pass
+    @staticmethod
+    def get_state_id_names():
+        return db.session.execute(
+            text("SELECT state.state_id AS stateId, state_name AS stateName FROM `state`")).fetchall()
 
-    def get_root_count_list_for(self, subject_id):
-        output = {}
+    @staticmethod
+    def get_root_count_list_for(subject_id):
         stmt = text("\
         SELECT r.state_id AS stateId, s.state_name AS stateName, count(r.state_id) AS rootCount \
         FROM policy AS p, root_state AS r, `state` AS s \
@@ -83,180 +75,107 @@ class StateDao(BaseDao):
         GROUP BY r.state_id \
         ")
 
-        query_result = db.session.execute(stmt, {'subject_id': int(subject_id)}).fetchall()
-        for item in query_result:
-            temp_object = {}
-            temp_object["state_id"] = item.stateId
-            temp_object["state_name"] = item.stateName
-            temp_object["num"] = item.rootCount
-            output[item.stateId] = temp_object
-        return output
+        return db.session.execute(stmt, {'subject_id': int(subject_id)}).fetchall()
+
+    @staticmethod
+    def get_all_state():
+        return State.query.all()
+
+
+class PolicyTextDao(BaseDao):
+    """policy text dao providing policy text related data"""
+
+    @staticmethod
+    def get_policy_text_by_policy_id(policy_id):
+        return PolicyText.query.filter(PolicyText.policyId == policy_id).first()
 
 
 class PolicyDao(BaseDao):
     """policy dao providing policy related data"""
+    START_YEAR = 0
+    END_YEAR = 9999
+
+    def __init__(self, start_year=START_YEAR, end_year=END_YEAR):
+        self.start_year = start_year
+        self.end_year = end_year
+
+    @staticmethod
+    def get_all_policies():
+        return Policy.query.all()
+
+    @staticmethod
+    def get_policy_id_name_subject():
+        return Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId).all()
+
+    @staticmethod
+    def get_policy_per_lda_cluster():
+        stmt = text("SELECT policy_lda_1 AS policyLda1, policy_lda_2 AS policyLda2, COUNT(*) AS policyCount "
+                    "FROM policy "
+                    "GROUP BY policy_lda_1, policy_lda_2 "
+                    "HAVING policyCount >= 5")
+        return db.session.execute(stmt).fetchall()
+
     @staticmethod
     def get_policy_by_id(policy_id):
-        output = {}
-        detail = {}
-        result = Policy.query.filter(Policy.policyId == policy_id).first()
-        cascades = result.cascades
-        for item in cascades:
-            detail.setdefault(item.adoptedYear, []).append(item.stateId)
-        years = detail.keys()
-        output["policyId"] = result.policyId
-        output["policyName"] = result.policyName
-        output["policyStart"] = min(years)
-        output["policyEnd"] = max(years)
-        output["detail"] = detail
-        output["message"] = "success"
-        return output
+        return Policy.query.filter(Policy.policyId == policy_id).first()
+
+    def get_q_all_policies_with_valid_cluster_count(self):
+        policy_count = func.count().label('policy_count')
+        policy_lda1 = Policy.policyLda1.label('policyLda1')
+        policy_lda2 = Policy.policyLda2.label('policyLda2')
+        lda_tuple = tuple_(Policy.policyLda1, Policy.policyLda2)
+        sq_policy = Session().query(policy_lda1, policy_lda2, policy_count) \
+            .group_by(policy_lda1, policy_lda2) \
+            .having(policy_count > 5) \
+            .subquery()
+        valid_lda_tuples = Session().query(sq_policy.c.policyLda1, sq_policy.c.policyLda2).subquery()
+        return Session().query(Policy).filter(lda_tuple.in_(valid_lda_tuples),
+                                              Policy.policyStart >= self.start_year,
+                                              Policy.policyEnd <= self.end_year)
+
+    def get_q_all_policies_with_valid_subject(self):
+        return Session().query(Policy).join(Subject).filter(Policy.policySubjectId == Subject.subjectId,
+                                                            Policy.policyStart >= self.start_year,
+                                                            Policy.policyEnd <= self.end_year,
+                                                            Subject.subjectValid == 1)
+
+    def get_q_policies_by_subject(self, subject_id):
+        return Policy.query.filter(Policy.policySubjectId == subject_id, Policy.policyStart >= self.start_year,
+                                   Policy.policyEnd <= self.end_year)
+
+    def get_q_policies_by_text_similarity(self, params):
+        if len(params) == 2:
+            return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyStart >= self.start_year,
+                                       Policy.policyEnd <= self.end_year)
+        elif len(params) == 3:
+            return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyLda2 == params[2],
+                                       Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year)
+
+    def get_top_similar_policies(self, q_policies, policy_id, top_count):
+        p_id_1 = PolicySimilarity.policyId1.label('policyId1')
+        p_id_2 = PolicySimilarity.policyId2.label('policyId2')
+        p_ts = PolicySimilarity.policyTextSimilarity.label('policyTextSimilarity')
+        p_cs = PolicySimilarity.policyCascadeSimilarity.label('policyCascadeSimilarity')
+        p_name = Policy.policyName.label('policyName')
+        all_filtered_policies = Session().query(PolicySimilarity) \
+            .filter(p_id_1 == policy_id, p_id_2.in_(q_policies.from_self(Policy.policyId).subquery()))
+        text_top = all_filtered_policies.from_self(p_id_2, p_name, p_ts) \
+            .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_ts.desc()).limit(top_count)
+        cascade_top = all_filtered_policies.from_self(p_id_2, p_name, p_cs) \
+            .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_cs.desc()).limit(top_count)
+        return text_top, cascade_top
 
 
-class NetworkDao(BaseDao):
-    """network dao providing network related data"""
+class TextQueryDao(BaseDao):
+    """text query dao conducting text queries"""
 
-    def get_parameterized_network(self, meta_flag, policy_id):
-        """get_parameterized_network"""
-        output = []
-        meta_set = {}
-        year_set = {}
-        meta_noshow_set = {}
-        year_noshow_set = {}
-        meta_unadopted_set = {}
-        min_year = 9999
-        min_meta = 9999
-        max_meta = 0
-        ne_adopt_year = 0
-        pipe = {
-            "perCapitaIncome": "state_pci",
-            "minorityDiversity": "state_md",
-            "legislativeProfessionalism": "state_lp",
-            "citizenIdeology": "state_ci",
-            "totalPopulation": "state_pop",
-            "populationDensity": "state_pd"
-        }
-        readable_meta_name = {
-            "perCapitaIncome": "Per Capita Income",
-            "minorityDiversity": "Minority Diversity",
-            "legislativeProfessionalism": "Legislative Professionalism",
-            "citizenIdeology": "Citizen Ideology",
-            "totalPopulation": "Total Population",
-            "populationDensity": "Population Density"
-        }
-        stmt = text("SELECT s.state_id AS stateId, m.year AS year, m." + pipe[meta_flag] + " AS " + meta_flag + " "
-                    "FROM state AS s, `metadata` AS m "
-                    "WHERE s.state_id=m.state_id "
-                    "HAVING (m.year, s.state_id) IN ( "
-                    "   SELECT c0.adopted_year, c0.state_id "
-                    "   FROM `cascade` AS c0 "
-                    "   WHERE c0.policy_id=:policy_id "
-                    ") ORDER BY m.year ASC")
-        stmt = stmt.columns(State.stateId, Metadata.year, getattr(Metadata, meta_flag))
-
-        # data from those states who:
-        # - were affected by the specified policy
-        # - during 1960 to 1999
-        result_with_valid_data = db.session.query(State.stateId, Metadata.year, getattr(Metadata, meta_flag))\
-            .from_statement(stmt).params(policy_id=policy_id).all()
-
-        for item in result_with_valid_data:
-            meta = getattr(item, meta_flag)
-            meta_set[item.stateId] = meta
-            year_set[item.stateId] = item.year
-            max_meta = max(max_meta, meta)
-            min_meta = min(min_meta, meta)
-
-        # data from those states who:
-        # - were affected by the specified policy
-        # - without time limitations
-        result_full = super(NetworkDao, self).get_cascade_by_policy_id(policy_id)
-        for item in result_full:
-            if item.stateId == "NE":
-                ne_adopt_year = item.adoptedYear
-            if item.stateId not in meta_set:
-                meta_noshow_set[item.stateId] = 0
-                year_noshow_set[item.stateId] = item.adoptedYear
-            if item.adoptedYear < min_year:
-                min_year = item.adoptedYear
-        min_year = super(NetworkDao, self).helper_get_valid_year(min_year)
-
-        meta_from_earliest_year = super(NetworkDao, self).get_metadata_by_year(min_year)
-        for item in meta_from_earliest_year:
-            stateId = item.stateId
-            if stateId not in meta_set:
-                meta = getattr(item, meta_flag)
-                if stateId in meta_noshow_set:
-                    meta_noshow_set[stateId] = meta
-                else:
-                    meta_unadopted_set[stateId] = meta
-                max_meta = max(max_meta, meta)
-                min_meta = min(min_meta, meta)
-
-        states = super(NetworkDao, self).get_all_state()
-
-        for state in states:
-            temp_object = {}
-            stateId = state.stateId
-            temp_object["stateId"] = stateId
-            temp_object["stateName"] = state.stateName
-            temp_object["longtitude"] = state.longtitude
-            temp_object["latitude"] = state.latitude
-            temp_object["metaId"] = meta_flag
-            temp_object["metaName"] = readable_meta_name[meta_flag]
-            if stateId == "NE":
-                temp_object["valid"] = False if stateId in meta_unadopted_set else True
-                temp_object["metadata"] = -1
-                temp_object["normalizedMetadata"] = -1
-                temp_object["dataYear"] = 9999
-                temp_object["adoptedYear"] = ne_adopt_year
-            elif stateId in meta_unadopted_set:
-                temp_object["valid"] = False
-                temp_object["metadata"] = meta_unadopted_set[stateId]
-                temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_unadopted_set[stateId], min_meta, max_meta)
-                temp_object["dataYear"] = min_year
-                temp_object["adoptedYear"] = 9999
-            else:
-                temp_object["valid"] = True
-                if stateId in meta_set:
-                    temp_object["metadata"] = meta_set[stateId]
-                    temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_set[stateId], min_meta, max_meta)
-                    temp_object["adoptedYear"] = year_set[stateId]
-                    temp_object["dataYear"] = year_set[stateId]
-                else:
-                    temp_object["metadata"] = meta_noshow_set[stateId]
-                    temp_object["normalizedMetadata"] = super(NetworkDao, self).helper_normalizer(meta_noshow_set[stateId], min_meta, max_meta)
-                    temp_object["adoptedYear"] = year_noshow_set[stateId]
-                    temp_object["dataYear"] = min_year
-            output.append(temp_object)
-        return output
-
-
-class DiffusionDao(BaseDao):
-    """diffusion dao providing network related data"""
-
-    def get_parameterized_diffusion(self, policy_id):
-        """get_parameterized_diffusion"""
-        data_list = []
-        stat = {}
-        year_set = {}
-        year_noshow_set = {}
-        min_year = 9999
-        meta_set = {"md": {}, "ci": {}, "lp": {}, "pci": {}, "pd": {}, "pop": {}}
-        meta_noshow_set = {"md": {}, "ci": {}, "lp": {}, "pci": {}, "pd": {}, "pop": {}}
-        meta_unadopted_set = {"md": {}, "ci": {}, "lp": {}, "pci": {}, "pd": {}, "pop": {}}
-        min_meta = {"md": 9999, "ci": 9999, "lp": 9999, "pci": 9999, "pd": 9999, "pop": 9999}
-        max_meta = {"md": 0, "ci": 0, "lp": 0, "pci": 0, "pd": 0, "pop": 0}
-        pipe = {
-            "md": "minorityDiversity",
-            "ci": "citizenIdeology",
-            "lp": "legislativeProfessionalism",
-            "pci": "perCapitaIncome",
-            "pd": "populationDensity",
-            "pop": "totalPopulation"
-        }
-        ne_adopt_year = 9999
-        ne_validity = False
+    @staticmethod
+    def get_states_with_validated_data(policy_id):
+        """
+        data from those states who:
+            - were affected by the specified policy
+            - during 1960 to 1999
+        """
 
         stmt = text("SELECT s.state_id AS stateId, \
                       m.year AS year, \
@@ -283,89 +202,14 @@ class DiffusionDao(BaseDao):
                             Metadata.populationDensity,
                             Metadata.totalPopulation)
 
-        # data from those states who:
-        # - were affected by the specified policy
-        # - during 1960 to 1999
-        result_with_valid_data = db.session.query(State.stateId,
-                                                  Metadata.year,
-                                                  Metadata.minorityDiversity,
-                                                  Metadata.citizenIdeology,
-                                                  Metadata.legislativeProfessionalism,
-                                                  Metadata.perCapitaIncome,
-                                                  Metadata.populationDensity,
-                                                  Metadata.totalPopulation)\
-            .from_statement(stmt)\
-            .params(policy_id=policy_id)\
+        return db.session.query(State.stateId,
+                                Metadata.year,
+                                Metadata.minorityDiversity,
+                                Metadata.citizenIdeology,
+                                Metadata.legislativeProfessionalism,
+                                Metadata.perCapitaIncome,
+                                Metadata.populationDensity,
+                                Metadata.totalPopulation) \
+            .from_statement(stmt) \
+            .params(policy_id=policy_id) \
             .all()
-
-        for item in result_with_valid_data:
-            year_set[item.stateId] = item.year
-            for obj in pipe:
-                meta_set[obj][item.stateId] = getattr(item, pipe[obj])
-                max_meta[obj] = max(max_meta[obj], getattr(item, pipe[obj]))
-                min_meta[obj] = min(min_meta[obj], getattr(item, pipe[obj]))
-
-        # data from those states who:
-        # - were affected by the specified policy
-        # - without time limitations
-        result_full = super(DiffusionDao, self).get_cascade_by_policy_id(policy_id)
-        for item in result_full:
-            if item.stateId == "NE":
-                ne_adopt_year = item.adoptedYear
-                ne_validity = True
-            elif item.stateId not in meta_set["md"]:
-                for obj in pipe:
-                    meta_noshow_set[obj][item.stateId] = 0
-                year_noshow_set[item.stateId] = item.adoptedYear
-            if item.adoptedYear < min_year:
-                min_year = item.adoptedYear
-        min_year = super(DiffusionDao, self).helper_get_valid_year(min_year)
-
-        meta_from_earliest_year = super(DiffusionDao, self).get_metadata_by_year(min_year)
-        for item in meta_from_earliest_year:
-            stateId = item.stateId
-            if stateId not in meta_set["md"]:
-                for obj in pipe:
-                    val = getattr(item, pipe[obj])
-                    if stateId in meta_noshow_set["md"]:
-                        meta_noshow_set[obj][stateId] = val
-                    else:
-                        meta_unadopted_set[obj][stateId] = val
-                    max_meta[obj] = max(max_meta[obj], val)
-                    min_meta[obj] = min(min_meta[obj], val)
-
-        states = super(DiffusionDao, self).get_all_state()
-
-        for state in states:
-            temp_object = {}
-            stateId = state.stateId
-            temp_object["stateId"] = stateId
-            temp_object["stateName"] = state.stateName
-            temp_meta_set = {}
-            if stateId == "NE":
-                temp_object["valid"] = ne_validity
-                temp_object["dataYear"] = -1
-                temp_object["adoptedYear"] = ne_adopt_year
-            elif stateId in meta_unadopted_set["md"]:
-                temp_object["valid"] = False if policy_id != "unselected" else True
-                for obj in pipe:
-                    temp_meta_set[obj] = meta_unadopted_set[obj][stateId]
-                temp_object["dataYear"] = min_year
-                temp_object["adoptedYear"] = 9999
-            else:
-                temp_object["valid"] = True
-                if stateId in meta_set["md"]:
-                    for obj in pipe:
-                        temp_meta_set[obj] = meta_set[obj][stateId]
-                    temp_object["adoptedYear"] = year_set[stateId]
-                    temp_object["dataYear"] = year_set[stateId]
-                else:
-                    for obj in pipe:
-                        temp_meta_set[obj] = meta_noshow_set[obj][stateId]
-                    temp_object["adoptedYear"] = year_noshow_set[stateId]
-                    temp_object["dataYear"] = min_year
-            temp_object["metadata"] = temp_meta_set
-            data_list.append(temp_object)
-        stat["max"] = max_meta
-        stat["min"] = min_meta
-        return data_list, stat

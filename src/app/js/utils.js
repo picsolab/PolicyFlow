@@ -42,7 +42,7 @@ let utils = {
 
         var saida = [];
 
-        for (i = 0; i < len; i++) {
+        for (var i = 0; i < len; i++) {
             var c = [];
             alpha += (1.0 / len);
 
@@ -56,6 +56,16 @@ let utils = {
 
         return saida;
 
+    },
+    getColorMap(nodes, colorOut, colorIn) {
+        // compute color list based on length of year list
+        let _yearList = _.uniq(_.map(nodes, node => node.adoptedYear)).sort(),
+            _colorList = this.generateColor(colorOut, colorIn, _yearList.length),
+            _colorMap = {};
+        _yearList.forEach((year, index) => {
+            _colorMap[year] = _colorList[index];
+        });
+        return _colorMap;
     }
 };
 
