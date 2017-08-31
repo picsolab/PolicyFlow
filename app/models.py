@@ -202,4 +202,8 @@ class NetinfNetwork:
         return self.norm_edges
 
     def get_network_object(self):
-        return [{"source": x[0], "target": x[1], "value": round(float(x[3]), 2)} for x in self.edges]
+        try:
+            network_object = [{"source": x[0], "target": x[1], "value": round(float(x[3]), 2)} for x in self.edges]
+        except IndexError:
+            network_object = []
+        return network_object

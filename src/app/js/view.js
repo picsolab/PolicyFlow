@@ -322,17 +322,11 @@ let PolicyTrendView = Backbone.View.extend({
                 length = dataList.length,
                 totalCount = 0;
 
-            for (let i = 0; i < length; i++) {
-                let e = dataList[i];
-                totalCount += (e.key <= endYearDate && e.key >= startYearDate) ? e.value : 0;
-                if (totalCount > 5) {
-                    _attr.c.set({
-                        "startYear": startYear,
-                        "endYear": endYear
-                    });
-                    break;
-                }
-            }
+            _attr.c.set({
+                "startYear": startYear,
+                "endYear": endYear,
+                "policy": conf.bases.policy.default
+            });
         });
     }
 });
@@ -971,10 +965,16 @@ let NetworkView = Backbone.View.extend({
         function dblclick(d) {
             d3.select(this).classed("fixed", d.fixed = false);
         }
-
+        _self.postRender();
+        return this;
+    },
+    preRender() {
+        this.$el.hide();
+        $("#policy-network-wrapper .loader-img").show();
+    },
+    postRender() {
         $("#policy-network-wrapper .loader-img").hide();
         this.$el.show();
-        return this;
     },
     getSelectedIds(conditions) {
         if ((conditions.get("regionList").length === 0 && conditions.get("stateList").length === 0) ||
@@ -1067,15 +1067,21 @@ let PolicyGroupView = Backbone.View.extend({
                 clickToSelect: true,
                 order: 'asc'
             }],
-            formatNoMatches: () => 'Loading policies...',
+            formatLoadingMessage: () => 'Loading policies, please wait...',
+            formatNoMatches: () => 'Oops! No matching policies. Please try to adjust your time range.',
             formatShowingRows: (pageFrom, pageTo, totalRows) => 'Showing ' + pageFrom + ' to ' + pageTo + ' of ' + totalRows + ' policies'
         });
+
+        $('#policy-group-wrapper .fixed-table-toolbar .columns').append('<button id="policy-group-uncheck-btn" class="btn btn-default" type="button" name="Uncheck" title="Uncheck selection">Uncheck</button>');
+        $(this.el).bootstrapTable('showLoading');
     },
     render(conditions) {
         let _self = this,
             policies = this.model.get("policies"),
             __table = $(_self.el);
         __table.bootstrapTable('load', policies);
+        __table.bootstrapTable('hideLoading');
+        __table.bootstrapTable('resetSearch', "");
         __table.bootstrapTable('selectPage', 1);
         _self.updateSelection(conditions);
     },
@@ -1089,6 +1095,9 @@ let PolicyGroupView = Backbone.View.extend({
     },
     clear() {
         $(this.el).bootstrapTable('removeAll');
+    },
+    preRender() {
+        this.$el.bootstrapTable('showLoading');
     }
 });
 
@@ -1475,10 +1484,16 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .call(_self.barTween, _attr, "bottom");
         _self.createBars(bottomBars, "bottom");
-
+        _self.postRender();
+        return this;
+    },
+    preRender() {
+        this.$el.hide();
+        $("#diffusion-wrapper .loader-img").show();
+    },
+    postRender() {
         $("#diffusion-wrapper .loader-img").hide();
         this.$el.show();
-        return this;
     },
     getPathColor(source, target) {
         if (this.isNodeDefault(source) && this.isNodeDefault(target)) {

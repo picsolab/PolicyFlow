@@ -314,12 +314,13 @@ class NetworkService(BaseService):
         iters = int(args['iters'])
         method, param, start_year, end_year = PolicyService.parse_args(args)
         policies = PolicyService.get_policy_group(method, param, start_year, end_year)
+        network = []
 
         if policies is not None:
             cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
-            return json.dumps(computing_service.get_network_by(cascade_text, iters=iters), cls=DecimalEncoder)
+            network = computing_service.get_network_by(cascade_text, iters=iters)
 
-        return json.dumps({})
+        return json.dumps(network, cls=DecimalEncoder)
 
     @staticmethod
     @app.route("/api/network/<policy_id>")

@@ -63,9 +63,10 @@ function setupRenderingControllers() {
             ringModel.populate(conditions);
             policyTrendModel.populate(conditions);
             if (!conditions.hasChanged('param')) {
-                // force loading
-                policyGroupView.clear();
-                preLoading();
+                // force loading   
+                policyGroupView.preRender();
+                networkView.preRender();
+                diffusionView.preRender();
                 policyGroupModel.populate(conditions);
                 dynamicNetworkModel.populate(conditions);
             }
@@ -115,8 +116,9 @@ function setupRenderingControllers() {
         if (conditions.hasChanged("param") ||
             conditions.hasChanged("startYear") ||
             conditions.hasChanged("endYear")) {
-            policyGroupView.clear();
-            preLoading();
+            policyGroupView.preRender();
+            networkView.preRender();
+            diffusionView.preRender();
             policyGroupModel.populate(conditions);
             dynamicNetworkModel.populate(conditions);
         }
@@ -168,13 +170,11 @@ function setupRenderingTriggers() {
 
     policyTrendModel.on("change", () => {
         policyTrendView.render(conditions);
-    })
+    });
 
     dynamicNetworkModel.on("change", () => {
-        networkModel.set("edges", dynamicNetworkModel.get("edgesInStateIds"), { silent: true });
-        diffusionModel.set("edges", dynamicNetworkModel.get("edgesInIndices"), { silent: true });
-        networkModel.populate(conditions);
-        diffusionModel.populate(conditions);
+        networkModel.populate(conditions, dynamicNetworkModel.get("edgesInStateIds"));
+        diffusionModel.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
     });
 
     policyGroupModel.on("change", () => {
@@ -199,7 +199,9 @@ function bindDomEvents() {
         conditions.set({
             "method": __target.attr("value"),
             "policy": conf.bases.policy.default,
-            "param": "0"
+            "param": "0",
+            "startYear": 0,
+            "endYear": 9999
         });
     });
 
@@ -233,6 +235,11 @@ function bindDomEvents() {
     $("#policy-group-table").on('check.bs.table', (row) => {
         let selectedPolicy = $("#policy-group-table").bootstrapTable('getSelections');
         conditions.set('policy', selectedPolicy[0]["policy_id"]);
+    });
+
+    $("#policy-group-uncheck-btn").on('click', () => {
+        conditions.set('policy', conf.bases.policy.default);
+        policyGroupView.updateSelection(conditions);
     });
 
     // selected metadata to conditions
@@ -271,13 +278,6 @@ function initDom() {
     // centrality select drop down
     initDropdowns($("#centrality-select"), "centrality-option", conf.bases.centralityList);
     setupCentralityDropdown();
-}
-
-function preLoading() {
-    networkView.$el.hide();
-    diffusionView.$el.hide();
-    $("#policy-network-wrapper .loader-img").show();
-    $("#diffusion-wrapper .loader-img").show();
 }
 
 /**

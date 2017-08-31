@@ -146,18 +146,23 @@ let DynamicNetworkModel = Backbone.Model.extend({
             "start_year": conditions.get("startYear"),
             "end_year": conditions.get("endYear")
         }).done(data => {
-            let edgesInIndices = _.map(data, edge => {
-                return {
-                    "source": conf.pipe.statesToIndices[edge.source],
-                    "target": conf.pipe.statesToIndices[edge.target],
-                    "value": edge.value
-                };
-            });
+            if (data.length === 0) {
+                data = [];
+                edgesInIndices = [];
+            } else {
+                edgesInIndices = _.map(data, edge => {
+                    return {
+                        "source": conf.pipe.statesToIndices[edge.source],
+                        "target": conf.pipe.statesToIndices[edge.target],
+                        "value": edge.value
+                    };
+                });
+            }
             _self.set({
                 "edgesInStateIds": data,
                 "edgesInIndices": edgesInIndices
             });
-        })
+        });
     }
 });
 
@@ -166,20 +171,25 @@ let NetworkModel = Backbone.Model.extend({
         this.urlRoot = conf.api.root + conf.api.networkBase;
         this.url = this.urlRoot + conf.models.conditions.defaults.policy;
     },
-    populate(conditions) {
+    populate() {
         let _self = this,
             centralities = conf.static.centrality.centralities,
-            centralityStat = conf.static.centrality.stat;
+            centralityStat = conf.static.centrality.stat,
+            conditions = arguments[0],
+            edges = (arguments.length === 2 ?
+                arguments[1] :
+                this.get("edges"));
         this.url = this.urlRoot + conditions.get("policy");
         return $.getJSON(_self.url).done((data) => {
             let nodes = data.nodes;
             _.mapValues(nodes, (node) => node["centralities"] = centralities[node.stateId]);
             _self.set({
-                edges: this.get("edges"),
+                edges: edges,
                 nodes: nodes,
                 stat: data.stat,
                 cstat: centralityStat
-            });
+            }, { silent: true });
+            _self.trigger("change");
         });
     }
 });
@@ -218,10 +228,14 @@ let DiffusionModel = Backbone.Model.extend({
         this.urlRoot = conf.api.root + conf.api.diffusionBase;
         this.url = this.urlRoot + conf.models.conditions.defaults.policy;
     },
-    populate(conditions) {
+    populate() {
         let _self = this,
             centralities = conf.static.centrality.centralities,
-            centralityStat = conf.static.centrality.stat;
+            centralityStat = conf.static.centrality.stat,
+            conditions = arguments[0],
+            edges = (arguments.length === 2 ?
+                arguments[1] :
+                this.get("edges"));
         this.url = this.urlRoot + conditions.get("policy");
         return $.getJSON(_self.url).done((data) => {
             // console.log(_self.url);
@@ -231,10 +245,11 @@ let DiffusionModel = Backbone.Model.extend({
             });
             _self.set({
                 "nodes": nodes,
-                "edges": this.get("edges"),
+                "edges": edges,
                 "stat": data.stat,
                 "cstat": centralityStat
-            });
+            }, { silent: true });
+            _self.trigger("change");
         });
     }
 });
