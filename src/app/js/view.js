@@ -322,7 +322,7 @@ let PolicyTrendView = Backbone.View.extend({
                 length = dataList.length,
                 totalCount = 0;
 
-            for (i = 0; i < length; i++) {
+            for (let i = 0; i < length; i++) {
                 let e = dataList[i];
                 totalCount += (e.key <= endYearDate && e.key >= startYearDate) ? e.value : 0;
                 if (totalCount > 5) {
