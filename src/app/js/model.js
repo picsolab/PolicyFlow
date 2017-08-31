@@ -93,6 +93,19 @@ let PolicyDetailModel = Backbone.Model.extend({
     }
 });
 
+let PolicyTrendModel = Backbone.Model.extend({
+    initialize() {
+        this.urlBase = conf.api.root + conf.api.policyBase + conf.api.policyTrendBase;
+    },
+    populate(conditions) {
+        let _self = this;
+        _self.url = _self.urlBase + conditions.get("method") + "/" + conditions.get("param");
+        return $.getJSON(_self.url, (data) => {
+            _self.set(data);
+        });
+    }
+});
+
 let GeoModel = Backbone.Model.extend({
     initialize() {
         this.topoUrl = './static/data/states.p1.topo.json';
@@ -265,6 +278,7 @@ module.exports = {
     PolicyModel: PolicyModel,
     PolicyOptionsModel: PolicyOptionsModel,
     PolicyDetailModel: PolicyDetailModel,
+    PolicyTrendModel: PolicyTrendModel,
     GeoModel: GeoModel,
     NetworkModel: NetworkModel,
     DynamicNetworkModel: DynamicNetworkModel,

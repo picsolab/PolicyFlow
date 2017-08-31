@@ -112,9 +112,20 @@ const GraphSettings = {
         nodeY: 380,
     },
 
-    // bar view settings
-    b: {
-
+    // policy trend view settings
+    t: {
+        margin: {
+            top: 10,
+            left: 30,
+            right: 10,
+            bottom: 50
+        },
+        size: {
+            width: 2200,
+            height: 100
+        },
+        multiplier: {},
+        config: {}
     },
 
     // network view settings

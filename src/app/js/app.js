@@ -11,6 +11,7 @@ let conditions = new Model.Conditions(),
     policyGroupModel = new Model.PolicyGroupModel(),
     policyModel = new Model.PolicyModel(),
     policyDetailModel = new Model.PolicyDetailModel(),
+    policyTrendModel = new Model.PolicyTrendModel(),
     geoModel = new Model.GeoModel(),
     ringModel = new Model.RingModel(),
     networkModel = new Model.NetworkModel(),
@@ -23,6 +24,9 @@ let policyView = new View.PolicyView({
     }),
     policyDetailView = new View.PolicyDetailView({
         model: policyDetailModel
+    }),
+    policyTrendView = new View.PolicyTrendView({
+        model: policyTrendModel
     }),
     geoView = new View.GeoView({
         model: geoModel
@@ -54,10 +58,10 @@ $(document).ready(() => {
 
 function setupRenderingControllers() {
     conditions.on('change', () => {
-        // updateHeader();
 
         if (conditions.hasChanged('method')) {
             ringModel.populate(conditions);
+            policyTrendModel.populate(conditions);
             if (!conditions.hasChanged('param')) {
                 // force loading
                 policyGroupView.clear();
@@ -104,6 +108,9 @@ function setupRenderingControllers() {
                 conditions.hasChanged('centrality')) {
                 diffusionView.update();
             }
+        }
+        if (conditions.hasChanged("param")) {
+            policyTrendModel.populate(conditions);
         }
         if (conditions.hasChanged("param") ||
             conditions.hasChanged("startYear") ||
@@ -159,6 +166,10 @@ function setupRenderingTriggers() {
         policyDetailView.render(conditions);
     });
 
+    policyTrendModel.on("change", () => {
+        policyTrendView.render(conditions);
+    })
+
     dynamicNetworkModel.on("change", () => {
         networkModel.set("edges", dynamicNetworkModel.get("edgesInStateIds"), { silent: true });
         diffusionModel.set("edges", dynamicNetworkModel.get("edgesInIndices"), { silent: true });
@@ -174,6 +185,7 @@ function setupRenderingTriggers() {
 function initRendering() {
     policyDetailView.render(conditions);
     ringModel.populate(conditions);
+    policyTrendModel.populate(conditions);
     policyGroupModel.populate(conditions);
     policyModel.populate(conditions);
     geoModel.populate(conditions);

@@ -1,3 +1,4 @@
+from collections import Counter
 from flask import request, g, json
 from app import app
 
@@ -128,6 +129,15 @@ class PolicyService(BaseService):
         return PolicyService.get_q_policy_group(method, param, start_year, end_year).all()
 
     @staticmethod
+    def get_annual_adoption_count_list_in_group_specified_by(method, param):
+        policies = PolicyService.get_q_policy_group(method, param, 0, 9999).all()
+        year_list = list()
+        for policy in policies:
+            year_list.extend([cascade.adoptedYear for cascade in policy.cascades])
+        count_by_year = Counter(year_list)
+        return count_by_year
+
+    @staticmethod
     @app.route("/api/policy/<policy_id>")
     def get_policy_by_id(policy_id):
         """get_policy_by_id"""
@@ -186,6 +196,14 @@ class PolicyService(BaseService):
         output["text_similarities"] = text_similarities
         output["cascade_similarities"] = cascade_similarities
         return json.dumps(output, cls=DecimalEncoder)
+
+    @staticmethod
+    @app.route("/api/policy/trend/<method>/<param>")
+    def get_annual_adoption_list(method, param):
+        output = dict()
+        annual_list = PolicyService.get_annual_adoption_count_list_in_group_specified_by(method, param)
+        output["list"] = [{"year": k, "count": v} for k, v in annual_list.iteritems()]
+        return json.dumps(output)
 
 
 class NetworkService(BaseService):

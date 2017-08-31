@@ -190,8 +190,11 @@ class NetinfNetwork:
             < av_timediff >
             """
             self.edges = [tuple(x.split("/")) for x in network_text.split("\n")]
-            self.max_margin = map(max, zip(*self.edges))[3]
-            self.min_margin = map(min, zip(*self.edges))[3]
+            # self.update_range(self.edges)
+
+    def update_range(self, edges):
+        self.max_margin = map(max, zip(*self.edges))[3]
+        self.min_margin = map(min, zip(*self.edges))[3]
 
     def normalize(self):
         diff = self.max_margin - self.min_margin

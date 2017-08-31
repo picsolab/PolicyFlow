@@ -10,5 +10,8 @@ require('../node_modules/bootstrap-table/dist/bootstrap-table.min.css')
 require('bootstrap-select');
 require('../node_modules/bootstrap-select/dist/css/bootstrap-select.min.css');
 
+// dc.css
+require('../node_modules/dc/dc.min.css')
+
 // collapse extension for Bootstrap
 require('./assets/lib/collapse.js');

@@ -55,6 +55,8 @@ module.exports = {
             jQuery: 'jquery',
             _: 'lodash',
             d3: 'd3',
+            dc: 'dc',
+            crossfilter: 'crossfilter',
             Backbone: 'backbone',
             d3tip: 'd3-tip',
             topojson: 'topojson'

@@ -255,6 +255,88 @@ let PolicyDetailView = Backbone.View.extend({
     }
 });
 
+let PolicyTrendView = Backbone.View.extend({
+    el: "#policy-trend-wrapper",
+    initialize() {
+        this._attr = {};
+    },
+    render(conditions) {
+        let _self = this,
+            _attr = this._attr,
+            adoptionList = this.model.get("list").map(e => {
+                return {
+                    "year": new Date(e.year, 0, 1),
+                    "count": +e.count
+                };
+            }),
+            yearList = adoptionList.map(e => e.year),
+            countList = adoptionList.map(e => e.count),
+            yearDomain = [_.min(yearList), _.max(yearList)],
+            countDomain = [_.min(countList), _.max(countList)];
+
+        let _width = gs.t.margin.left + gs.t.margin.right + gs.t.size.width,
+            _height = gs.t.margin.top + gs.t.margin.bottom + gs.t.size.height;
+
+        let xScale = d3.time.scale()
+            .domain(yearDomain),
+            yScale = d3.scale.linear()
+            .domain(countDomain);
+
+        let ndx = crossfilter(adoptionList),
+            dimension = ndx.dimension(d => d.year),
+            group = dimension.group().reduceSum(d => d.count);
+
+        let chart = dc.barChart(_self.el)
+            .width(_width)
+            .height(_height)
+            .useViewBoxResizing(true)
+            .margins(gs.t.margin)
+            .x(xScale)
+            .y(yScale)
+            .xUnits(d3.time.years)
+            .dimension(dimension)
+            .group(group);
+
+        $.extend(_attr, {
+            chart: chart,
+            ndx: ndx,
+            c: conditions
+        });
+
+        chart.render();
+
+        _self.bindTriggers();
+    },
+    bindTriggers() {
+        let _self = this,
+            _attr = _self._attr,
+            chart = _attr.chart,
+            __target = $(_self.el);
+        __target.off();
+        __target.on('mouseup', () => {
+            let startYearDate = chart.dimension().bottom(1)[0].year,
+                startYear = startYearDate.getFullYear(),
+                endYearDate = chart.dimension().top(1)[0].year,
+                endYear = endYearDate.getFullYear(),
+                dataList = chart.group().all(),
+                length = dataList.length,
+                totalCount = 0;
+
+            for (i = 0; i < length; i++) {
+                let e = dataList[i];
+                totalCount += (e.key <= endYearDate && e.key >= startYearDate) ? e.value : 0;
+                if (totalCount > 5) {
+                    _attr.c.set({
+                        "startYear": startYear,
+                        "endYear": endYear
+                    });
+                    break;
+                }
+            }
+        });
+    }
+});
+
 let GeoView = Backbone.View.extend({
     el: '#svg-geo-view',
     initialize() {
@@ -2114,6 +2196,7 @@ d3.selection.prototype.moveToFront = function() {
 module.exports = {
     PolicyView: PolicyView,
     PolicyDetailView: PolicyDetailView,
+    PolicyTrendView: PolicyTrendView,
     GeoView: GeoView,
     RingView: RingView,
     NetworkView: NetworkView,

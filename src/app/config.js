@@ -99,6 +99,7 @@ const Config = {
         test: '/api/success/',
         policyBase: 'policy/',
         policyDetailBase: 'detail/',
+        policyTrendBase: 'trend/',
         policyGroupBase: 'policies/',
         networkBase: 'network/',
         ringBase: 'cluster/',
