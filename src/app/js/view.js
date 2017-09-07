@@ -1114,10 +1114,9 @@ let PolicyGroupView = Backbone.View.extend({
     },
     updateSelection(conditions) {
         let _self = this;
+        $(this.el).bootstrapTable("uncheckAll");
         if (conditions.get("policy") !== conf.bases.policy.default) {
             $(this.el).bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
-        } else {
-            $(this.el).bootstrapTable("uncheckAll");
         }
     },
     clear() {
