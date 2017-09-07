@@ -116,7 +116,7 @@ const GraphSettings = {
     t: {
         margin: {
             top: 10,
-            left: 30,
+            left: 50,
             right: 10,
             bottom: 50
         },
@@ -125,7 +125,9 @@ const GraphSettings = {
             height: 100
         },
         multiplier: {},
-        config: {}
+        config: {
+            yTickNumber: 4
+        }
     },
 
     // network view settings
