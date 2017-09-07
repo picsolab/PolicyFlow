@@ -50,7 +50,7 @@
     padding-left: 15px;
 }
 
-#policy-explore-wrapper {
+.no-padding {
     padding: 0;
 }
 
@@ -139,16 +139,11 @@ text .loader-img {
 
 /* policy group view */
 
-#policy-group-wrapper {
-    padding-left: 0;
-    padding-right: 0;
-}
-
 
 /*policy trend*/
 
 #policy-trend-wrapper {
-    height: 60px;
+    height: 80px;
 }
 
 #policy-trend-wrapper>svg .axis text {
