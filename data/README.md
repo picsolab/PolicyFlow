@@ -176,33 +176,41 @@ Script & Dump: `./backup/diffusion2017vis_20170706.sql`
 
 #### data manipulation
 
-convert shapefiles to topojson: 
+Convert shapefiles to topojson. To begin with, make sure you're under `/data`.
 
-download the shape file from [census](https://www.census.gov/geo/maps-data/data/cbf/cbf_state.html)
+1. create directorire and download the shape file [cb_2016_us_state_5m.zip](http://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_us_state_5m.zip) from [census](https://www.census.gov/geo/maps-data/data/cbf/cbf_state.html):
 
-with tools:
+```shell
+# make directory for raw and output data
+mkdir external && mkdir out && cd external
 
+# download shapefiles
+wget http://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_us_state_5m.zip
+
+# extract the package to `cb_2016_us_state_5m`
+unzip cb_2016_us_state_5m.zip -d cb_2016_us_state_5m
 ```
-# brew install gdal
+
+2. install tools globally:
+
+```shell
 npm install shapefile -g
 npm install topojson -g
 npm install ndjson-cli -g
 ```
 
-do:
+3.  convert shape files to topojson files
 
 ```shell
-# convert to geojson with gdal
-# ogr2ogr -f "GeoJSON" states.geo.json ../raw/cb_2016_us_state_5m/cb_2016_us_state_5m.shp
-
 # convert shapefiles to topojson
-shp2json -n [input .shp with .shx and .dbf in same directory] | ndjson-reduce 'p.features.push({type: "Feature", properties: {id: d.properties.STUSPS, gid: d.properties.GEOID}, geometry: d.geometry}), p' '{type: "FeatureCollection", features: []}' | geo2topo states=- > [output]
+# .shx and .dbf files should be in the same directory with .shp file
+shp2json -n cb_2016_us_state_5m/cb_2016_us_state_5m.shp | ndjson-reduce 'p.features.push({type: "Feature", properties: {id: d.properties.STUSPS, gid: d.properties.GEOID}, geometry: d.geometry}), p' '{type: "FeatureCollection", features: []}' | geo2topo states=- > states.topo.json
 
-# Unify and simplify
-toposimplify -P 0.1 ./app/data/states.topo.json -o ./app/data/states.p1.topo.json
+# simplify raw file and write it to `/src/data/`
+toposimplify -P 0.1 states.topo.json -o ../../src/data/states.p1.topo.json
 ```
 
-move topojson files to `/app/static/data/states.topo.json`
+#### notes
 
 shapefiles can also be found at [Census.gov › Geography › Maps & Data › Cartographic Boundary Shapefiles](https://www.census.gov/geo/maps-data/data/tiger-cart-boundary.html), and so much pregenerated map data can be found at [Mapzen](https://mapzen.com/data/borders/), 
 [jgoodall](https://github.com/jgoodall/us-maps), [mbostock for v3](https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json), and [us-atlas for v4](https://unpkg.com/us-atlas@1/us/10m.json)
@@ -215,6 +223,8 @@ Census Bureau-designated regions and divisions from [wikipedia](https://en.wikip
 [GeoJSON spec](http://geojson.org/geojson-spec.html), and [RFC 7946](https://tools.ietf.org/html/rfc7946).
 
 ### NETINF
+
+This section served as notes for generating a static network from all policies and retrieving attributes of states. In current version, attributes are valid in database, whild the static network is no longer used. You may refer to notes [here](../app/libs/README.md) for the process of dynamically generating network according to users' requests. 
 
 #### Models
 
