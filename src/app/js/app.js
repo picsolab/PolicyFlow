@@ -237,6 +237,17 @@ function bindDomEvents() {
         conditions.set('policy', selectedPolicy[0]["policy_id"]);
     });
 
+    document.getElementById("policy-detail-wrapper").addEventListener("click", function(e) {
+        if (e.target && e.target.nodeName.toUpperCase() == "TD") {
+            let __tr = $(e.target).parent(),
+                policyId = __tr.attr("pid");
+            if (policyId) {
+                conditions.set('policy', policyId);
+                policyGroupView.updateSelection(conditions);
+            }
+        }
+    });
+
     $("#policy-group-uncheck-btn").on('click', () => {
         conditions.set('policy', conf.bases.policy.default);
         policyGroupView.updateSelection(conditions);

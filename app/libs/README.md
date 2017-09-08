@@ -16,19 +16,35 @@
 
 ## notes
 
-### zss
-
-Tree edit distance using the [Zhang Shasha algorithm](http://www.grantjenks.com/wiki/_media/ideas:simple_fast_algorithms_for_the_editing_distance_between_tree_and_related_problems.pdf) (an [overview slide](http://www.inf.unibz.it/dis/teaching/ATA/ata7-handout-1x1.pdf), another [paper](http://research.cs.queensu.ca/TechReports/Reports/1995-372.pdf)) on [GitHub](https://github.com/timtadh/zhang-shasha).
-
 ### compile modified netinf
 
-```
-# mac
-g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp
+To start with, make sure you're under `/app/libs/`.
 
-# ubuntu
-g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp -lrt -lgomp
-```
+1. compile `snap`
+
+    ```shell
+    # clone snap repository
+    git clone https://github.com/snap-stanford/snap
+
+    # make
+    cd snap && make
+    ```
+
+2. compile modified `netinf`
+
+    ```shell
+    # make sure you're now at /app/libs/netinf/
+    cd ../netinf
+
+    # mac
+    g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp
+
+    # ubuntu
+    g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp -lrt -lgomp
+
+    # make sure the executable is provided with execute permission 
+    chmod +x netinf
+    ```
 
 #### refs
 
@@ -45,6 +61,10 @@ Wrapping C++ code with python (manually) from [stackoverflow](https://stackoverf
 how to make python load dylib on osx from [stackoverflow](https://stackoverflow.com/questions/2488016/how-to-make-python-load-dylib-on-osx)
 
 `ctypes` official [documentation](https://docs.python.org/2.7/library/ctypes.html)
+
+### zss
+
+Tree edit distance using the [Zhang Shasha algorithm](http://www.grantjenks.com/wiki/_media/ideas:simple_fast_algorithms_for_the_editing_distance_between_tree_and_related_problems.pdf) (an [overview slide](http://www.inf.unibz.it/dis/teaching/ATA/ata7-handout-1x1.pdf), another [paper](http://research.cs.queensu.ca/TechReports/Reports/1995-372.pdf)) on [GitHub](https://github.com/timtadh/zhang-shasha).
 
 ### snap
 

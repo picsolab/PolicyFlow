@@ -50,7 +50,7 @@
     padding-left: 15px;
 }
 
-#policy-explore-wrapper {
+.no-padding {
     padding: 0;
 }
 
@@ -87,7 +87,13 @@
     text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
 
-.loader-img {
+.label-group text.no-shadow {
+    text-shadow: none !important;
+}
+
+.label-group text.large {}
+
+text .loader-img {
     display: inline-block;
     position: absolute;
     top: 50%;
@@ -130,27 +136,18 @@
     pointer-events: none;
 }
 
-#ring-label-group text {
-    pointer-events: none;
-}
-
 
 /* policy group view */
-
-#policy-group-wrapper {
-    padding-left: 0;
-    padding-right: 0;
-}
 
 
 /*policy trend*/
 
 #policy-trend-wrapper {
-    height: 60px;
+    height: 80px;
 }
 
 #policy-trend-wrapper>svg .axis text {
-    font: 10px sans-serif;
+    font: 20px sans-serif;
     font-weight: 400;
     pointer-events: none;
     text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;

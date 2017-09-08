@@ -53,7 +53,7 @@
         <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
             <div id="method-tab-wrapper">
                 <ul class="nav nav-tabs" role="tablist">
-                    <li role="presentation" class="active"><a href="" data-toggle="tab" value="subject">Major Topic</a></li>
+                    <li role="presentation" class="active"><a href="" data-toggle="tab" value="subject">Subject</a></li>
                     <li role="presentation"><a href="" data-toggle="tab" value="text">Text Similarity</a></li>
                 </ul>
             </div>
@@ -64,7 +64,7 @@
             </div>
         </div>
         <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12 main">
-            <div id="policy-explore-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+            <div id="policy-explore-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 no-padding">
                 <!-- Nav tabs -->
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active"><a href="#network-views-wrapper" aria-controls="network-views-wrapper" role="tab" data-toggle="tab">Overview</a></li>
@@ -74,17 +74,15 @@
                 <!-- Tab panes -->
                 <div class="tab-content">
                     <div id="network-views-wrapper" role="tabpanel" class="tab-pane fade in active">
-                        <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        </div>
                         <div id="policy-geo-wrapper" class="col-lg-7 col-md-7 col-sm-12">
                             <svg id="svg-geo-view"></svg>
                             <div id="policy-geo-controller-wrapper" class="btn-group" data-toggle="buttons">
                                 <label class="btn btn-default active">
-                                            <input type="radio" name="policy-geo-controller-options" id="geo-option-state" value="state" autocomplete="off" checked> State-wise
-                                        </label>
+                                                    <input type="radio" name="policy-geo-controller-options" id="geo-option-state" value="state" autocomplete="off" checked> State-wise
+                                                </label>
                                 <label class="btn btn-default">
-                                            <input type="radio" name="policy-geo-controller-options" id="geo-option-region" value="region" autocomplete="off"> Regional
-                                        </label>
+                                                    <input type="radio" name="policy-geo-controller-options" id="geo-option-region" value="region" autocomplete="off"> Regional
+                                                </label>
                             </div>
                         </div>
                         <div id="policy-network-wrapper" class="col-lg-5 col-md-5 col-sm-12">
@@ -114,9 +112,14 @@
                     </div>
                 </div>
             </div>
-            <div id="policy-group-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <table id="policy-group-table">
-                </table>
+            <div id="policy-filter-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 no-padding">
+                <div id="policy-trend-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 no-padding">
+                    <strong>Filter policy by their adoption year</strong>&nbsp;<span class="filter"></span>
+                </div>
+                <div id="policy-group-wrapper" class="col-lg-12 col-md-12 col-sm-12 col-xs-12 no-padding">
+                    <table id="policy-group-table">
+                    </table>
+                </div>
             </div>
         </div>
     </div>
