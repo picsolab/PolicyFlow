@@ -7,6 +7,7 @@ import random
 from .helper import DecimalEncoder
 from .base_service import BaseService
 from .computing_service import ComputingService
+from ..models import get_state_index
 from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao
 
 computing_service = ComputingService()
@@ -277,6 +278,7 @@ class NetworkService(BaseService):
             temp_object = {}
             stateId = state.stateId
             temp_object["stateId"] = stateId
+            temp_object["stateIndex"] = get_state_index(stateId)
             temp_object["stateName"] = state.stateName
             temp_meta_set = {}
             if stateId == "NE":

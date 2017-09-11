@@ -2,6 +2,7 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
+let GRank = require('./grank.js');
 const printDiagnoseInfo = false;
 
 let colorList = [],
@@ -816,11 +817,6 @@ let NetworkView = Backbone.View.extend({
                     // won't happen
             }
         }
-        // expose filtered edges and nodes to the view class
-        $.extend(_attr, {
-            filteredEdges: filteredEdges,
-            filteredNodes: filteredNodes
-        });
 
         let sizeScale = d3.scale.linear()
             .domain([cstat.min[cType], cstat.max[cType]])
@@ -843,6 +839,29 @@ let NetworkView = Backbone.View.extend({
                 filteredEdges.push(newEdge);
             }
         });
+
+        // expose filtered edges and nodes to the view class
+        $.extend(_attr, {
+            filteredEdges: filteredEdges,
+            filteredNodes: filteredNodes,
+            graph: new GRank.Graph()
+        });
+
+        // update graph according to filteredNodes and filteredEdges
+        // and compute similarities for mouse event
+        let graph = _attr.graph
+            .nodes(_.map(filteredNodes, node => node.stateId))
+            .edges(_.map(filteredEdges, edge => {
+                return (edge.validity ? {
+                    source: edge.source.stateId,
+                    target: edge.target.stateId
+                } : {
+                    source: edge.target.stateId,
+                    target: edge.source.stateId
+                });
+            }))
+            // .doSimrank();
+            .doPrank();
 
         // config force layout with filtered nodes and edges
         force.nodes(d3.values(filteredNodes))
@@ -892,6 +911,8 @@ let NetworkView = Backbone.View.extend({
                 title: (d) => d.stateId
             })
             .on("dblclick", dblclick)
+            .on("mouseover", circleOverHandler)
+            .on("mouseleave", circleLeaveHandler)
             .call(drag);
 
         circles.attr({
@@ -987,6 +1008,30 @@ let NetworkView = Backbone.View.extend({
         function dblclick(d) {
             d3.select(this).classed("fixed", d.fixed = false);
         }
+
+        // pop up similar nodes when mouseover a node
+        function circleOverHandler() {
+            let simList = graph.getSimilarNodes("prank", $(this).attr("title"));
+
+            if (simList.length !== 0) {
+                simList.forEach(sim => {
+                    let __circle = $("#network-node-group").find("circle[title=" + sim.name + "]");
+                    __circle.addClass("fixed");
+                });
+            }
+        }
+        // clear pop up status on nodes when mouseleave
+        function circleLeaveHandler() {
+            let simList = graph.getSimilarNodes("prank", $(this).attr("title"));
+
+            if (simList.length !== 0) {
+                simList.forEach(sim => {
+                    let __circle = $("#network-node-group").find("circle[title=" + sim.name + "]");
+                    __circle.removeClass("fixed");
+                });
+            }
+        }
+
         _self.postRender();
         return this;
     },
