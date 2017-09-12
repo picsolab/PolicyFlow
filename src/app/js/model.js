@@ -19,7 +19,9 @@ let Conditions = Backbone.Model.extend({
     },
     initialize: () => {},
     setupCentralityValidity() {
-        let validity = this.get("metadata") === "centrality" || this.get("sequence") === "centrality";
+        // either is on "centrality"
+        let validity = (this.get("metadata") === conf.bases.yAttributeList[0].id ||
+            this.get("sequence") === conf.bases.xAttributeList[0].id);
         this.set("cvalidity", validity);
     },
     toggleTractList(tract) {

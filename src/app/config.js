@@ -52,9 +52,6 @@ const Config = {
                 id: "centrality",
                 domId: "x-option-centrality",
                 description: "Centrality"
-                    // id: "perCapitaIncome",
-                    // domId: "x-option-per-capita-income",
-                    // description: "Per Capita Income"
             },
             {
                 id: "adoptionYear",

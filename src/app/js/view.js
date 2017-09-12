@@ -859,9 +859,9 @@ let NetworkView = Backbone.View.extend({
                     source: edge.target.stateId,
                     target: edge.source.stateId
                 });
-            }))
-            // .doSimrank();
-            .doPrank();
+            }));
+
+        setTimeout(() => { graph.doPrank(); }, 350);
 
         // config force layout with filtered nodes and edges
         force.nodes(d3.values(filteredNodes))

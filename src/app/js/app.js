@@ -7,7 +7,6 @@ let Collection = require('./collection.js');
 let Router = require('./router.js');
 
 let conditions = new Model.Conditions(),
-    policyOptionsModel = new Model.PolicyOptionsModel(),
     policyGroupModel = new Model.PolicyGroupModel(),
     policyModel = new Model.PolicyModel(),
     policyDetailModel = new Model.PolicyDetailModel(),
@@ -17,7 +16,7 @@ let conditions = new Model.Conditions(),
     networkModel = new Model.NetworkModel(),
     diffusionModel = new Model.DiffusionModel(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
-    sc = Collection.SnapshotCollection,
+    sc = new Collection.SnapshotCollection(),
     appRouter = new Router.AppRouter();
 let policyView = new View.PolicyView({
         model: policyModel
@@ -160,10 +159,6 @@ function setupRenderingTriggers() {
         ringView.render(conditions);
     });
 
-    policyOptionsModel.on("change", () => {
-        updateSubjectAndPolicy(policyOptionsModel, conf.bases.subject.default, conf.bases.policy.default);
-    });
-
     policyDetailModel.on("change", () => {
         policyDetailView.render(conditions);
     });
@@ -253,41 +248,70 @@ function bindDomEvents() {
         policyGroupView.updateSelection(conditions);
     });
 
-    // selected metadata to conditions
-    $('#metadata-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        conditions.set("metadata", conf.bases.yAttributeList[clickedIndex - 1].id);
+    // set conditions:centrality from centrality dropdown
+    document.getElementById("centrality-dropdown").addEventListener("click", function(e) {
+        let __target = $(e.target),
+            centrality = __target.attr("aid");
+        if (centrality) {
+            setupDropdown("#centrality-dropdown", centrality);
+            conditions.set("centrality", centrality);
+        }
     });
 
-    // selected x-seq to conditions
-    $('#sequence-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        conditions.set("sequence", conf.bases.xAttributeList[clickedIndex - 1].id);
+    // set conditions:metadata from metadata dropdown
+    document.getElementById("metadata-dropdown").addEventListener("click", function(e) {
+        let __target = $(e.target),
+            metadata = __target.attr("aid");
+        if (metadata) {
+            setupDropdown("#metadata-dropdown", metadata);
+            conditions.set("metadata", metadata);
+        }
     });
 
-    // selected centrality type to condition
-    $('#centrality-select').on('changed.bs.select', (event, clickedIndex, newValue, oldValue) => {
-        conditions.set("centrality", conf.bases.centralityList[clickedIndex - 1].id);
+    // setup x-seq to conditions
+    $("#sequence-checkbox").on("switchChange.bootstrapSwitch", (e, state) => {
+        if (state) {
+            conditions.set("sequence", conf.bases.xAttributeList[0].id);
+        } else {
+            conditions.set("sequence", conf.bases.xAttributeList[1].id);
+        }
     });
 
     $("#add-snapshot").on("click", (event) => {
         sc.add(diffusionView, conditions);
     });
 
-    $("#policy-geo-controller-wrapper").on('click', (event) => {
-        conditions.set("geoBase", $(event.target).find('input').val());
-    })
+    // policy-geo-controller
+    $("#geo-controller-checkbox").on("switchChange.bootstrapSwitch", (e, state) => setTimeout(geoSwitchHandler, 350, e, state));
 
     document.getElementById("snapshot-wrapper").addEventListener('click', retrieveCascadeHandler, false);
 }
 
 function initDom() {
-    // attributes select drop down
-    initDropdowns($('#metadata-select'), "metadata-option", conf.bases.yAttributeList);
+    // attributes drop down
+    setupDropdown("#metadata-dropdown", conf.bases.yAttributeList[0].id);
 
-    // diffusion select drop down
-    initDropdowns($('#sequence-select'), "sequence-option", conf.bases.xAttributeList);
+    // centrality drop down
+    setupDropdown("#centrality-dropdown", conf.bases.centralityList[0].id);
 
-    // centrality select drop down
-    initDropdowns($("#centrality-select"), "centrality-option", conf.bases.centralityList);
+    // sequence switch
+    $("#sequence-checkbox").bootstrapSwitch({
+        size: "mini",
+        onText: "Influence",
+        offText: "AdoptionYear",
+        onColor: "primary",
+        offColor: "primary"
+    });
+
+    // geo switch
+    $("#geo-controller-checkbox").bootstrapSwitch({
+        size: "mini",
+        onText: "State-wise",
+        offText: "Regional",
+        onColor: "primary",
+        offColor: "primary"
+    });
+
     setupCentralityDropdown();
 }
 
@@ -310,58 +334,94 @@ function retrieveCascadeHandler(e) {
     }
 }
 
+function geoSwitchHandler(e, state) {
+    if (state) {
+        conditions.set("geoBase", "state");
+    } else {
+        conditions.set("geoBase", "region");
+    }
+}
+
 /** 
  * Utils
  */
 
-function recoverDomBy(conditions) {
-    // recover subject and policy dropdown
-    // updateSubjectAndPolicy(policyOptionsModel, conditions.get("subject"), conditions.get("policy"));
+/**
+ * clear selection on dropdown specified by idSelector
+ * @return {string} id field
+ */
+function clearDropdownSelection(idSelector) {
+    let __activeOption = $(idSelector + " ul").find("li[class='active']");
+    __activeOption.removeClass("active");
+    return __activeOption.find("a").attr("class");
+}
 
+/**
+ * mark corresponding option specified by `aid` at dropdown specified by `idSelector`
+ * @param {strint} idSelector 
+ * @param {string} aid 
+ */
+function markDropdownSelection(idSelector, aid) {
+    let __element = $(idSelector + " ul").find("a[aid=" + aid + "]");
+    __element.parent().addClass("active");
+}
+
+function recoverDomBy(conditions) {
     // recover method tab, ring view
     $("#method-tab-wrapper a[value=" + conditions.get("method") + "]").tab('show');
 
     // recover centrality dropdown
-    $("#centrality-select").selectpicker('val', conditions.get("centrality"), { silent: true });
+    setupDropdown("#centrality-dropdown", conditions.get("centrality"));
 
-    // recover metadata and sequence
-    $('#sequence-select').selectpicker('val', conditions.get("sequence"), { silent: true });
-    $('#metadata-select').selectpicker('val', conditions.get("metadata"), { silent: true });
+    // recover metadata dropdown
+    setupDropdown("#metadata-dropdown", conditions.get("metadata"));
+
+    // recover sequence switch
+    switch (conditions.get("sequence")) {
+        // centrality
+        case conf.bases.xAttributeList[0].id:
+            $("#sequence-checkbox").bootstrapSwitch("state", true);
+            break;
+        case conf.bases.xAttributeList[1].id:
+            $("#sequence-checkbox").bootstrapSwitch("state", false);
+            break;
+        default:
+            //none
+            break;
+    }
 
     setupCentralityDropdown();
-
 }
 
-// Update page header when conditions change
-function updateHeader() {
-    let headerStr = conditions.get("policy") === conf.bases.policy.default ?
-        "Select a policy to get started." :
-        policyOptionsModel.get("pipe")[conditions.get("policy")] + "<br/><small>" + conditions.get("subject") + "</small>";
-    $('#page-header').html(headerStr);
+function setupDropdown(idSelector, aid) {
+    let toSelect = clearDropdownSelection(idSelector);
+    if (toSelect !== aid) {
+        markDropdownSelection(idSelector, aid);
+    }
 }
 
-function initDropdowns($element, className, attrList) {
-    attrList.forEach((attr, index) => {
-        $element.append("<option class='" + className + "' id='" + attr.domId + "' value='" + attr.id + "'>" + attr.description + "</option>");
-    });
-    $element.val(attrList[0].id);
-    $element.prop('disabled', false);
-    $element.selectpicker('refresh');
-}
-
+/**
+ * Setup centrality dropdown and sequence switch according to current `conditions`.
+ */
 function setupCentralityDropdown() {
-    let isPolicyUnselected = conditions.get("policy") === conf.bases.policy.default;
+    let isPolicyUnselected = (conditions.get("policy") === conf.bases.policy.default);
+
+    // if no policy has been selected, `sequence` can only be "centrality"
     if (isPolicyUnselected) {
-        if ($('#sequence-select').selectpicker('val') !== "centrality") {
-            $('#sequence-select').val("centrality");
-            conditions.set('sequence', "centrality");
+        // if sequence switch is on AdoptionYear
+        if (!$("#sequence-checkbox").bootstrapSwitch("state")) {
+            // set it to true: "centrality"
+            $("#sequence-checkbox").bootstrapSwitch("state", true);
+            conditions.set('sequence', conf.bases.xAttributeList[0].id);
         }
     } else {
         conditions.setupCentralityValidity();
         let eitherCentralitySelected = conditions.get("cvalidity");
-        $('#centrality-select').prop('disabled', !eitherCentralitySelected);
-        $('#centrality-select').selectpicker('refresh');
+        if (eitherCentralitySelected) {
+            $('#centrality-dropdown').removeClass("disabled");
+        } else {
+            $('#centrality-dropdown').addClass("disabled");
+        }
     }
-    $('#sequence-select').prop('disabled', isPolicyUnselected);
-    $('#sequence-select').selectpicker('refresh');
+    $("#sequence-checkbox").bootstrapSwitch("disabled", isPolicyUnselected);
 }

@@ -16,7 +16,7 @@ const GraphSettings = {
         },
         size: {
             width: 270,
-            height: 600
+            height: 585
         },
         multiplier: {
 

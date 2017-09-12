@@ -7,22 +7,8 @@
 
 /*Nav Bar*/
 
-@media(min-width:768px) {
-    .nav {
-        margin-bottom: 6px;
-    }
-    .navbar-header {
-        margin-top: 5px;
-    }
-    #content-wrapper {
-        margin-top: 70px;
-    }
-}
-
-@media(max-width:768px) {
-    #content-wrapper {
-        margin-top: 50px;
-    }
+#content-wrapper {
+    margin-top: 55px;
 }
 
 .nav-title-label {
@@ -31,8 +17,6 @@
     font-weight: 200;
     color: white;
 }
-
-.select-wrapper {}
 
 .page-header {
     margin-top: 10px;
@@ -52,6 +36,10 @@
 
 .no-padding {
     padding: 0;
+}
+
+.dropdown.disabled>a {
+    pointer-events: none;
 }
 
 
@@ -101,6 +89,12 @@ text .loader-img {
     margin-right: -50%;
     transform: translate(-50%, -50%);
     z-index: 50;
+}
+
+.bootstrap-switch {
+    position: absolute ! important;
+    right: 2%;
+    top: 0px;
 }
 
 
@@ -156,9 +150,13 @@ text .loader-img {
 
 /*snapshot panel*/
 
+#snapshot-collection-wrapper {
+    overflow: hidden;
+}
+
 #snapshot-wrapper {
     overflow: scroll;
-    height: 480px;
+    height: 420px;
 }
 
 .snapshot-wrapper {
@@ -346,30 +344,6 @@ text .loader-img {
 .partial text,
 .y-axis {
     cursor: all-scroll;
-}
-
-
-/*stat-bar-panel*/
-
-#stat-bar-wrapper {
-    height: 100px;
-}
-
-.axis path,
-.axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
-}
-
-.d3-tip {
-    line-height: 1;
-    font-weight: bold;
-    padding: 12px;
-    background: #bfb7b7;
-    color: #fff;
-    border-radius: 2px;
-    z-index: 1001;
 }
 
 

@@ -20,31 +20,6 @@
                 </button>
                 <a class="navbar-brand" href="#">PolicyFlow</a>
             </div>
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="nav">
-                    <li class="col-lg-2 col-md-2 col-sm-2">
-                        <label class="nav-title-label">Attributes</label>
-                        <div class="select-wrapper" id="metadata-select-wrapper">
-                            <select name="metadata-select" id="metadata-select" class="selectpicker show-tick" data-live-search="false" data-container="body" data-width="100%" title="Loading..." disabled></select>
-                        </div>
-                    </li>
-                    <li class="col-lg-2 col-md-2 col-sm-2">
-                        <label class="nav-title-label">Sequence</label>
-                        <div class="select-wrapper" id="sequence-select-wrapper">
-                            <select name="sequence-select" id="sequence-select" class="selectpicker show-tick" data-live-search="false" data-container="body" data-width="100%" title="Loading..." disabled></select>
-                        </div>
-                    </li>
-                    <li class="col-lg-2 col-md-2 col-sm-2">
-                        <label class="nav-title-label">Influence</label>
-                        <div class="select-wrapper" id="centrality-select-wrapper">
-                            <select name="centrality-select" id="centrality-select" class="selectpicker show-tick" data-live-search="false" data-container="body" data-width="100%" title="Loading..." disabled></select>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
         </div>
         <!-- /.container-fluid -->
     </nav>
@@ -69,21 +44,40 @@
                 <ul class="nav nav-tabs" role="tablist">
                     <li role="presentation" class="active"><a href="#network-views-wrapper" aria-controls="network-views-wrapper" role="tab" data-toggle="tab">Overview</a></li>
                     <li role="presentation"><a href="#diffusion-views-wrapper" aria-controls="diffusion-views-wrapper" role="tab" data-toggle="tab">Policy Inspection</a></li>
+                    <li id="metadata-dropdown" role="presentation" class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                          Attribute <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a aid="centrality">Influence</a></li>
+                            <li><a aid="perCapitaIncome">Per Capita Income</a></li>
+                            <li><a aid="minorityDiversity">Minority Diversity</a></li>
+                            <li><a aid="legislativeProfessionalism">Legislative Professionalism</a></li>
+                            <li><a aid="citizenIdeology">Citizen Ideology</a></li>
+                            <li><a aid="totalPopulation">Total Population</a></li>
+                            <li><a aid="populationDensity">Population Density</a></li>
+                        </ul>
+                    </li>
+                    <li id="centrality-dropdown" role="presentation" class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                          Influence <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a aid="outdegree">Outdegree</a></li>
+                            <li><a aid="pageRank">Page Rank</a></li>
+                            <li><a aid="betweenness">Betweenness</a></li>
+                            <li><a aid="hit">Hit</a></li>
+                            <li><a aid="close">Closeness</a></li>
+                        </ul>
+                    </li>
                 </ul>
 
                 <!-- Tab panes -->
                 <div class="tab-content">
                     <div id="network-views-wrapper" role="tabpanel" class="tab-pane fade in active">
                         <div id="policy-geo-wrapper" class="col-lg-7 col-md-7 col-sm-12">
+                            <input id="geo-controller-checkbox" type="checkbox" name="geo-controller-checkbox" checked>
                             <svg id="svg-geo-view"></svg>
-                            <div id="policy-geo-controller-wrapper" class="btn-group" data-toggle="buttons">
-                                <label class="btn btn-default active">
-                                                    <input type="radio" name="policy-geo-controller-options" id="geo-option-state" value="state" autocomplete="off" checked> State-wise
-                                                </label>
-                                <label class="btn btn-default">
-                                                    <input type="radio" name="policy-geo-controller-options" id="geo-option-region" value="region" autocomplete="off"> Regional
-                                                </label>
-                            </div>
                         </div>
                         <div id="policy-network-wrapper" class="col-lg-5 col-md-5 col-sm-12">
                             <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#">
@@ -92,12 +86,9 @@
                     </div>
                     <div id="diffusion-views-wrapper" role="tabpanel" class="tab-pane fade">
                         <div id="diffusion-wrapper" class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
+                            <input id="sequence-checkbox" type="checkbox" name="sequence-checkbox" checked>
                             <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#">
                             <svg id="svg-diffusion-view"></svg>
-                            <div class="btn-group" role="group" aria-label="...">
-                                <button id="add-snapshot" type="button" class="btn btn-default">add</button>
-                                <button id="remove-snapshot" type="button" class="btn btn-default">remove</button>
-                            </div>
                         </div>
                         <div id="policy-cascade-wrapper" class="col-lg-3 col-md-3 col-sm-7 col-xs-7">
                             <div id="policy-unselected-notitication" class="jumbotron">
@@ -107,7 +98,12 @@
                             </div>
                             <svg id="svg-cascade-view" style="display:none;"></svg>
                         </div>
-                        <div id="snapshot-wrapper" class="col-lg-2 col-md-2 col-sm-5 col-xs-5">
+                        <div id="snapshot-collection-wrapper" class="col-lg-2 col-md-2 col-sm-5 col-xs-5">
+                            <div class="btn-group" role="group" aria-label="...">
+                                <button id="add-snapshot" type="button" class="btn btn-default btn-xs">add</button>
+                                <button id="remove-snapshot" type="button" class="btn btn-default btn-xs">remove</button>
+                            </div>
+                            <div id="snapshot-wrapper" class="no-padding"></div>
                         </div>
                     </div>
                 </div>
