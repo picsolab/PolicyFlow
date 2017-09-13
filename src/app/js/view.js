@@ -7,32 +7,33 @@ const printDiagnoseInfo = false;
 
 let colorList = [],
     colorMap = {};
-const color15 = [
-        css_variables['--color-cb-9'],
+let color7 = [
         css_variables['--color-cb-a'],
-        css_variables['--color-i'],
-        css_variables['--color-cb-10'],
-        css_variables['--color-cb-8'],
-        css_variables['--color-cb-7'],
-        css_variables['--color-cb-6'],
-        css_variables['--color-cb-5'],
-        css_variables['--color-cb-4'],
-        css_variables['--color-cb-3'],
-        css_variables['--color-cb-2'],
-        css_variables['--color-cb-1'],
-        css_variables['--color-cb-0'],
-        css_variables['--color-c'],
-        css_variables['--color-j']
+        css_variables['--color-cb-b'],
+        css_variables['--color-cb-c'],
+        css_variables['--color-cb-d'],
+        css_variables['--color-cb-e'],
+        css_variables['--color-cb-f'],
+        css_variables['--color-cb-g']
     ],
-    color7 = [
-        css_variables['--color-cb-9'],
-        css_variables['--color-cb-a'],
+    color15 = color7.concat([
         css_variables['--color-cb-0'],
+        css_variables['--color-cb-2'],
+        css_variables['--color-cb-4'],
+        css_variables['--color-cb-6'],
+        css_variables['--color-cb-8'],
+        css_variables['--color-cb-10'],
+        css_variables['--color-a'],
+        css_variables['--color-d']
+    ]),
+    color21 = color15.concat([
+        css_variables['--color-f'],
+        css_variables['--color-j'],
         css_variables['--color-cb-1'],
         css_variables['--color-cb-3'],
-        css_variables['--color-cb-4'],
-        css_variables['--color-cb-7']
-    ];
+        css_variables['--color-cb-5'],
+        css_variables['--color-cb-9']
+    ]);
 
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
@@ -2102,7 +2103,7 @@ let RingView = Backbone.View.extend({
             nameDomain = _.concat(method, clusterObj.children.map((d) => d.name)),
             colorSchema = d3.scale.ordinal()
             .domain(nameDomain)
-            .range(method === "subject" ? color15 : color7),
+            .range(method === "subject" ? color15 : color21),
             ldaTerms = conf.static.ldaTerms;
 
         $(_self.el).empty();
@@ -2241,11 +2242,11 @@ let RingView = Backbone.View.extend({
                     ldaTerm += "<b>Terms:&nbsp;</b>"
                     for (let i in termArr) {
                         ldaTerm += termArr[i] + ", ";
-                        if ((+i + 1) / 5 === 1) {
+                        if ((+i + 1) % 5 === 0) {
                             ldaTerm += "</br>";
                         }
                     }
-                    ldaTerm = ldaTerm.trim().replace(/,+$/, "") + '</br>'; // replace tailing comma with a break
+                    ldaTerm = ldaTerm.replace(/<\/br>+$/, "").trim().replace(/,+$/, "") + '</br>'; // replace tailing and break
                 }
             }
             return '<b>' + (method === "text" ? "Cluster" : "Subject") + ':&nbsp;</b>' + getHead(d) + '</br>' +

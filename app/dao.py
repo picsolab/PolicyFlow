@@ -109,27 +109,27 @@ class PolicyDao(BaseDao):
 
     @staticmethod
     def get_policy_per_lda_cluster():
-        stmt = text("SELECT policy_lda_1 AS policyLda1, policy_lda_2 AS policyLda2, COUNT(*) AS policyCount "
-                    "FROM policy "
-                    "GROUP BY policy_lda_1, policy_lda_2 "
-                    "HAVING policyCount >= 5")
-        return db.session.execute(stmt).fetchall()
+        policy_count = func.count().label('policyCount')
+        policy_lda1 = Policy.policyLda1.label('policyLda1')
+        # stmt = text("SELECT policy_lda_1 AS policyLda1, policy_lda_2 AS policyLda2, COUNT(*) AS policyCount "
+        #             "FROM policy "
+        #             "GROUP BY policy_lda_1, policy_lda_2 "
+        #             "HAVING policyCount >= 5")
+        return Session().query(policy_lda1, policy_count).group_by(policy_lda1).having(policy_count >= 5)
 
     @staticmethod
     def get_policy_by_id(policy_id):
         return Policy.query.filter(Policy.policyId == policy_id).first()
 
     def get_q_all_policies_with_valid_cluster_count(self):
-        policy_count = func.count().label('policy_count')
+        policy_count = func.count().label('policyCount')
         policy_lda1 = Policy.policyLda1.label('policyLda1')
-        policy_lda2 = Policy.policyLda2.label('policyLda2')
-        lda_tuple = tuple_(Policy.policyLda1, Policy.policyLda2)
-        sq_policy = Session().query(policy_lda1, policy_lda2, policy_count) \
-            .group_by(policy_lda1, policy_lda2) \
+        sq_policy = Session().query(policy_lda1, policy_count) \
+            .group_by(policy_lda1) \
             .having(policy_count > 5) \
             .subquery()
-        valid_lda_tuples = Session().query(sq_policy.c.policyLda1, sq_policy.c.policyLda2).subquery()
-        return Session().query(Policy).filter(lda_tuple.in_(valid_lda_tuples),
+        valid_ldas = Session().query(sq_policy.c.policyLda1).subquery()
+        return Session().query(Policy).filter(policy_lda1.in_(valid_ldas),
                                               Policy.policyStart >= self.start_year,
                                               Policy.policyEnd <= self.end_year)
 
@@ -148,6 +148,7 @@ class PolicyDao(BaseDao):
             return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyStart >= self.start_year,
                                        Policy.policyEnd <= self.end_year)
         elif len(params) == 3:
+            # currently won't be reached
             return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyLda2 == params[2],
                                        Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year)
 
