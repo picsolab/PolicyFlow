@@ -16,7 +16,7 @@ class BaseDao(object):
     def helper_get_valid_year(year):
         max_year = 1999
         min_year = 1960
-        if year < max_year:
+        if year < min_year:
             year = min_year
         elif year > max_year:
             year = max_year
