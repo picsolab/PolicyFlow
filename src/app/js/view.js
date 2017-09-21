@@ -460,7 +460,7 @@ let GeoView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         return d3.rgb(css_variables["--color-unadopted"]);
                     }
@@ -584,7 +584,7 @@ let GeoView = Backbone.View.extend({
                 title = __tract.attr("title");
             __tract.css("fill", () => {
                 if (title === "NE") {
-                    return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                    return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                 } else if (colorNeeded) {
                     let node = _attr.nodes[title];
                     if (!d3.set(conf.static.states).has(title) || _self.isNodeDefault(node)) {
@@ -924,7 +924,7 @@ let NetworkView = Backbone.View.extend({
                     switch (geoBase) {
                         case "state":
                             if (d.stateId === "NE") {
-                                d.fill = d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                                d.fill = d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                             } else if (colorNeeded) {
                                 let node = _attr.nodes[d.stateId];
                                 if (!d3.set(conf.static.states).has(d.stateId) || _self.isNodeDefault(node)) {
@@ -1159,14 +1159,13 @@ let PolicyGroupView = Backbone.View.extend({
         _self.updateSelection(conditions);
     },
     updateSelection(conditions) {
-        let _self = this;
-        $(this.el).bootstrapTable("uncheckAll");
+        this.$el.bootstrapTable("uncheckAll");
         if (conditions.get("policy") !== conf.bases.policy.default) {
-            $(this.el).bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
+            this.$el.bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
         }
     },
     clear() {
-        $(this.el).bootstrapTable('removeAll');
+        this.$el.bootstrapTable('removeAll');
     },
     preRender() {
         this.$el.bootstrapTable('showLoading');
@@ -1179,12 +1178,17 @@ let DiffusionView = Backbone.View.extend({
         this._attr = {};
     },
     render(conditions) {
-        // console.log("rendering diffusion...");
         let _self = this,
             _attr = this._attr, // closure vars
             isSnapshot = arguments.length !== 1;
 
-        $(_self.el).empty();
+        // toggle notification jumbotron and stop rendering
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            this.postRender(conditions);
+            return this;
+        }
+
+        this.$el.empty();
 
         let _height = gs.d.margin.top + gs.d.size.pathHeight + gs.d.margin.bottom,
             _width = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
@@ -1426,7 +1430,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         if (_self.isNodeDefault(d)) {
                             return css_variables["--color-unadopted"];
@@ -1437,7 +1441,7 @@ let DiffusionView = Backbone.View.extend({
                 },
                 stroke: (d, i) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(2);
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     } else {
                         if (_self.isNodeDefault(d)) {
                             return d3.rgb(css_variables["--color-unadopted"]).darker(1);
@@ -1556,16 +1560,23 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .call(_self.barTween, _attr, "bottom");
         _self.createBars(bottomBars, "bottom");
-        _self.postRender();
+        _self.postRender(_attr.c);
         return this;
     },
     preRender() {
         this.$el.hide();
-        $("#diffusion-wrapper .loader-img").show();
+        $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").hide();
+        $("#diffusiion-policy-unselected-notitication").hide();
+        $("#diffusion-wrapper").find(".loader-img").show();
     },
-    postRender() {
-        $("#diffusion-wrapper .loader-img").hide();
-        this.$el.show();
+    postRender(conditions) {
+        $("#diffusion-wrapper").find(".loader-img").hide();
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            $("#diffusiion-policy-unselected-notitication").show();
+        } else {
+            $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").show();
+            this.$el.show();
+        }
     },
     getPathColor(source, target) {
         if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
@@ -1624,7 +1635,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         if (this.isNodeDefault(d)) {
                             return css_variables["--color-unadopted"];
@@ -2293,6 +2304,104 @@ let RingView = Backbone.View.extend({
     }
 });
 
+/**
+ * Dropdowns
+ * Customized dropdown menu that:
+ * - can be disabled/enabled entirely or patially
+ * - has a changeable label
+ */
+let DropdownController = Backbone.View.extend({
+    render(conditions) {
+        let _self = this;
+    },
+    /**
+     * set dropdown label text.
+     * @param {string} labelString to be set to the dropdown.
+     */
+    label(labelString) {
+        this.$el.find(".dropdown-toggle").contents().first().replaceWith(labelString);
+        return this;
+    },
+    /**
+     * disable the dropdown.
+     */
+    disable() {
+        this.$el.addClass("disabled");
+        return this;
+    },
+    /**
+     * enable the dropdown.
+     */
+    enable() {
+        this.$el.removeClass("disabled");
+    },
+    /**
+     * disable single or multiple options
+     * @param {string|Array<string>} arguments one single aid or an aid array.
+     */
+    disableOption() {
+        let __lis = this.$el.find(".dropdown-menu");
+        if (typeof arguments[0] === "string") {
+            // single option
+            __lis.find("a[aid=" + arguments[0] + "]").parent().addClass("disabled");
+        } else {
+            // multi-option
+            for (let aid of arguments[0]) {
+                __lis.find("a[aid=" + aid + "]").parent().addClass("disabled");
+            }
+        }
+    },
+    /**
+     * enable one single option or multiple options or all option.
+     * @param {string|Array<string>|null} arguments one single aid to enable, or aid array to enable, or null to enable all options.
+     */
+    enableOption() {
+        let __lis = this.$el.find(".dropdown-menu");
+        if (!arguments.length) {
+            // enable all options
+            __lis.each(() => {
+                // @this current <li>
+                $(this).removeClass("disabled");
+            })
+        } else if (typeof arguments[0] === "string") {
+            // enable one single option
+            __lis.find("a[aid=" + arguments[0] + "]").parent().removeClass("disabled");
+        } else {
+            // enable multiple options
+            for (let aid of arguments[0]) {
+                __lis.find("a[aid=" + aid + "]").parent().removeClass("disabled");
+            }
+        }
+    },
+    /**
+     * pick one or multiple options.
+     * @param {string|Array<string>} arguments one single aid or an aid array.
+     */
+    pickOption() {
+        this.clearOption();
+        if (typeof arguments[0] === "string") {
+            // single selection
+            this.$el.find("ul a[aid=" + arguments[0] + "]").parent().addClass("active");
+        } else {
+            // multi-selection
+            console.log("//TODO");
+        }
+    },
+    /**
+     * clear one or all selections.
+     * @param {string|null} arguments one single aid to be cleared or null to clear all selections.
+     */
+    clearOption() {
+        if (!arguments.length) {
+            // clear all selection
+            this.$el.find("ul>li[class='active']").removeClass("active");
+        } else {
+            // clear selection specified by arguments[0]
+            this.$el.find("ul>li[aid=" + arguments[0] + "]").removeClass("active");
+        }
+    }
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -2308,5 +2417,6 @@ module.exports = {
     RingView: RingView,
     NetworkView: NetworkView,
     DiffusionView: DiffusionView,
-    PolicyGroupView: PolicyGroupView
+    PolicyGroupView: PolicyGroupView,
+    DropdownController: DropdownController
 };

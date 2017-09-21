@@ -23,6 +23,7 @@ let Conditions = Backbone.Model.extend({
         let validity = (this.get("metadata") === conf.bases.yAttributeList[0].id ||
             this.get("sequence") === conf.bases.xAttributeList[0].id);
         this.set("cvalidity", validity);
+        return this;
     },
     toggleTractList(tract) {
         let theListName = this.getTractListName(),
