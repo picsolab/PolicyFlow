@@ -38,8 +38,21 @@
     padding: 0;
 }
 
-.dropdown.disabled>a {
+#metadata-dropdown.disabled>a {
     pointer-events: none;
+}
+
+#metadata-dropdown>ul>li.disabled>a {
+    pointer-events: none;
+}
+
+.nav-tabs>li.disabled {
+    pointer-events: none;
+}
+
+#policy-explore-wrapper ul li {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 
@@ -188,6 +201,10 @@ text .loader-img {
     /* IE 10+ */
     user-select: none;
     cursor: default;
+}
+
+.bootstrap-switch-id-sequence-checkbox {
+    display: none;
 }
 
 
