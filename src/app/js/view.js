@@ -1253,8 +1253,9 @@ let DiffusionView = Backbone.View.extend({
         let _height = gs.d.margin.top + gs.d.size.pathHeight + gs.d.margin.bottom,
             _width = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
             pathXShift = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth, // min x of pathG
-            pathYMid = gs.d.margin.top,
+            bottomLabelYShift = gs.d.margin.top + gs.d.size.pathHeight,
             circleXShift = pathXShift,
+            xAxisLableXShift = pathXShift + gs.d.size.pathWidth,
             circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
             yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
 
@@ -1277,6 +1278,11 @@ let DiffusionView = Backbone.View.extend({
                 'class': 'circles',
                 'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
             }),
+            xAxisLableG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-x-axis-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (xAxisLableXShift) + "," + (circleYShift) + ")"
+            }),
             pathG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-path-group',
                 'class': 'paths',
@@ -1297,6 +1303,11 @@ let DiffusionView = Backbone.View.extend({
                 'class': 'bars',
                 'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
             }),
+            bottomLabelG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-bottom-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (xAxisLableXShift) + "," + (bottomLabelYShift) + ")"
+            }),
             yLabelG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-y-label-group',
                 'class': 'y-labels',
@@ -1308,6 +1319,15 @@ let DiffusionView = Backbone.View.extend({
                 'transform': "translate(" + (0) + "," + (0) + ")"
             }),
             defs = svg.append('defs');
+
+        bottomLabelG.selectAll("text")
+            .data(["Deviant Cascades"])
+            .enter()
+            .append("text")
+            .attr({
+                transform: "translate(-120, -10)"
+            })
+            .text(d => d);
 
         let xScale = d3.scale.linear()
             .domain([0, 49])
@@ -1337,6 +1357,8 @@ let DiffusionView = Backbone.View.extend({
             upBarG: upBarG,
             bottomBarG: bottomBarG,
             yLabelG: yLabelG,
+            xAxisLableG: xAxisLableG,
+            bottomLabelG: bottomLabelG,
             refLineG: refLineG,
             guidanceLineG: guidanceLineG,
             defs: defs,
@@ -1387,6 +1409,30 @@ let DiffusionView = Backbone.View.extend({
             .data(nodes),
             bottomBars = _attr.bottomBarG.selectAll('rect')
             .data(nodes);
+
+        // add anotation for y-axis
+        _attr.yLabelG.selectAll("text").remove();
+        _attr.yLabelG.selectAll("text")
+            .data([_attr.c.get("metadata")])
+            .enter()
+            .append("text")
+            .attr({
+                transform: "translate(5,0) rotate(90)"
+            })
+            .text(d => conf.bases.yAttributeList.find(x => x.id === d).description);
+
+        _attr.xAxisLableG.selectAll("text").remove();
+        _attr.xAxisLableG.selectAll("text")
+            .data([_attr.c.get("sequence")])
+            .enter()
+            .append("text")
+            .attr({
+                transform: (d) => {
+                    let description = conf.bases.xAttributeList.find(x => x.id === d).description;
+                    return "translate(" + (-description.length * 8) + ", -5)";
+                }
+            })
+            .text(d => conf.bases.xAttributeList.find(x => x.id === d).description);
 
         paths.transition()
             .duration(gs.d.config.transitionTime)

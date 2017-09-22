@@ -14,7 +14,7 @@ const Config = {
             {
                 id: "centrality",
                 domId: "y-option-centrality",
-                description: "Centrality"
+                description: "Influence"
             },
             // [dev]
             {
@@ -51,7 +51,7 @@ const Config = {
         xAttributeList: [{
                 id: "centrality",
                 domId: "x-option-centrality",
-                description: "Centrality"
+                description: "Influence"
             },
             {
                 id: "adoptionYear",
