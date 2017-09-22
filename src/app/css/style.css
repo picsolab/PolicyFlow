@@ -313,6 +313,14 @@ text .loader-img {
     stroke: var(--color-unadopted-darker) !important;
 }
 
+#network-legend-group {
+    display: none;
+}
+
+#network-legend-group text {
+    font: 10px sans-serif;
+}
+
 
 /*policy cascade panel*/
 

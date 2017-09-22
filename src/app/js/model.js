@@ -162,7 +162,8 @@ let DynamicNetworkModel = Backbone.Model.extend({
             _self.set({
                 "edgesInStateIds": data,
                 "edgesInIndices": edgesInIndices
-            });
+            }, { silent: true });
+            _self.trigger("change");
         });
     }
 });
@@ -267,7 +268,8 @@ let PolicyGroupModel = Backbone.Model.extend({
             "start_year": conditions.get("startYear"),
             "end_year": conditions.get("endYear")
         }).done(data => {
-            this.set(data);
+            this.set(data, { silent: true });
+            this.trigger("change");
         });
     }
 });

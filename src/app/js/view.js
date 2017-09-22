@@ -727,7 +727,8 @@ let NetworkView = Backbone.View.extend({
 
         // compute actual full canvas size
         let _width = gs.n.margin.left + gs.n.margin.right + gs.n.size.width,
-            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height;
+            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height,
+            _legendXOffset = gs.n.margin.left + gs.n.size.width - gs.n.size.legendWidth;
 
         // dom element and groups
         let svg = _attr.svg = d3.select(_self.el)
@@ -751,6 +752,11 @@ let NetworkView = Backbone.View.extend({
                 'class': 'label-group',
                 'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
             }),
+            legendG = svg.append('g').attr({
+                'id': 'network-legend-group',
+                'class': 'label-group',
+                'transform': "translate(" + _legendXOffset + "," + gs.n.margin.top + ")"
+            }),
             defs = svg.append('defs');
 
         // create force layout 
@@ -767,6 +773,7 @@ let NetworkView = Backbone.View.extend({
             edgeG: edgeG,
             nodeG: nodeG,
             labelG: labelG,
+            legendG: legendG,
             defs: defs,
             c: conditions,
             nodes: nodes,
@@ -775,6 +782,10 @@ let NetworkView = Backbone.View.extend({
             cstat: cstat,
             force: force
         });
+
+        this.prepareMarker();
+
+        this.drawLegend();
 
         return this.update();
     },
@@ -791,8 +802,9 @@ let NetworkView = Backbone.View.extend({
             selectedIdList = d3.set(_self.getSelectedIds(_attr.c)), // selected states
             filteredNodes = {},
             filteredEdges = [],
+            isSpecificNetwork = _attr.c.get("policy") !== conf.bases.policy.default,
             colorNeeded = (geoBase === "state" ?
-                (metaType !== 'centrality') && (_attr.c.get("policy") !== conf.bases.policy.default) :
+                (metaType !== 'centrality') && isSpecificNetwork :
                 true),
             opacity = css_variables["--opacity-state"],
             meta = 'centrality',
@@ -841,6 +853,22 @@ let NetworkView = Backbone.View.extend({
             }
         });
 
+        // terminate rendering for empty network
+        if (filteredEdges.length === 0) {
+            $("#unable-to-process-network-notitication").show();
+            $("#policy-network-wrapper .loader-img").hide();
+            return;
+        } else {
+            $("#unable-to-process-network-notitication").hide();
+        }
+
+        // toggle legend for specific network
+        if (isSpecificNetwork) {
+            $("#network-legend-group").show();
+        } else {
+            $("#network-legend-group").hide();
+        }
+
         // expose filtered edges and nodes to the view class
         $.extend(_attr, {
             filteredEdges: filteredEdges,
@@ -877,22 +905,6 @@ let NetworkView = Backbone.View.extend({
             texts = _attr.labelG.selectAll("text")
             .data(force.nodes(), (d) => d.stateId);
 
-        // Per-type markers, as they don't inherit styles.
-        _attr.defs.selectAll("marker")
-            .data(["follow-the-rule", "violate-the-rule"])
-            .enter().append("marker")
-            .attr({
-                "id": d => d,
-                "viewBox": "0 -5 10 10",
-                "refX": 15,
-                "refY": -1.5,
-                "markerWidth": 6,
-                "markerHeight": 6,
-                "orient": "auto"
-            })
-            .append("path")
-            .attr("d", "M0,-5L10,0L0,5");
-
         // remove elements that are no longer need to display at current update
         links.exit().remove();
         circles.exit().transition()
@@ -903,7 +915,7 @@ let NetworkView = Backbone.View.extend({
         links.enter().append("path")
             .attr({
                 "class": d => "network-link " + _self.getLinkValidityClass(d),
-                "marker-end": d => "url(#" + _self.getLinkValidityClass(d) + ")"
+                "marker-end": "url(#edge-marker)"
             });
 
         circles.enter().append("circle")
@@ -1036,14 +1048,6 @@ let NetworkView = Backbone.View.extend({
         _self.postRender();
         return this;
     },
-    preRender() {
-        this.$el.hide();
-        $("#policy-network-wrapper .loader-img").show();
-    },
-    postRender() {
-        $("#policy-network-wrapper .loader-img").hide();
-        this.$el.show();
-    },
     /**
      * Retrieve current selection of states as a list.
      * @param {Backbone.Model} conditions 
@@ -1074,6 +1078,62 @@ let NetworkView = Backbone.View.extend({
     },
     isNodeDefault(node) {
         return node.valid && node.adoptedYear === 9999;
+    },
+    prepareMarker() {
+        this._attr.defs.append("marker")
+            .attr({
+                "id": "edge-marker",
+                "viewBox": "0 -5 10 10",
+                "refX": 15,
+                "refY": -1.5,
+                "markerWidth": 6,
+                "markerHeight": 6,
+                "orient": "auto"
+            })
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+        this._attr.defs.append("marker")
+            .attr({
+                "id": "triangle-marker",
+                "viewBox": "0 -5 10 10",
+                "refX": 0,
+                "refY": 0,
+                "markerWidth": 6,
+                "markerHeight": 6,
+                "orient": "auto"
+            })
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+    },
+    drawLegend() {
+        this._attr.legendG.selectAll("path")
+            .data(["follow-the-rule", "violate-the-rule"])
+            .enter().append("path")
+            .attr({
+                d: (d, i) => "M0," + (i * gs.n.margin.legendYShift) + "L20," + (i * gs.n.margin.legendYShift),
+                class: d => "network-link " + d,
+                "marker-end": "url(#triangle-marker)"
+            });
+
+        this._attr.legendG.selectAll("text")
+            .data(["Expected Cascades", "Deviant Cascades"])
+            .enter().append("text")
+            .attr({
+                x: 30,
+                y: (d, i) => gs.n.margin.legendYShift * i + gs.n.margin.legendTextShift
+            })
+            .text(d => d);
+
+    },
+    preRender() {
+        this.$el.hide();
+        $("#unable-to-process-network-notitication").hide();
+        $("#policy-network-wrapper .loader-img").show();
+    },
+    postRender() {
+        $("#policy-network-wrapper .loader-img").hide();
+        this.$el.show();
     }
 });
 
@@ -1296,9 +1356,7 @@ let DiffusionView = Backbone.View.extend({
 
         _self.update();
 
-        if (!isSnapshot) {
-            _self.bindTriggers();
-        }
+        !isSnapshot && _self.bindTriggers();
 
         return this;
     },
@@ -1312,7 +1370,6 @@ let DiffusionView = Backbone.View.extend({
             links = _attr.links;
 
         // define radius scale for circles
-        // let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
         let xSeq = _attr.c.get("centrality"),
             radiusScale = d3.scale.linear()
             .domain([cstat.min[xSeq], cstat.max[xSeq]])
@@ -1834,10 +1891,7 @@ let DiffusionView = Backbone.View.extend({
                     isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
 
                 if (isStroke && isValidPath) {
-                    // why does it firing twice ???????
-                    // console.log(e);
-                    // console.log(e.type);
-                    // console.log(className);
+
                     let validityCategory = classNameList[1];
 
                     [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
