@@ -1,6 +1,6 @@
 {
     "name": "diffusion2017vis",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "A visualization for policy diffusion network analysis.",
     "scripts": {
         "prestart": "npm run build",

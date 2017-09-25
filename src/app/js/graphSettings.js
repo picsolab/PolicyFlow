@@ -142,7 +142,7 @@ const GraphSettings = {
             legendTextShift: 3
         },
         size: {
-            height: 500,
+            height: 450,
             width: 500,
             legendWidth: 120
         },

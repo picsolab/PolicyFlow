@@ -25,13 +25,19 @@ let Conditions = Backbone.Model.extend({
         this.set("cvalidity", validity);
         return this;
     },
+    /**
+     * modify selected states according to use's selection.
+     * @param {string} tract state id string    
+     */
     toggleTractList(tract) {
         let theListName = this.getTractListName(),
             theList = this.getTractList();
-        if (_.indexOf(theList, tract) !== -1) {
-            this.set(theListName, _.filter(theList, (o) => o !== tract));
-        } else {
+        if (_.indexOf(theList, tract) === -1) {
+            // append the selected state to corresponding list if it does not exist
             this.set(theListName, _.concat(theList, tract));
+        } else {
+            // remove the selected state from the list if it exists
+            this.set(theListName, _.filter(theList, (o) => o !== tract));
         }
     },
     getTractList() {
@@ -51,7 +57,7 @@ let Conditions = Backbone.Model.extend({
 
 let PolicyOptionsModel = Backbone.Model.extend({
     url: '/api/subjects',
-    parse(response, options) {
+    parse(response) {
         this.set({
             "pipe": response.pipe,
             "policies": $.extend({ "All": response.all }, response.policies)

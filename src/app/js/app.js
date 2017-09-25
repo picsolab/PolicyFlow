@@ -1,10 +1,8 @@
 const conf = require('../config.js');
-let utils = require('./utils.js');
 
 let View = require('./view.js');
 let Model = require('./model.js');
 let Collection = require('./collection.js');
-let Router = require('./router.js');
 
 let conditions = new Model.Conditions(),
     policyGroupModel = new Model.PolicyGroupModel(),
@@ -16,8 +14,7 @@ let conditions = new Model.Conditions(),
     networkModel = new Model.NetworkModel(),
     diffusionModel = new Model.DiffusionModel(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
-    snapshotCollection = new Collection.SnapshotCollection(),
-    appRouter = new Router.AppRouter();
+    snapshotCollection = new Collection.SnapshotCollection();
 let policyView = new View.PolicyView({
         model: policyModel
     }),
@@ -141,12 +138,12 @@ function setupRenderingControllers() {
         }
         if (conditions.hasChanged('geoBase')) {
             geoView.toggleTract();
-            networkView.update(conditions);
+            networkView.update();
         }
         if (conditions.hasChanged('stateList') ||
             conditions.hasChanged('regionList')) {
             geoView.updateSelection();
-            networkView.update(conditions);
+            networkView.update();
         }
     });
 }
@@ -299,7 +296,7 @@ function bindDomEvents() {
         }
     });
 
-    $("#add-snapshot").on("click", (event) => {
+    $("#add-snapshot").on("click", () => {
         snapshotCollection.add(diffusionView, conditions);
     });
 
@@ -345,9 +342,8 @@ function initDom() {
 
 function retrieveCascadeHandler(e) {
     e.stopPropagation();
-    let _curr = $(e.target),
-        className = _curr.attr("class"),
-        domId = _curr.attr("id"),
+    let __curr = $(e.target),
+        domId = __curr.attr("id"),
         isASnapshot = domId.includes("snapshot-view");
 
     if (isASnapshot) {
