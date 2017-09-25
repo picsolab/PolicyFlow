@@ -7,22 +7,8 @@
 
 /*Nav Bar*/
 
-@media(min-width:768px) {
-    .nav {
-        margin-bottom: 6px;
-    }
-    .navbar-header {
-        margin-top: 5px;
-    }
-    #content-wrapper {
-        margin-top: 70px;
-    }
-}
-
-@media(max-width:768px) {
-    #content-wrapper {
-        margin-top: 50px;
-    }
+#content-wrapper {
+    margin-top: 55px;
 }
 
 .nav-title-label {
@@ -31,8 +17,6 @@
     font-weight: 200;
     color: white;
 }
-
-.select-wrapper {}
 
 .page-header {
     margin-top: 10px;
@@ -52,6 +36,23 @@
 
 .no-padding {
     padding: 0;
+}
+
+#metadata-dropdown.disabled>a {
+    pointer-events: none;
+}
+
+#metadata-dropdown>ul>li.disabled>a {
+    pointer-events: none;
+}
+
+.nav-tabs>li.disabled {
+    pointer-events: none;
+}
+
+#policy-explore-wrapper ul li {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 
@@ -91,8 +92,6 @@
     text-shadow: none !important;
 }
 
-.label-group text.large {}
-
 text .loader-img {
     display: inline-block;
     position: absolute;
@@ -101,6 +100,12 @@ text .loader-img {
     margin-right: -50%;
     transform: translate(-50%, -50%);
     z-index: 50;
+}
+
+.bootstrap-switch {
+    position: absolute ! important;
+    right: 2%;
+    top: 0px;
 }
 
 
@@ -156,9 +161,13 @@ text .loader-img {
 
 /*snapshot panel*/
 
+#snapshot-collection-wrapper {
+    overflow: hidden;
+}
+
 #snapshot-wrapper {
     overflow: scroll;
-    height: 480px;
+    height: 420px;
 }
 
 .snapshot-wrapper {
@@ -190,6 +199,10 @@ text .loader-img {
     /* IE 10+ */
     user-select: none;
     cursor: default;
+}
+
+.bootstrap-switch-id-sequence-checkbox {
+    display: none;
 }
 
 
@@ -298,6 +311,14 @@ text .loader-img {
     stroke: var(--color-unadopted-darker) !important;
 }
 
+#network-legend-group {
+    display: none;
+}
+
+#network-legend-group text {
+    font: 10px sans-serif;
+}
+
 
 /*policy cascade panel*/
 
@@ -349,37 +370,12 @@ text .loader-img {
 }
 
 
-/*stat-bar-panel*/
-
-#stat-bar-wrapper {
-    height: 100px;
-}
-
-.axis path,
-.axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
-}
-
-.d3-tip {
-    line-height: 1;
-    font-weight: bold;
-    padding: 12px;
-    background: #bfb7b7;
-    color: #fff;
-    border-radius: 2px;
-    z-index: 1001;
-}
-
-
 /* Creates a small triangle extender for the tooltip */
 
 .d3-tip:after {
     box-sizing: border-box;
     display: inline;
     font-size: 10px;
-    width: 100%;
     line-height: 1;
     color: rgba(0, 0, 0, 0.8);
     content: "\25BC";

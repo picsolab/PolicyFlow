@@ -2,40 +2,46 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
+let GRank = require('./grank.js');
 const printDiagnoseInfo = false;
 
 let colorList = [],
     colorMap = {};
-const color15 = [
-        css_variables['--color-cb-9'],
+let color7 = [
         css_variables['--color-cb-a'],
-        css_variables['--color-i'],
-        css_variables['--color-cb-10'],
-        css_variables['--color-cb-8'],
-        css_variables['--color-cb-7'],
-        css_variables['--color-cb-6'],
-        css_variables['--color-cb-5'],
-        css_variables['--color-cb-4'],
-        css_variables['--color-cb-3'],
-        css_variables['--color-cb-2'],
-        css_variables['--color-cb-1'],
-        css_variables['--color-cb-0'],
-        css_variables['--color-c'],
-        css_variables['--color-j']
+        css_variables['--color-cb-b'],
+        css_variables['--color-cb-c'],
+        css_variables['--color-cb-d'],
+        css_variables['--color-cb-e'],
+        css_variables['--color-cb-f'],
+        css_variables['--color-cb-g']
     ],
-    color7 = [
-        css_variables['--color-cb-9'],
-        css_variables['--color-cb-a'],
+    color15 = color7.concat([
         css_variables['--color-cb-0'],
+        css_variables['--color-cb-2'],
+        css_variables['--color-cb-4'],
+        css_variables['--color-cb-6'],
+        css_variables['--color-cb-8'],
+        css_variables['--color-cb-10'],
+        css_variables['--color-a'],
+        css_variables['--color-d']
+    ]),
+    color21 = color15.concat([
+        css_variables['--color-f'],
+        css_variables['--color-j'],
         css_variables['--color-cb-1'],
         css_variables['--color-cb-3'],
-        css_variables['--color-cb-4'],
-        css_variables['--color-cb-7']
-    ];
-
+        css_variables['--color-cb-5'],
+        css_variables['--color-cb-9']
+    ]);
+/**
+ * PolicyView: adoption sequence
+ * - to display states in the order of the year that they adopt one specific policy.
+ */
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
     render() {
+        // prevent rendering and show notification panel when no policy has been selected
         if (this.model.get("message") !== "success") {
             $("#policy-unselected-notitication").show();
             this.$el.hide();
@@ -47,7 +53,6 @@ let PolicyView = Backbone.View.extend({
         return this;
     },
     paint() {
-        // prepare params
         // - use Jan 1st to represent the year.
         let _self = this,
             yearOffset = Math.ceil((+_self.model.get('policyEnd') - +_self.model.get('policyStart')) * 0.1),
@@ -63,8 +68,6 @@ let PolicyView = Backbone.View.extend({
         yearList.forEach((year, index) => {
             colorMap[year] = colorList[index];
         });
-
-        // this.initParams();
 
         // clear the canvas
         d3.select(_self.el).selectAll('g').remove();
@@ -130,13 +133,21 @@ let PolicyView = Backbone.View.extend({
         _self.renderPalette(paletteG, yearList, xScale, yScale);
         _self.bindTriggers(yScale);
 
-        zoom.on('zoom', (e) => {
+        // bind zooming fuction
+        zoom.on('zoom', () => {
             $(".temp-tick").remove();
             d3.select(_self.el).select(".y-axis").call(yAxis);
             _self.renderPalette(paletteG, yearList, xScale, yScale);
             _self.bindTriggers(yScale);
         });
     },
+    /**
+     * do the major rendering work.
+     * @param {object} paletteG the dom element to which main part is rendered
+     * @param {Array<string>} yearList array of adtoption year
+     * @param {object} xScale x scale object
+     * @param {object} yScale y scale object
+     */
     renderPalette(paletteG, yearList, xScale, yScale) {
         let _self = this;
         paletteG.selectAll('g').remove();
@@ -167,7 +178,7 @@ let PolicyView = Backbone.View.extend({
                     width: xScale.rangeBand() - gs.p.margin.xPadding,
                     height: xScale.rangeBand() - gs.p.margin.xPadding,
                     x: (d, i) => xScale(i % gs.p.config.xMaxTick),
-                    y: (d, i) => yScale(new Date(+year, 0, 1)),
+                    y: () => yScale(new Date(+year, 0, 1)),
                     rx: 2,
                     ry: 2,
                     transform: (d, i) => "translate(0," + Math.floor(i / gs.p.config.xMaxTick) * (xScale.rangeBand() + gs.p.margin.yPadding) + ")"
@@ -182,7 +193,7 @@ let PolicyView = Backbone.View.extend({
                 .attr({
                     class: (d) => "text-tip " + year + " " + d,
                     x: (d, i) => xScale(i % gs.p.config.xMaxTick),
-                    y: (d, i) => yScale(new Date(+year, 0, 1)),
+                    y: () => yScale(new Date(+year, 0, 1)),
                     transform: (d, i) => "translate(" + (xScale.rangeBand() + gs.p.margin.textXShift) + "," + (Math.floor(i / gs.p.config.xMaxTick) * (xScale.rangeBand() + gs.p.margin.yPadding) + gs.p.margin.textYShift) + ")"
                 });
         });
@@ -191,6 +202,8 @@ let PolicyView = Backbone.View.extend({
         let element, year, tickList = [];
         this.$el.find(".y-axis .tick text").map((index, element) => tickList.push(element.textContent));
 
+        // color the hovered square, and
+        // show "year ►" next to the y-axis to indicate the adoption year when mouseover a state
         $(".partial").on('mouseover', (e) => {
             if (e.target.nodeName === 'rect') {
                 element = $(e.target);
@@ -213,8 +226,8 @@ let PolicyView = Backbone.View.extend({
                 });
         });
 
+        // reverse changes made by mouseover event
         $(".partial").on('mouseout', (e) => {
-            let index = e.target.parentElement.classList[1].split("-")[2];
             if (e.target.nodeName === "rect") {
                 element = $(e.target);
                 year = e.target.classList[2];
@@ -225,23 +238,14 @@ let PolicyView = Backbone.View.extend({
             element.removeClass("hovered-item");
             $(".temp-tick").remove();
         });
-    },
-    initParams() {
-        let detail = this.model.get("detail"),
-            maxTickCount = 0,
-            totalCount = 0;
-
-        // compute total number of states and the maximum number of state across all those years
-        _.each(detail, (year, stateList) => {
-            let count = stateList.length;
-            totalCount += count;
-            if (count > maxTickCount) {
-                maxTickCount = count;
-            }
-        });
     }
 });
 
+/**
+ * PolicyDetailView:
+ * - to display detail information for a selected policy, including:
+ *  + please refer to the template file.
+ */
 let PolicyDetailView = Backbone.View.extend({
     el: "#policy-detail-wrapper",
     template: require('../templates/policy-detail-template.html'),
@@ -255,6 +259,11 @@ let PolicyDetailView = Backbone.View.extend({
     }
 });
 
+/**
+ * PolicyTrendView: time filter
+ * - to display the aggreated policy adoption occurrence by year as a bar-chart, which also
+ * - used as a filter to create time window 
+ */
 let PolicyTrendView = Backbone.View.extend({
     el: "#policy-trend-wrapper",
     initialize() {
@@ -286,10 +295,12 @@ let PolicyTrendView = Backbone.View.extend({
             .orient("left")
             .ticks(gs.t.config.yTickNumber);
 
+        // create crossfilter
         let ndx = crossfilter(adoptionList),
             dimension = ndx.dimension(d => d.year),
             group = dimension.group().reduceSum(d => d.count);
 
+        // setup the bar-chart with dc.js
         let chart = dc.barChart(_self.el)
             .width(_width)
             .height(_height)
@@ -318,14 +329,13 @@ let PolicyTrendView = Backbone.View.extend({
             chart = _attr.chart,
             __target = $(_self.el);
         __target.off();
+
+        // set time window information to `conditions` model, which triggers relevant data fetching and rendering events
         __target.on('mouseup', () => {
             let startYearDate = chart.dimension().bottom(1)[0].year,
                 startYear = startYearDate.getFullYear(),
                 endYearDate = chart.dimension().top(1)[0].year,
-                endYear = endYearDate.getFullYear(),
-                dataList = chart.group().all(),
-                length = dataList.length,
-                totalCount = 0;
+                endYear = endYearDate.getFullYear();
 
             _attr.c.set({
                 "startYear": startYear,
@@ -336,11 +346,23 @@ let PolicyTrendView = Backbone.View.extend({
     }
 });
 
+/**
+ * GeoView:
+ * - with multiple functionalities (you know it).
+ */
 let GeoView = Backbone.View.extend({
     el: '#svg-geo-view',
     initialize() {
         this._attr = {};
     },
+    /**
+     * render and prepare static elements that do not change according to different `conditions`, including
+     * - svg groups
+     * - some of scales
+     * - labels
+     * - and so on.
+     * @param {object} conditions Backbone.Model 
+     */
     render(conditions) {
         let _self = this,
             _attr = this._attr,
@@ -365,6 +387,7 @@ let GeoView = Backbone.View.extend({
         //     feature.properties.id === "UT" && console.log(i);
         // });
 
+        // generate regional border data
         _.forEach(regionDef, (theRegion, key) => {
             let theGeo = topojson.merge(stateTopo, stateTopo.objects.states.geometries.filter((d) => d3.set(theRegion).has(d.properties.id)));
             regionGeos.push(theGeo);
@@ -379,6 +402,7 @@ let GeoView = Backbone.View.extend({
 
         $(_self.el).empty();
 
+        // compute actual full canvas size
         let _width = gs.g.margin.left + gs.g.margin.right + gs.g.size.mapWidth,
             _height = gs.g.margin.top + gs.g.margin.bottom + gs.g.size.mapHeight;
 
@@ -426,6 +450,7 @@ let GeoView = Backbone.View.extend({
             }),
             defs = svg.append('defs');
 
+        // expose variables for modular access
         $.extend(_attr, {
             legendG: legendG,
             stateTractG: stateTractG,
@@ -441,11 +466,13 @@ let GeoView = Backbone.View.extend({
             stat: stat
         });
 
+        // data binding
         let states = _attr.stateTractG.selectAll("path")
             .data(stateFeatures),
             regions = regionTractG.selectAll("path")
             .data(regionFeatures);
 
+        // create state tracts
         states.enter()
             .append("path")
             .attr({
@@ -458,7 +485,7 @@ let GeoView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         return d3.rgb(css_variables["--color-unadopted"]);
                     }
@@ -468,6 +495,7 @@ let GeoView = Backbone.View.extend({
             .append("title")
             .text((d) => d.properties.id);
 
+        // add labels to state tracts
         stateLabelG.selectAll("text")
             .data(stateFeatures).enter()
             .append("text")
@@ -481,6 +509,7 @@ let GeoView = Backbone.View.extend({
                 y: d => d.centroid[1]
             })
 
+        // add state border to the map
         stateBorderG.append("path")
             .datum(stateBorder)
             .attr({
@@ -489,6 +518,7 @@ let GeoView = Backbone.View.extend({
                 d: pathBuilder
             });
 
+        // create regional tract
         regions.enter()
             .append("path")
             .attr({
@@ -503,6 +533,7 @@ let GeoView = Backbone.View.extend({
             .append("title")
             .text((d) => d.id);
 
+        // add regional border to the map 
         regionBorderG.append("path")
             .datum(regionBorder)
             .attr({
@@ -511,6 +542,7 @@ let GeoView = Backbone.View.extend({
                 d: pathBuilder
             });
 
+        // add labels to region tracts
         regionLabelG.selectAll("text")
             .data(regionFeatures).enter()
             .append("text")
@@ -526,26 +558,40 @@ let GeoView = Backbone.View.extend({
                 y: d => d.centroid[1]
             });
 
+        // create color gradient that'll be applied to the legend
         this.createLegendGradient();
 
+        // to render the rest elements
         this.update();
         this.bindTriggers();
+
+        // toggle state-wise/regional layer according to user's interaction
         this.toggleTract({ silent: true });
         return this;
     },
+    /**
+     * update color on tracts according to metadata selected.
+     */
     update() {
         let _self = this,
             _attr = _self._attr,
-            meta = 'centrality',
-            colorNeeded = (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected'),
+            meta = conf.bases.yAttributeList[0].id,
+            // to color tract iff:
+            // - one of six `metadata` options is chosen, and 
+            // - a policy is specified
+            colorNeeded = (_attr.c.get("metadata") !== conf.bases.yAttributeList[0].id) && (_attr.c.get("policy") !== conf.bases.policy.default),
             colorScale;
 
+        // clear previous legend
         $(this.el).find("#geo-legend-group").empty();
 
+        // apply gradient color to tracts and render the legend 
         if (colorNeeded) {
             meta = conf.pipe.metaToId[_attr.c.get("metadata")];
             let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
                 colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]]
+
+            // bind color scale to domain of `metadata` selected
             colorScale = d3.scale.linear()
                 .domain(valueDomain)
                 .interpolate(d3.interpolateRgb)
@@ -576,35 +622,47 @@ let GeoView = Backbone.View.extend({
             _attr.legendG.call(legendAxis).select(".domain").remove();
         }
 
-        let stateTracts = $("#state-tract-group path");
-        stateTracts.each(i => {
-            let __tract = $(stateTracts[i]),
+        // color each state tract
+        let __stateTracts = $("#state-tract-group path");
+        __stateTracts.each(i => {
+            let __tract = $(__stateTracts[i]),
                 title = __tract.attr("title");
             __tract.css("fill", () => {
-                if (title === "NE") {
-                    return d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                } else if (colorNeeded) {
-                    let node = _attr.nodes[title];
-                    if (!d3.set(conf.static.states).has(title) || _self.isNodeDefault(node)) {
-                        return css_variables["--color-unadopted"];
+                // to proceed only when the title string is from one of 50 states,
+                // this validation is due to mismatch between state set from geo shape file and our database
+                if (d3.set(conf.static.states).has(title)) {
+                    if (title === "NE") {
+                        // special case: no data for NE 
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
-                        return node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                        let node = _attr.nodes[title];
+                        if (colorNeeded && node.valid) {
+                            // return corresponding color for one states that adopted current policy
+                            return colorScale(node["metadata"][meta]);
+                        } else {
+                            // return default color otherwise
+                            return d3.rgb(css_variables["--color-unadopted"]);
+                        }
                     }
-                } else if (meta === 'centrality') {
-                    return d3.rgb(css_variables["--color-unadopted"]);
                 }
             });
         });
         return this;
     },
+    /**
+     * @deprecated
+     * given a node, check whether its a default network or not.
+     * "default network" is an equivalence to situation that no policy has been selected. 
+     * @param {object} node 
+     */
     isNodeDefault(node) {
         return node.valid && node.adoptedYear === 9999;
     },
     bindTriggers() {
-        let _self = this,
-            _attr = this._attr,
-            __svg = $(this.el);
+        let _attr = this._attr,
+            __svg = this.$el;
 
+        // to modify the list of selected states according to use's interaction.
         let regionTractClickHandler = function(e) {
                 e.stopPropagation();
                 let _curr = $(e.target);
@@ -625,6 +683,9 @@ let GeoView = Backbone.View.extend({
         __svg.on('click', regionTractClickHandler);
         __svg.on('click', stateTractClickHandler);
     },
+    /**
+     * toggle state-wise/regional layer according to user's interaction
+     */
     toggleTract() {
         let c = this._attr.c;
         switch (c.get("geoBase")) {
@@ -664,10 +725,12 @@ let GeoView = Backbone.View.extend({
                 console.log("[invalid geoBase] - Congratulations on toggling a bug!");
         }
     },
+    /**
+     * update UI according to the list of selected states.
+     */
     updateSelection() {
         let c = this._attr.c,
             theListName = c.getTractListName(),
-            theList = c.getTractList(),
             geoBase = c.get("geoBase"),
             previousList = c.previousAttributes()[theListName],
             currentList = c.get(theListName),
@@ -684,6 +747,9 @@ let GeoView = Backbone.View.extend({
             __domElement.removeClass("hovered-item");
         }
     },
+    /**
+     * create gradient color settings that'll be used to render legend
+     */
     createLegendGradient() {
         let grad = this._attr.defs.append("linearGradient")
             .attr({
@@ -707,11 +773,23 @@ let GeoView = Backbone.View.extend({
     }
 });
 
+/**
+ * NetworkView:
+ * - with multiple functionalities (you know it).
+ */
 let NetworkView = Backbone.View.extend({
     el: "#svg-network-view",
     initialize() {
         this._attr = {};
     },
+    /**
+     * render and prepare static elements that do not change according to different `conditions`, including
+     * - svg groups
+     * - some of scales
+     * - labels
+     * - and so on.
+     * @param {object} conditions Backbone.Model 
+     */
     render(conditions) {
         let _self = this,
             _attr = this._attr,
@@ -725,7 +803,8 @@ let NetworkView = Backbone.View.extend({
 
         // compute actual full canvas size
         let _width = gs.n.margin.left + gs.n.margin.right + gs.n.size.width,
-            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height;
+            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height,
+            _legendXOffset = gs.n.margin.left + gs.n.size.width - gs.n.size.legendWidth;
 
         // dom element and groups
         let svg = _attr.svg = d3.select(_self.el)
@@ -749,6 +828,11 @@ let NetworkView = Backbone.View.extend({
                 'class': 'label-group',
                 'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
             }),
+            legendG = svg.append('g').attr({
+                'id': 'network-legend-group',
+                'class': 'label-group',
+                'transform': "translate(" + _legendXOffset + "," + gs.n.margin.top + ")"
+            }),
             defs = svg.append('defs');
 
         // create force layout 
@@ -765,6 +849,7 @@ let NetworkView = Backbone.View.extend({
             edgeG: edgeG,
             nodeG: nodeG,
             labelG: labelG,
+            legendG: legendG,
             defs: defs,
             c: conditions,
             nodes: nodes,
@@ -774,6 +859,11 @@ let NetworkView = Backbone.View.extend({
             force: force
         });
 
+        // create the triangle symbol applied to arrows
+        this.prepareMarker();
+
+        this.drawLegend();
+
         return this.update();
     },
     update() {
@@ -781,7 +871,6 @@ let NetworkView = Backbone.View.extend({
             _attr = this._attr,
             nodes = _attr.nodes,
             edges = _attr.edges,
-            stat = _attr.stat,
             cstat = _attr.cstat,
             geoBase = _attr.c.get("geoBase"), // {"state", "region"}
             metaType = _attr.c.get("metadata"), // {conf.bases.yAttributeList[i].id} "centrality" or other attributes
@@ -789,11 +878,12 @@ let NetworkView = Backbone.View.extend({
             selectedIdList = d3.set(_self.getSelectedIds(_attr.c)), // selected states
             filteredNodes = {},
             filteredEdges = [],
+            isSpecificNetwork = _attr.c.get("policy") !== conf.bases.policy.default,
             colorNeeded = (geoBase === "state" ?
-                (metaType !== 'centrality') && (_attr.c.get("policy") !== conf.bases.policy.default) :
+                (metaType !== conf.bases.yAttributeList[0].id) && isSpecificNetwork :
                 true),
             opacity = css_variables["--opacity-state"],
-            meta = 'centrality',
+            meta = conf.bases.yAttributeList[0].id,
             colorScale;
 
         // config `colorScale` and default `opacity` that'd be applied to render the map according to `geoBase`
@@ -816,18 +906,6 @@ let NetworkView = Backbone.View.extend({
                     // won't happen
             }
         }
-        // expose filtered edges and nodes to the view class
-        $.extend(_attr, {
-            filteredEdges: filteredEdges,
-            filteredNodes: filteredNodes
-        });
-
-        let sizeScale = d3.scale.linear()
-            .domain([cstat.min[cType], cstat.max[cType]])
-            .range(gs.n.config.circleSizeRange),
-            force = _attr.force.on("tick", tick),
-            drag = force.drag()
-            .on("dragstart", dragstart);
 
         // iterate `edges` with `nodes` to filter and generate nodes and edges that are actually need to be rendered
         edges.forEach(edge => {
@@ -844,6 +922,59 @@ let NetworkView = Backbone.View.extend({
             }
         });
 
+        // terminate rendering for empty network
+        // could caused by either of following three
+        // - too few policies to generate general network
+        // - current selected policy does not match the general network
+        // - selected states from geo view does not involved in current policy
+        if (filteredEdges.length === 0) {
+            $("#unable-to-process-network-notitication").show();
+            $("#policy-network-wrapper .loader-img").hide();
+            this.$el.hide();
+            return;
+        } else {
+            $("#unable-to-process-network-notitication").hide();
+        }
+
+        // toggle legend for specific network
+        if (isSpecificNetwork) {
+            $("#network-legend-group").show();
+        } else {
+            $("#network-legend-group").hide();
+        }
+
+        let sizeScale = d3.scale.linear()
+            .domain([cstat.min[cType], cstat.max[cType]])
+            .range(gs.n.config.circleSizeRange),
+            force = _attr.force.on("tick", tick),
+            drag = force.drag()
+            .on("dragstart", dragstart);
+
+        // expose filtered edges and nodes to the view class
+        $.extend(_attr, {
+            filteredEdges: filteredEdges,
+            filteredNodes: filteredNodes,
+            graph: new GRank.Graph()
+        });
+
+        // update graph according to filteredNodes and filteredEdges
+        // and compute similarities for mouse event
+        let graph = _attr.graph
+            .nodes(_.map(filteredNodes, node => node.stateId))
+            .edges(_.map(filteredEdges, edge => {
+                return (edge.validity ? {
+                    source: edge.source.stateId,
+                    target: edge.target.stateId
+                } : {
+                    source: edge.target.stateId,
+                    target: edge.source.stateId
+                });
+            }));
+
+        // add an interval to delay UI blocking caused by network computation
+        // to improve: create a Web Worker for this computation
+        setTimeout(() => { graph.doPrank(); }, 350);
+
         // config force layout with filtered nodes and edges
         force.nodes(d3.values(filteredNodes))
             .links(filteredEdges)
@@ -857,22 +988,6 @@ let NetworkView = Backbone.View.extend({
             texts = _attr.labelG.selectAll("text")
             .data(force.nodes(), (d) => d.stateId);
 
-        // Per-type markers, as they don't inherit styles.
-        _attr.defs.selectAll("marker")
-            .data(["follow-the-rule", "violate-the-rule"])
-            .enter().append("marker")
-            .attr({
-                "id": d => d,
-                "viewBox": "0 -5 10 10",
-                "refX": 15,
-                "refY": -1.5,
-                "markerWidth": 6,
-                "markerHeight": 6,
-                "orient": "auto"
-            })
-            .append("path")
-            .attr("d", "M0,-5L10,0L0,5");
-
         // remove elements that are no longer need to display at current update
         links.exit().remove();
         circles.exit().transition()
@@ -883,7 +998,7 @@ let NetworkView = Backbone.View.extend({
         links.enter().append("path")
             .attr({
                 "class": d => "network-link " + _self.getLinkValidityClass(d),
-                "marker-end": d => "url(#" + _self.getLinkValidityClass(d) + ")"
+                "marker-end": "url(#edge-marker)"
             });
 
         circles.enter().append("circle")
@@ -892,6 +1007,8 @@ let NetworkView = Backbone.View.extend({
                 title: (d) => d.stateId
             })
             .on("dblclick", dblclick)
+            .on("mouseover", circleOverHandler)
+            .on("mouseleave", circleLeaveHandler)
             .call(drag);
 
         circles.attr({
@@ -901,17 +1018,22 @@ let NetworkView = Backbone.View.extend({
                 fill: (d) => {
                     switch (geoBase) {
                         case "state":
-                            if (d.stateId === "NE") {
-                                d.fill = d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                            } else if (colorNeeded) {
-                                let node = _attr.nodes[d.stateId];
-                                if (!d3.set(conf.static.states).has(d.stateId) || _self.isNodeDefault(node)) {
-                                    d.fill = css_variables["--color-unadopted"];
+                            // to proceed only when the title string is from one of 50 states,
+                            // this validation is due to mismatch between state set from geo shape file and our database
+                            if (d3.set(conf.static.states).has(d.stateId)) {
+                                if (d.stateId === "NE") {
+                                    // special case: no data for NE 
+                                    return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                                 } else {
-                                    d.fill = node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                                    let node = _attr.nodes[d.stateId];
+                                    if (colorNeeded && node.valid) {
+                                        // return corresponding color for one states that adopted current policy
+                                        d.fill = colorScale(node["metadata"][meta]);
+                                    } else {
+                                        // return default color otherwise
+                                        d.fill = css_variables["--color-unadopted"];
+                                    }
                                 }
-                            } else if (meta === 'centrality') {
-                                d.fill = d3.rgb(css_variables["--color-unadopted"]);
                             }
                             break;
                         case "region":
@@ -943,7 +1065,7 @@ let NetworkView = Backbone.View.extend({
             }
         });
 
-        // this is MAGIC
+        // this is MAGIC to controll initial animation of force layout
         while (!gs.n.config.animationSwitch && force.alpha() > 1e-5) { force.tick(); }
 
         /**
@@ -987,20 +1109,36 @@ let NetworkView = Backbone.View.extend({
         function dblclick(d) {
             d3.select(this).classed("fixed", d.fixed = false);
         }
+
+        // pop up similar nodes when mouseover a node
+        function circleOverHandler() {
+            let simList = graph.getSimilarNodes("prank", $(this).attr("title"));
+
+            if (simList.length !== 0) {
+                simList.forEach(sim => {
+                    let __circle = $("#network-node-group").find("circle[title=" + sim.name + "]");
+                    __circle.addClass("fixed");
+                });
+            }
+        }
+        // clear pop up status on nodes when mouseleave
+        function circleLeaveHandler() {
+            let simList = graph.getSimilarNodes("prank", $(this).attr("title"));
+
+            if (simList.length !== 0) {
+                simList.forEach(sim => {
+                    let __circle = $("#network-node-group").find("circle[title=" + sim.name + "]");
+                    __circle.removeClass("fixed");
+                });
+            }
+        }
+
         _self.postRender();
         return this;
     },
-    preRender() {
-        this.$el.hide();
-        $("#policy-network-wrapper .loader-img").show();
-    },
-    postRender() {
-        $("#policy-network-wrapper .loader-img").hide();
-        this.$el.show();
-    },
     /**
      * Retrieve current selection of states as a list.
-     * @param {Backbone.Model} conditions 
+     * @param {object} conditions Backbone.Model
      * @returns {Array<string>} state list in their IDs.
      */
     getSelectedIds(conditions) {
@@ -1023,18 +1161,80 @@ let NetworkView = Backbone.View.extend({
             "violate-the-rule");
     },
     isFollowingNetworkRule(edge) {
-        let nodes = this._attr.nodes;
         return +edge.source.adoptedYear <= +edge.target.adoptedYear;
     },
     isNodeDefault(node) {
         return node.valid && node.adoptedYear === 9999;
+    },
+    prepareMarker() {
+        this._attr.defs.append("marker")
+            .attr({
+                "id": "edge-marker",
+                "viewBox": "0 -5 10 10",
+                "refX": 15,
+                "refY": -1.5,
+                "markerWidth": 6,
+                "markerHeight": 6,
+                "orient": "auto"
+            })
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+        this._attr.defs.append("marker")
+            .attr({
+                "id": "triangle-marker",
+                "viewBox": "0 -5 10 10",
+                "refX": 0,
+                "refY": 0,
+                "markerWidth": 6,
+                "markerHeight": 6,
+                "orient": "auto"
+            })
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+    },
+    drawLegend() {
+        this._attr.legendG.selectAll("path")
+            .data(["follow-the-rule", "violate-the-rule"])
+            .enter().append("path")
+            .attr({
+                d: (d, i) => "M0," + (i * gs.n.margin.legendYShift) + "L20," + (i * gs.n.margin.legendYShift),
+                class: d => "network-link " + d,
+                "marker-end": "url(#triangle-marker)"
+            });
+
+        this._attr.legendG.selectAll("text")
+            .data(["Expected Cascades", "Deviant Cascades"])
+            .enter().append("text")
+            .attr({
+                x: 30,
+                y: (d, i) => gs.n.margin.legendYShift * i + gs.n.margin.legendTextShift
+            })
+            .text(d => d);
+
+    },
+    preRender() {
+        this.$el.hide();
+        $("#unable-to-process-network-notitication").hide();
+        $("#policy-network-wrapper .loader-img").show();
+    },
+    postRender() {
+        $("#policy-network-wrapper .loader-img").hide();
+        this.$el.show();
     }
 });
 
+/**
+ * PolicyGroupView: (Policy table)
+ * Policy table reveals more information about the filtered policies, which also let users to: 
+ * - select one policy to begin inspection,
+ * - search policies by keywords,
+ * - and so on.
+ */
 let PolicyGroupView = Backbone.View.extend({
     el: "#policy-group-table",
     initialize() {
-        $(this.el).bootstrapTable({
+        this.$el.bootstrapTable({
             sortClass: "relevance",
             height: 400,
             pagination: true,
@@ -1095,7 +1295,7 @@ let PolicyGroupView = Backbone.View.extend({
                 order: 'asc'
             }],
             formatLoadingMessage: () => 'Loading policies, please wait...',
-            formatNoMatches: () => 'Oops! No matching policies. Please try to adjust your time range.',
+            formatNoMatches: () => 'Oops! No matching policies. Please try to adjust your time window.',
             formatShowingRows: (pageFrom, pageTo, totalRows) => 'Showing ' + pageFrom + ' to ' + pageTo + ' of ' + totalRows + ' policies'
         });
 
@@ -1113,38 +1313,62 @@ let PolicyGroupView = Backbone.View.extend({
         _self.updateSelection(conditions);
     },
     updateSelection(conditions) {
-        let _self = this;
-        $(this.el).bootstrapTable("uncheckAll");
+        this.$el.bootstrapTable("uncheckAll");
         if (conditions.get("policy") !== conf.bases.policy.default) {
-            $(this.el).bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
+            this.$el.bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
         }
     },
     clear() {
-        $(this.el).bootstrapTable('removeAll');
+        this.$el.bootstrapTable('removeAll');
     },
     preRender() {
         this.$el.bootstrapTable('showLoading');
     }
 });
 
+/**
+ * DiffusionView: (inspection view, cascade view)
+ * to perform visual hypothesis test.
+ * Allows for comparing specific policy cascades with 
+ * a) the expected patterns in a group network, or 
+ * b) the state contexts (attributes)
+ *  x-axis: influence or adoption order
+ *  y-axis: attribute ranking
+ *  (top) cascade follows expected influence direction
+ *  (bottom) cascade violates expected influence direction
+ */
 let DiffusionView = Backbone.View.extend({
     el: "#svg-diffusion-view",
     initialize() {
         this._attr = {};
     },
+    /**
+     * render and prepare static elements that do not change according to different `conditions`, including
+     * - svg groups
+     * - some of scales
+     * - labels
+     * - and so on.
+     * @param {object} conditions Backbone.Model 
+     */
     render(conditions) {
-        // console.log("rendering diffusion...");
         let _self = this,
             _attr = this._attr, // closure vars
             isSnapshot = arguments.length !== 1;
 
-        $(_self.el).empty();
+        // toggle notification jumbotron and stop rendering
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            this.postRender(conditions);
+            return this;
+        }
+
+        this.$el.empty();
 
         let _height = gs.d.margin.top + gs.d.size.pathHeight + gs.d.margin.bottom,
             _width = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
             pathXShift = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth, // min x of pathG
-            pathYMid = gs.d.margin.top,
+            bottomLabelYShift = gs.d.margin.top + gs.d.size.pathHeight,
             circleXShift = pathXShift,
+            xAxisLableXShift = pathXShift + gs.d.size.pathWidth,
             circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
             yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
 
@@ -1156,6 +1380,7 @@ let DiffusionView = Backbone.View.extend({
             .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
             .classed('svg-content-responsive', true);
 
+        // create unique ids to prevent incorrect interaction behaviors for snapshot
         let idPrefix = isSnapshot ? Math.random().toString(36).substr(2, 8) + "-" : '',
             guidanceLineG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-guidance-line-group',
@@ -1166,6 +1391,11 @@ let DiffusionView = Backbone.View.extend({
                 'id': idPrefix + 'diffusion-circle-group',
                 'class': 'circles',
                 'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
+            }),
+            xAxisLableG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-x-axis-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (xAxisLableXShift) + "," + (circleYShift) + ")"
             }),
             pathG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-path-group',
@@ -1187,6 +1417,11 @@ let DiffusionView = Backbone.View.extend({
                 'class': 'bars',
                 'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
             }),
+            bottomLabelG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-bottom-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (xAxisLableXShift) + "," + (bottomLabelYShift) + ")"
+            }),
             yLabelG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-y-label-group',
                 'class': 'y-labels',
@@ -1198,6 +1433,15 @@ let DiffusionView = Backbone.View.extend({
                 'transform': "translate(" + (0) + "," + (0) + ")"
             }),
             defs = svg.append('defs');
+
+        bottomLabelG.selectAll("text")
+            .data(["Deviant Cascades"])
+            .enter()
+            .append("text")
+            .attr({
+                transform: "translate(-120, -10)"
+            })
+            .text(d => d);
 
         let xScale = d3.scale.linear()
             .domain([0, 49])
@@ -1227,6 +1471,8 @@ let DiffusionView = Backbone.View.extend({
             upBarG: upBarG,
             bottomBarG: bottomBarG,
             yLabelG: yLabelG,
+            xAxisLableG: xAxisLableG,
+            bottomLabelG: bottomLabelG,
             refLineG: refLineG,
             guidanceLineG: guidanceLineG,
             defs: defs,
@@ -1246,9 +1492,8 @@ let DiffusionView = Backbone.View.extend({
 
         _self.update();
 
-        if (!isSnapshot) {
-            _self.bindTriggers();
-        }
+        // only listen to event if it isn't a snapshot
+        !isSnapshot && _self.bindTriggers();
 
         return this;
     },
@@ -1256,18 +1501,17 @@ let DiffusionView = Backbone.View.extend({
         // console.log("updating diffusion...");
         let _self = this,
             _attr = this._attr,
-            stat = this.model.get("stat"),
             cstat = this.model.get("cstat"),
             nodes = _attr.nodes,
             links = _attr.links;
 
         // define radius scale for circles
-        // let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
         let xSeq = _attr.c.get("centrality"),
             radiusScale = d3.scale.linear()
             .domain([cstat.min[xSeq], cstat.max[xSeq]])
             .range(gs.d.size.circle);
 
+        // data binding 
         let paths = _attr.pathG.selectAll('path')
             .data(links),
             guids = _attr.guidanceLineG.selectAll('path')
@@ -1281,11 +1525,35 @@ let DiffusionView = Backbone.View.extend({
             bottomBars = _attr.bottomBarG.selectAll('rect')
             .data(nodes);
 
+        // add anotation for y-axis
+        _attr.yLabelG.selectAll("text").remove();
+        _attr.yLabelG.selectAll("text")
+            .data([_attr.c.get("metadata")])
+            .enter()
+            .append("text")
+            .attr({
+                transform: "translate(5,0) rotate(90)"
+            })
+            .text(d => conf.bases.yAttributeList.find(x => x.id === d).description);
+
+        _attr.xAxisLableG.selectAll("text").remove();
+        _attr.xAxisLableG.selectAll("text")
+            .data([_attr.c.get("sequence")])
+            .enter()
+            .append("text")
+            .attr({
+                transform: (d) => {
+                    let description = conf.bases.xAttributeList.find(x => x.id === d).description;
+                    return "translate(" + (-description.length * 8) + ", -10)";
+                }
+            })
+            .text(d => conf.bases.xAttributeList.find(x => x.id === d).description);
+
         paths.transition()
             .duration(gs.d.config.transitionTime)
-            .attrTween("d", (d, i) => {
+            .attrTween("d", (d) => {
                 let c = d.coords,
-                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
+                    n = _self.processCoordinates(nodes, cstat, _attr.c, d),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1323,9 +1591,9 @@ let DiffusionView = Backbone.View.extend({
 
         guids.transition()
             .duration(gs.d.config.transitionTime)
-            .attrTween("d", (d, i) => {
+            .attrTween("d", (d) => {
                 let c = d.gcoords,
-                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
+                    n = _self.processCoordinates(nodes, cstat, _attr.c, d),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1347,13 +1615,13 @@ let DiffusionView = Backbone.View.extend({
 
         circles.transition()
             .duration(gs.d.config.transitionTime)
-            .attrTween("cx", (d, i) => {
+            .attrTween("cx", (d) => {
                 let interpolateX = d3.interpolate(d.circleX, _attr.xScale(d.sequenceOrder));
                 return function(t) {
                     return d.circleX = interpolateX(t);
                 }
             })
-            .attrTween("r", (d, i) => {
+            .attrTween("r", (d) => {
                 let interpolateR = d3.interpolate(d.circleR, radiusScale(d.centralities[xSeq]));
                 return function(t) {
                     return d.circleR = interpolateR(t);
@@ -1380,7 +1648,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         if (_self.isNodeDefault(d)) {
                             return css_variables["--color-unadopted"];
@@ -1389,9 +1657,9 @@ let DiffusionView = Backbone.View.extend({
                         }
                     }
                 },
-                stroke: (d, i) => {
+                stroke: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(2);
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     } else {
                         if (_self.isNodeDefault(d)) {
                             return d3.rgb(css_variables["--color-unadopted"]).darker(1);
@@ -1432,11 +1700,11 @@ let DiffusionView = Backbone.View.extend({
         paths.enter()
             .append('path')
             .attr({
-                d: (d, i) => {
-                    d.coords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
+                d: (d) => {
+                    d.coords = _self.processCoordinates(nodes, cstat, _attr.c, d);
                     return _self.linkBuilder(d);
                 },
-                class: (d, i) => {
+                class: (d) => {
                     let source = nodes[d.source],
                         target = nodes[d.target],
                         isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
@@ -1444,8 +1712,8 @@ let DiffusionView = Backbone.View.extend({
                     d.isValid = source.valid && target.valid;
 
                     if (printDiagnoseInfo) {
-                        console.groupCollapsed("Source: node-" + d.source + "\t" + source.stateId, "Target: node-" + d.target + "\t" + target.stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
-                        if (isValid) {
+                        console.groupCollapsed("Source: node-" + d.source + "\t" + source.stateId, "Target: node-" + d.target + "\t" + target.stateId + "\t" + d.isValid + "\t" + isFollowingNetworkRule)
+                        if (d.isValid) {
                             console.log("Both valid.");
                         } else {
                             console.log("Source " + (source.valid ? "valid." : "invalid."));
@@ -1481,11 +1749,11 @@ let DiffusionView = Backbone.View.extend({
         guids.enter()
             .append('path')
             .attr({
-                d: (d, i) => {
-                    d.gcoords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
+                d: (d) => {
+                    d.gcoords = _self.processCoordinates(nodes, cstat, _attr.c, d);
                     return _self.guidanceBuilder(d);
                 },
-                class: (d, i) => {
+                class: (d) => {
                     let isValid = nodes[d.source].valid && nodes[d.target].valid,
                         isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
 
@@ -1510,16 +1778,23 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .call(_self.barTween, _attr, "bottom");
         _self.createBars(bottomBars, "bottom");
-        _self.postRender();
+        _self.postRender(_attr.c);
         return this;
     },
     preRender() {
         this.$el.hide();
-        $("#diffusion-wrapper .loader-img").show();
+        $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").hide();
+        $("#diffusiion-policy-unselected-notitication").hide();
+        $("#diffusion-wrapper").find(".loader-img").show();
     },
-    postRender() {
-        $("#diffusion-wrapper .loader-img").hide();
-        this.$el.show();
+    postRender(conditions) {
+        $("#diffusion-wrapper").find(".loader-img").hide();
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            $("#diffusiion-policy-unselected-notitication").show();
+        } else {
+            $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").show();
+            this.$el.show();
+        }
     },
     getPathColor(source, target) {
         if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
@@ -1578,7 +1853,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         if (this.isNodeDefault(d)) {
                             return css_variables["--color-unadopted"];
@@ -1716,15 +1991,15 @@ let DiffusionView = Backbone.View.extend({
             [xScale(c.x1), yScale(c.y1)]
         ]);
     },
-    processCoordinates(nodes, cstat, c, d, i) {
+    processCoordinates(nodes, cstat, c, d) {
         const divider = 0.3,
-            yPartition1 = 0.25,
-            yPartition2 = 0.75,
+            // yPartition1 = 0.25,
+            // yPartition2 = 0.75,
             centralityType = c.get("centrality"),
             thicknessParam = nodes[d.source].centralities[centralityType],
-            standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]),
-            ySeq = conf.pipe.metaToId[c.get("metadata")],
-            xSeq = conf.pipe.metaToId[c.get("sequence")];
+            standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]);
+        // ySeq = conf.pipe.metaToId[c.get("metadata")],
+        // xSeq = conf.pipe.metaToId[c.get("sequence")];
 
         let x1 = nodes[d.source].sequenceOrder,
             x2 = nodes[d.target].sequenceOrder,
@@ -1764,23 +2039,18 @@ let DiffusionView = Backbone.View.extend({
     },
     bindTriggers() {
         let _self = this,
-            _attr = this._attr,
-            __svg = $(this.el);
+            __svg = this.$el;
 
         let pathOverHandler = function(e) {
                 e.stopPropagation();
                 let _curr = $(e.target),
-                    pathId = _curr.attr("id"),
                     className = _curr.attr("class"),
                     classNameList = className.split(' '),
                     isStroke = (classNameList[0] === 'diffusion-strokes'),
                     isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
 
                 if (isStroke && isValidPath) {
-                    // why does it firing twice ???????
-                    // console.log(e);
-                    // console.log(e.type);
-                    // console.log(className);
+
                     let validityCategory = classNameList[1];
 
                     [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
@@ -1844,8 +2114,7 @@ let DiffusionView = Backbone.View.extend({
                         _asSource = _pathG.find("path[source=" + nodeId + "]"),
                         _asTarget = _pathG.find("path[target=" + nodeId + "]");
 
-                    let nodeMap = {},
-                        targetMap = {};
+                    let nodeMap = {};
                     nodeMap[nodeId] = true;
 
                     _asSource.each((i) => {
@@ -1898,8 +2167,7 @@ let DiffusionView = Backbone.View.extend({
                         _asSource = _pathG.find("path[source=" + nodeId + "]"),
                         _asTarget = _pathG.find("path[target=" + nodeId + "]");
 
-                    let nodeMap = {},
-                        targetMap = {};
+                    let nodeMap = {};
                     nodeMap[nodeId] = true;
 
                     _asSource.each((i) => {
@@ -1948,8 +2216,7 @@ let DiffusionView = Backbone.View.extend({
     },
     drawRefLines(nodeId, validityCategory) {
 
-        let _self = this,
-            _attr = this._attr,
+        let _attr = this._attr,
             nodes = _attr.nodes,
             xScale = _attr.xScale,
             yTopScale = _attr.yTopScale,
@@ -2041,15 +2308,18 @@ let DiffusionView = Backbone.View.extend({
     }
 });
 
+/**
+ * RingView:
+ * - to display policy cluster
+ * - to reveal cluster detail in tooltip when hovered
+ * - to have a cluster selected when clicked
+ */
 let RingView = Backbone.View.extend({
     el: "#svg-ring-view",
     initialize() {
         this._attr = {};
-        $(this.el).on('mouseleave', () => {
-            $("#ring-tooltip").css("opacity", 0);
-        });
     },
-    render(conditions) {
+    render() {
         let _self = this,
             _attr = this._attr,
             clusterObj = _self.model.get("cluster"),
@@ -2057,15 +2327,17 @@ let RingView = Backbone.View.extend({
             nameDomain = _.concat(method, clusterObj.children.map((d) => d.name)),
             colorSchema = d3.scale.ordinal()
             .domain(nameDomain)
-            .range(method === "subject" ? color15 : color7),
+            .range(method === "subject" ? color15 : color21),
             ldaTerms = conf.static.ldaTerms;
 
         $(_self.el).empty();
         $("#ring-tooltip").remove();
 
+        // compute full canvas size
         let _width = gs.r.margin.left + gs.r.margin.right + gs.r.size.width,
             _height = gs.r.margin.top + gs.r.margin.bottom + gs.r.size.height;
 
+        // create svg element and groups for ring and label
         let svg = _attr.svg = d3.select(_self.el)
             .attr({
                 'preserveAspectRatio': 'xMidYMid meet',
@@ -2083,6 +2355,7 @@ let RingView = Backbone.View.extend({
                 transform: "translate(" + (_width / 2) + "," + (_height / 2) + ")"
             });
 
+        // create layout and arc generator
         let partition = d3.layout.partition()
             .sort((a, b) => a.size - b.size)
             .size(method === "subject" ? [2 * Math.PI, 2 * gs.r.size.r] : [2 * Math.PI, gs.r.size.r * gs.r.size.r])
@@ -2102,16 +2375,19 @@ let RingView = Backbone.View.extend({
             .append("div")
             .attr("id", "ring-tooltip");
 
+        // data binding
         let paths = ringG.datum(clusterObj).selectAll("path")
             .data(partition.nodes),
             labels = labelG.datum(clusterObj).selectAll("text")
             .data(partition.nodes);
 
+        // expose variables for modular access
         $.extend(_attr, {
             ringG: ringG,
             labelG: labelG
         });
 
+        // create paths (arcs) and bind events
         paths.enter().append("path")
             .attr({
                 d: arc,
@@ -2133,6 +2409,7 @@ let RingView = Backbone.View.extend({
             .on("mouseout", mouseOutArc)
             .on("click", mouseClickArc);
 
+        // create labels
         labels.enter().append("text")
             .attr({
                 transform: d => "rotate(" + computeTextRotation(d) + ")",
@@ -2144,11 +2421,19 @@ let RingView = Backbone.View.extend({
             }) // vertical-align
             .text(d => displayText(d));
 
+        /**
+         * compute rotation angle for each label.
+         * @param {object} d current node
+         */
         function computeTextRotation(d) {
             let shift = (d.depth === 0 ? 180 : -90);
             return (d.x + d.dx / 2) * 180 / Math.PI + shift;
         };
 
+        /**
+         * retrieve cluster identifier from node object.
+         * @param {object} d current node
+         */
         function getSeqStr(d) {
             let seq = "",
                 curr = d;
@@ -2159,10 +2444,18 @@ let RingView = Backbone.View.extend({
             return _.trimStart(seq, "-");
         };
 
+        /**
+         * add leading '0' to form the key to retrieve cluster terms.
+         * @param {object} d current node
+         */
         function getFullSeqStr(d) {
             return d.depth ? "0-" + getSeqStr(d) : "0";
         };
 
+        /**
+         * to generate label on the arcs.
+         * @param {object} d current node
+         */
         function getHead(d) {
             if (d.depth) {
                 if (method === "subject") {
@@ -2174,7 +2467,10 @@ let RingView = Backbone.View.extend({
                 return "all";
             }
         };
-
+        /**
+         * adjust the label to fit in thickness of arcs.
+         * @param {object} d current node
+         */
         function displayText(d) {
             let text = getHead(d),
                 thickness = (method === "subject" ?
@@ -2187,6 +2483,10 @@ let RingView = Backbone.View.extend({
             }
         };
 
+        /**
+         * to generate tooltip text.
+         * @param {object} d current node
+         */
         function formatDescription(d) {
             let ldaTerm = "";
             if (method === "text") {
@@ -2196,17 +2496,19 @@ let RingView = Backbone.View.extend({
                     ldaTerm += "<b>Terms:&nbsp;</b>"
                     for (let i in termArr) {
                         ldaTerm += termArr[i] + ", ";
-                        if ((+i + 1) / 5 === 1) {
+                        if ((+i + 1) % 5 === 0) {
                             ldaTerm += "</br>";
                         }
                     }
-                    ldaTerm = ldaTerm.trim().replace(/,+$/, "") + '</br>'; // replace tailing comma with a break
+                    ldaTerm = ldaTerm.replace(/<\/br>+$/, "").trim().replace(/,+$/, "") + '</br>'; // replace tailing and break
                 }
             }
             return '<b>' + (method === "text" ? "Cluster" : "Subject") + ':&nbsp;</b>' + getHead(d) + '</br>' +
                 ldaTerm +
                 "<b>Total:&nbsp;</b>" + d.size + '&nbsp;policies';
         };
+
+        /* event handlers */
 
         function mouseOverArc(d) {
             d3.select(this).style("stroke", "black");
@@ -2219,7 +2521,7 @@ let RingView = Backbone.View.extend({
             return tooltip.style("opacity", 0);
         };
 
-        function mouseMoveArc(d) {
+        function mouseMoveArc() {
             return tooltip.style({
                 top: (d3.event.pageY + gs.r.margin.tShiftY) + "px",
                 left: (d3.event.pageX + gs.r.margin.tShiftX) + "px"
@@ -2235,15 +2537,103 @@ let RingView = Backbone.View.extend({
             }
         };
 
-        // this.bindTriggers();
+        return this;
+    }
+});
+
+/**
+ * Dropdowns
+ * Customized dropdown menu that:
+ * - can be disabled/enabled entirely or patially
+ * - has a changeable label
+ */
+let DropdownController = Backbone.View.extend({
+    render() {},
+    /**
+     * set dropdown label text.
+     * @param {string} labelString to be set to the dropdown.
+     */
+    label(labelString) {
+        this.$el.find(".dropdown-toggle").contents().first().replaceWith(labelString);
         return this;
     },
-    bindTriggers() {
-        let __svg = $(this.el);
-        __svg.off();
-        __svg.on("mouseout", () => {
-            d3.select("#ring-tooltip").style("opacity", 0);
-        });
+    /**
+     * disable the dropdown.
+     */
+    disable() {
+        this.$el.addClass("disabled");
+        return this;
+    },
+    /**
+     * enable the dropdown.
+     */
+    enable() {
+        this.$el.removeClass("disabled");
+    },
+    /**
+     * disable single or multiple options
+     * @param {string|Array<string>} arguments one single aid or an aid array.
+     */
+    disableOption() {
+        let __lis = this.$el.find(".dropdown-menu");
+        if (typeof arguments[0] === "string") {
+            // single option
+            __lis.find("a[aid=" + arguments[0] + "]").parent().addClass("disabled");
+        } else {
+            // multi-option
+            for (let aid of arguments[0]) {
+                __lis.find("a[aid=" + aid + "]").parent().addClass("disabled");
+            }
+        }
+    },
+    /**
+     * enable one single option or multiple options or all option.
+     * @param {string|Array<string>|null} arguments one single aid to enable, or aid array to enable, or null to enable all options.
+     */
+    enableOption() {
+        let __lis = this.$el.find(".dropdown-menu");
+        if (!arguments.length) {
+            // enable all options
+            __lis.each(() => {
+                // @this current <li>
+                $(this).removeClass("disabled");
+            })
+        } else if (typeof arguments[0] === "string") {
+            // enable one single option
+            __lis.find("a[aid=" + arguments[0] + "]").parent().removeClass("disabled");
+        } else {
+            // enable multiple options
+            for (let aid of arguments[0]) {
+                __lis.find("a[aid=" + aid + "]").parent().removeClass("disabled");
+            }
+        }
+    },
+    /**
+     * pick one or multiple options.
+     * @param {string|Array<string>} arguments one single aid or an aid array.
+     */
+    pickOption() {
+        this.clearOption();
+        if (typeof arguments[0] === "string") {
+            // single selection
+            this.$el.find("ul a[aid=" + arguments[0] + "]").parent().addClass("active");
+        } else {
+            // multi-selection
+            console.log("//TODO");
+        }
+    },
+    /**
+     * clear one or all selections.
+     * @param {string|null} arguments one single aid to be cleared or null to clear all selections.
+     */
+    clearOption() {
+        if (!arguments.length) {
+            // clear all selection
+            this.$el.find("ul>li[class='active']").removeClass("active");
+        } else {
+            // clear selection specified by arguments[0]
+            this.$el.find("ul>li[aid=" + arguments[0] + "]").removeClass("active");
+        }
     }
 });
 
@@ -2262,5 +2652,6 @@ module.exports = {
     RingView: RingView,
     NetworkView: NetworkView,
     DiffusionView: DiffusionView,
-    PolicyGroupView: PolicyGroupView
+    PolicyGroupView: PolicyGroupView,
+    DropdownController: DropdownController
 };

@@ -13,5 +13,9 @@ require('../node_modules/bootstrap-select/dist/css/bootstrap-select.min.css');
 // dc.css
 require('../node_modules/dc/dc.min.css')
 
+// bootstrap-switch
+require('bootstrap-switch')
+require('../node_modules/bootstrap-switch/dist/css/bootstrap3/bootstrap-switch.min.css')
+
 // collapse extension for Bootstrap
 require('./assets/lib/collapse.js');

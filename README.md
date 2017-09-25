@@ -7,7 +7,7 @@ This visualization project enable users to explore and inspect policy diffusion 
 Clone the repository.
 
 ```shell
-git clone https://github.com/Xynoci/diffusion2017vis
+https://github.com/chukunx/diffusion2017vis
 cd diffusion2017vis
 ```
 

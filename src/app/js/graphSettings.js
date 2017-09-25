@@ -16,7 +16,7 @@ const GraphSettings = {
         },
         size: {
             width: 270,
-            height: 600
+            height: 585
         },
         multiplier: {
 
@@ -137,11 +137,14 @@ const GraphSettings = {
             left: 10,
             bottom: 10,
             right: 10,
-            labelXShift: 2
+            labelXShift: 2,
+            legendYShift: 15,
+            legendTextShift: 3
         },
         size: {
-            height: 500,
-            width: 500
+            height: 450,
+            width: 500,
+            legendWidth: 120
         },
         multiplier: {
 

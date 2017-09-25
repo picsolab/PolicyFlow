@@ -19,16 +19,25 @@ let Conditions = Backbone.Model.extend({
     },
     initialize: () => {},
     setupCentralityValidity() {
-        let validity = this.get("metadata") === "centrality" || this.get("sequence") === "centrality";
+        // either is on "centrality"
+        let validity = (this.get("metadata") === conf.bases.yAttributeList[0].id ||
+            this.get("sequence") === conf.bases.xAttributeList[0].id);
         this.set("cvalidity", validity);
+        return this;
     },
+    /**
+     * modify selected states according to use's selection.
+     * @param {string} tract state id string    
+     */
     toggleTractList(tract) {
         let theListName = this.getTractListName(),
             theList = this.getTractList();
-        if (_.indexOf(theList, tract) !== -1) {
-            this.set(theListName, _.filter(theList, (o) => o !== tract));
-        } else {
+        if (_.indexOf(theList, tract) === -1) {
+            // append the selected state to corresponding list if it does not exist
             this.set(theListName, _.concat(theList, tract));
+        } else {
+            // remove the selected state from the list if it exists
+            this.set(theListName, _.filter(theList, (o) => o !== tract));
         }
     },
     getTractList() {
@@ -48,7 +57,7 @@ let Conditions = Backbone.Model.extend({
 
 let PolicyOptionsModel = Backbone.Model.extend({
     url: '/api/subjects',
-    parse(response, options) {
+    parse(response) {
         this.set({
             "pipe": response.pipe,
             "policies": $.extend({ "All": response.all }, response.policies)
@@ -159,7 +168,8 @@ let DynamicNetworkModel = Backbone.Model.extend({
             _self.set({
                 "edgesInStateIds": data,
                 "edgesInIndices": edgesInIndices
-            });
+            }, { silent: true });
+            _self.trigger("change");
         });
     }
 });
@@ -264,7 +274,8 @@ let PolicyGroupModel = Backbone.Model.extend({
             "start_year": conditions.get("startYear"),
             "end_year": conditions.get("endYear")
         }).done(data => {
-            this.set(data);
+            this.set(data, { silent: true });
+            this.trigger("change");
         });
     }
 });
