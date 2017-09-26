@@ -319,6 +319,14 @@ text .loader-img {
     font: 10px sans-serif;
 }
 
+#computing-node-similarity-span {
+    font: 10px sans-serif;
+    display: none;
+    position: absolute ! important;
+    left: 2%;
+    top: 0px;
+}
+
 
 /*policy cascade panel*/
 

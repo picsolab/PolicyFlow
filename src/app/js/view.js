@@ -3,6 +3,7 @@ let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
 let GRank = require('./grank.js');
+let GRankWorker = require("./grank.worker.js");
 const printDiagnoseInfo = false;
 
 let colorList = [],
@@ -948,20 +949,10 @@ let NetworkView = Backbone.View.extend({
             .range(gs.n.config.circleSizeRange),
             force = _attr.force.on("tick", tick),
             drag = force.drag()
-            .on("dragstart", dragstart);
-
-        // expose filtered edges and nodes to the view class
-        $.extend(_attr, {
-            filteredEdges: filteredEdges,
-            filteredNodes: filteredNodes,
-            graph: new GRank.Graph()
-        });
-
-        // update graph according to filteredNodes and filteredEdges
-        // and compute similarities for mouse event
-        let graph = _attr.graph
-            .nodes(_.map(filteredNodes, node => node.stateId))
-            .edges(_.map(filteredEdges, edge => {
+            .on("dragstart", dragstart),
+            graph = new GRank.Graph(),
+            nodeList = _.map(filteredNodes, node => node.stateId),
+            edgeList = _.map(filteredEdges, edge => {
                 return (edge.validity ? {
                     source: edge.source.stateId,
                     target: edge.target.stateId
@@ -969,11 +960,40 @@ let NetworkView = Backbone.View.extend({
                     source: edge.target.stateId,
                     target: edge.source.stateId
                 });
-            }));
+            });
 
-        // add an interval to delay UI blocking caused by network computation
-        // to improve: create a Web Worker for this computation
-        setTimeout(() => { graph.doPrank(); }, 350);
+        graph.nodes(nodeList)
+            .edges(edgeList);
+
+        // expose filtered edges and nodes to the view class
+        $.extend(_attr, {
+            filteredEdges: filteredEdges,
+            filteredNodes: filteredNodes,
+            graph: graph
+        });
+
+        // update graph according to filteredNodes and filteredEdges
+        // and compute similarities for mouse event
+        if (conf.enableWebWorker && window.Worker) {
+            // if Web Worker supported
+            // show info span and mute pointer event
+            $("#computing-node-similarity-span").show();
+            this.$el.css("pointer-events", "none");
+            let grankWorker = new GRankWorker();
+            grankWorker.postMessage({ nodes: nodeList, edges: edgeList });
+            grankWorker.onmessage = function(e) {
+                graph.setPrank(e.data.prank);
+                // hide info span and recover pointer event
+                $("#computing-node-similarity-span").hide();
+                $(_self.el).css("pointer-events", "");
+            }
+        } else {
+            // if Web Worker not enabled or not supported
+            // add an interval to delay UI blocking caused by network computation
+            // to improve: create a Web Worker for this computation
+            setTimeout(() => { graph.doPrank(); }, 350);
+        }
+
 
         // config force layout with filtered nodes and edges
         force.nodes(d3.values(filteredNodes))
