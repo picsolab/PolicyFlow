@@ -1,4 +1,5 @@
 const Config = {
+    enableWebWorker: true,
     bases: {
         subject: {
             default: "All",

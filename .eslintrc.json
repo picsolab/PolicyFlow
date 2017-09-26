@@ -29,6 +29,7 @@
         "crossfilter": true,
         "Backbone": true,
         "d3tip": true,
-        "topojson": true
+        "topojson": true,
+        "__webpack_public_path__": true
     }
 }

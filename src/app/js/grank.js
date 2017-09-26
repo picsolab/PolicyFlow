@@ -11,24 +11,23 @@
 
     // Set up SimRank appropriately for the environment. Start with AMD.
     if (typeof define === 'function' && define.amd) {
-        define(['lodash', 'mathjs', 'exports'], function(_, math, exports) {
+        define(['mathjs', 'exports'], function(math, exports) {
             // Export global even in AMD case in case this script is loaded with
             // others that may still expect a global Backbone.
-            root.GRank = factory(root, exports, _, math);
+            root.GRank = factory(root, exports, math);
         });
 
         // Next for Node.js or CommonJS. jQuery may not be needed as a module.
     } else if (typeof exports !== 'undefined') {
-        var _ = require('lodash'),
-            math = require('mathjs');
-        factory(root, exports, _, math);
+        var math = require('mathjs');
+        factory(root, exports, math);
 
         // Finally, as a browser global.
     } else {
-        root.GRank = factory(root, {}, root._, root.math);
+        root.GRank = factory(root, {}, root.math);
     }
 
-})(function(root, GRank, _, math) {
+})(function(root, GRank, math) {
 
     // Graph class
     let Graph = GRank.Graph = function() {
@@ -185,6 +184,12 @@
                     }
                 }
             }
+            return this;
+        },
+
+        // set pre-computed matrix
+        setPrank(prankMatrix) {
+            this.prank = prankMatrix.isMatrix ? prankMatrix : math.matrix(prankMatrix);
             return this;
         },
 
