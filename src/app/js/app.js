@@ -55,6 +55,8 @@ $(document).ready(() => {
 
     bindDomEvents();
 
+    bindCrossViewEvents();
+
     initRendering();
 });
 
@@ -304,6 +306,66 @@ function bindDomEvents() {
     $("#geo-controller-checkbox").on("switchChange.bootstrapSwitch", (e, state) => setTimeout(geoSwitchHandler, 350, e, state));
 
     document.getElementById("snapshot-wrapper").addEventListener('click', retrieveCascadeHandler, false);
+}
+
+function bindCrossViewEvents() {
+    // lightup DiffusionView strokes from PolicyView
+    policyView.$el.on('mouseover', e => {
+        let __target = $(e.target);
+        if (__target.hasClass("state")) {
+            // if __target is a rect
+            let stateIndex = conf.pipe.statesToIndices[__target.attr("value")];
+            diffusionView.lightUpStrokes(stateIndex);
+        } else if (__target.hasClass("text-tip")) {
+            // if __target is a `text`
+            let stateIndex = conf.pipe.statesToIndices[__target[0].classList[2]];
+            diffusionView.lightUpStrokes(stateIndex);
+        }
+    });
+
+    // turnoff DiffusionVies strokes from PolicyView
+    policyView.$el.on('mouseout', e => {
+        let __target = $(e.target);
+        if (__target.hasClass("state")) {
+            // if __target is a rect
+            let stateIndex = conf.pipe.statesToIndices[__target.attr("value")];
+            diffusionView.turnOffStrokes(stateIndex);
+        } else if (__target.hasClass("text-tip")) {
+            // if __target is a `text`
+            let stateIndex = conf.pipe.statesToIndices[__target[0].classList[2]];
+            diffusionView.turnOffStrokes(stateIndex);
+        }
+    });
+
+    // lightup PolicyView squares from DiffusionView
+    diffusionView.$el.on('mouseover', e => {
+        let __target = $(e.target);
+        if (__target.hasClass("diffusion-strokes")) {
+            // if __target is a stroke
+            let sourceIndex = __target.attr("source"),
+                targetIndex = __target.attr("target"),
+                sourceNode = conf.static.states[+sourceIndex],
+                targetNode = conf.static.states[+targetIndex];
+            [sourceNode, targetNode].forEach(node => {
+                policyView.lightUp(policyView.getRect(node));
+            });
+        }
+    });
+
+    // turnoff PolicyView squares from DiffusionView
+    diffusionView.$el.on('mouseout', e => {
+        let __target = $(e.target);
+        if (__target.hasClass("diffusion-strokes")) {
+            // if __target is a stroke
+            let sourceIndex = __target.attr("source"),
+                targetIndex = __target.attr("target"),
+                sourceNode = conf.static.states[+sourceIndex],
+                targetNode = conf.static.states[+targetIndex];
+            [sourceNode, targetNode].forEach(node => {
+                policyView.turnOff(policyView.getRect(node));
+            });
+        }
+    });
 }
 
 function initDom() {

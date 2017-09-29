@@ -41,6 +41,11 @@ let color7 = [
  */
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
+    initialize() {
+        this._attr = {
+            tickList: []
+        };
+    },
     render() {
         // prevent rendering and show notification panel when no policy has been selected
         if (this.model.get("message") !== "success") {
@@ -129,31 +134,42 @@ let PolicyView = Backbone.View.extend({
 
         // create palette group
         let paletteG = svg.append('g')
-            .attr('class', "palette");
+            .attr({
+                'class': "palette",
+                'id': 'policy-palette'
+            });
 
-        _self.renderPalette(paletteG, yearList, xScale, yScale);
-        _self.bindTriggers(yScale);
+        $.extend(_self._attr, {
+            axesG: axesG,
+            paletteG: paletteG,
+            xScale: xScale,
+            yScale: yScale,
+            yearList: yearList
+        });
+
+        _self.renderPalette();
+        _self.bindTriggers();
 
         // bind zooming fuction
         zoom.on('zoom', () => {
             $(".temp-tick").remove();
             d3.select(_self.el).select(".y-axis").call(yAxis);
-            _self.renderPalette(paletteG, yearList, xScale, yScale);
-            _self.bindTriggers(yScale);
+            _self.renderPalette();
+            _self.bindTriggers();
         });
     },
     /**
      * do the major rendering work.
-     * @param {object} paletteG the dom element to which main part is rendered
-     * @param {Array<string>} yearList array of adtoption year
-     * @param {object} xScale x scale object
-     * @param {object} yScale y scale object
      */
-    renderPalette(paletteG, yearList, xScale, yScale) {
-        let _self = this;
+    renderPalette() {
+        let _self = this,
+            _attr = this._attr,
+            paletteG = _attr.paletteG,
+            xScale = _attr.xScale,
+            yScale = _attr.yScale;
         paletteG.selectAll('g').remove();
 
-        yearList.forEach((year, index) => {
+        _attr.yearList.forEach((year, index) => {
             // prepare data and params
             let forTheYear = _self.model.get("detail")[year].sort(),
                 numberOfLines = Math.ceil(forTheYear.length / gs.p.config.xMaxTick),
@@ -199,45 +215,58 @@ let PolicyView = Backbone.View.extend({
                 });
         });
     },
-    bindTriggers(yScale) {
-        let element, year, tickList = [];
+    getRect(stateId) {
+        let _self = this;
+        return $("#" + _self._attr.paletteG.attr('id')).find("rect[value=" + stateId + "]");
+    },
+    lightUp(__target) {
+        __target.addClass("hovered-item");
+        let _self = this,
+            year = __target.attr("class").split(" ")[2],
+            tickList = this._attr.tickList;
+
+        d3.select("#svg-cascade-view .y-axis").selectAll("tempTick")
+            .data([year])
+            .enter()
+            .append('text')
+            .text(tickList.indexOf("" + year) === -1 ? (year + " ►") : " ►")
+            .attr({
+                class: "temp-tick",
+                y: _self._attr.yScale(new Date(+year, 0, 1)),
+                transform: () => tickList.indexOf("" + year) === -1 ? "translate(-37,4)" : "translate(-8,4)"
+            });
+    },
+    turnOff(__target) {
+        __target.removeClass("hovered-item");
+        $(".temp-tick").remove();
+    },
+    bindTriggers() {
+        let tickList = [],
+            yScale = this._attr.yScale,
+            _self = this;
+        _self._attr.tickList = tickList;
         this.$el.find(".y-axis .tick text").map((index, element) => tickList.push(element.textContent));
 
         // color the hovered square, and
         // show "year ►" next to the y-axis to indicate the adoption year when mouseover a state
         $(".partial").on('mouseover', (e) => {
+            let __target = (void 0);
             if (e.target.nodeName === 'rect') {
-                element = $(e.target);
-                year = e.target.classList[2];
+                __target = $(e.target);
             } else {
-                element = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
-                year = e.target.classList[1];
+                __target = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
             }
-            element.addClass("hovered-item");
-
-            d3.select("#svg-cascade-view .y-axis").selectAll("tempTick")
-                .data([year])
-                .enter()
-                .append('text')
-                .text(tickList.indexOf("" + year) === -1 ? (year + " ►") : " ►")
-                .attr({
-                    class: "temp-tick",
-                    y: yScale(new Date(+year, 0, 1)),
-                    transform: () => tickList.indexOf("" + year) === -1 ? "translate(-37,4)" : "translate(-8,4)"
-                });
+            _self.lightUp(__target);
         });
 
         // reverse changes made by mouseover event
         $(".partial").on('mouseout', (e) => {
             if (e.target.nodeName === "rect") {
-                element = $(e.target);
-                year = e.target.classList[2];
+                __target = $(e.target);
             } else {
-                element = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
-                year = e.target.classList[1];
+                __target = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
             }
-            element.removeClass("hovered-item");
-            $(".temp-tick").remove();
+            this.turnOff(__target);
         });
     }
 });
@@ -1424,7 +1453,7 @@ let DiffusionView = Backbone.View.extend({
             }),
             xLabelG = circleG.append('g').attr({
                 'id': idPrefix + 'diffusion-x-label-group',
-                'class': 'x-labels',
+                'class': 'label-group',
                 'transform': "translate(" + (0) + "," + (0) + ")"
             }),
             upBarG = svg.append('g').attr({
@@ -1444,7 +1473,7 @@ let DiffusionView = Backbone.View.extend({
             }),
             yLabelG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-y-label-group',
-                'class': 'y-labels',
+                'class': 'label-group',
                 'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
             }),
             refLineG = pathG.append('g').attr({
@@ -1523,7 +1552,16 @@ let DiffusionView = Backbone.View.extend({
             _attr = this._attr,
             cstat = this.model.get("cstat"),
             nodes = _attr.nodes,
-            links = _attr.links;
+            links = _attr.links,
+            getDescriptionStr = function(d) {
+                let description = conf.bases.xAttributeList.find(x => x.id === d).description;
+                if (d === conf.bases.xAttributeList[0].id) {
+                    let cType = _attr.c.get("centrality"),
+                        cString = conf.bases.centralityList.find(x => x.id === cType).description;
+                    description += (": " + cString);
+                }
+                return description;
+            };
 
         // define radius scale for circles
         let xSeq = _attr.c.get("centrality"),
@@ -1552,7 +1590,7 @@ let DiffusionView = Backbone.View.extend({
             .enter()
             .append("text")
             .attr({
-                transform: "translate(5,0) rotate(90)"
+                transform: gs.d.margin.yLabelTransform
             })
             .text(d => conf.bases.yAttributeList.find(x => x.id === d).description);
 
@@ -1563,11 +1601,11 @@ let DiffusionView = Backbone.View.extend({
             .append("text")
             .attr({
                 transform: (d) => {
-                    let description = conf.bases.xAttributeList.find(x => x.id === d).description;
-                    return "translate(" + (-description.length * 8) + ", -10)";
+                    let description = getDescriptionStr(d);
+                    return "translate(" + (-description.length * gs.d.multiplier.text) + ", " + gs.d.margin.xLabel + ")";
                 }
             })
-            .text(d => conf.bases.xAttributeList.find(x => x.id === d).description);
+            .text(d => getDescriptionStr(d));
 
         paths.transition()
             .duration(gs.d.config.transitionTime)
@@ -2057,181 +2095,185 @@ let DiffusionView = Backbone.View.extend({
                 break;
         }
     },
+    pathOverHandler(e) {
+        let _self = this,
+            _curr = $(e.target),
+            className = _curr.attr("class"),
+            classNameList = className.split(' '),
+            isStroke = (classNameList[0] === 'diffusion-strokes'),
+            isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+        if (isStroke && isValidPath) {
+
+            let validityCategory = classNameList[1];
+
+            [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                // add ref lines
+                _self.drawRefLines(+nodeId, validityCategory);
+
+                // light up bars
+                _self.lightUpBars(validityCategory, nodeId);
+
+                // light up circles
+                $("#diffusion-node-" + nodeId).addClass("hovered-item");
+
+                // move mouseovered nodes to front
+                // d3.select("#diffusion-node-" + nodeId).moveToFront();
+            });
+
+            // light up mouseovered path
+            _curr.addClass("hovered-item");
+
+            // move mouseovered to front
+            // d3.select("#" + pathId).moveToFront();
+
+        }
+    },
+    pathOutHandler(e) {
+        let _curr = $(e.target),
+            className = _curr.attr("class"),
+            classNameList = className.split(' '),
+            isStroke = (classNameList[0] === 'diffusion-strokes'),
+            isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+        if (isStroke && isValidPath) {
+            let _curr = $(e.target);
+
+            // remove ref lines
+            $("#diffusion-ref-line-group").empty();
+
+            [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+
+                // recover lighted bars
+                $(".bar-" + nodeId).removeClass("hovered-item");
+
+                // recover up circles
+                $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+            });
+
+            // recover lighted path
+            _curr.removeClass("hovered-item");
+
+        }
+    },
+    circleOverHandler(e) {
+        let _curr = $(e.target),
+            className = _curr.attr("class"),
+            isCircle = (className === "diffusion-circles");
+        if (isCircle) {
+            this.lightUpStrokes(_curr.attr("nodeId"));
+        }
+    },
+    circleOutHandler(e) {
+        let _curr = $(e.target),
+            className = _curr.attr("class"),
+            classNameList = className.split(' '),
+            isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
+
+        if (isCircle) {
+            this.turnOffStrokes(_curr.attr("nodeId"));
+        }
+    },
+    lightUpStrokes(nodeId) {
+        let _self = this,
+            __pathG = $("#" + _self._attr.pathG.attr('id')),
+            __asSource = __pathG.find("path[source=" + nodeId + "]"),
+            __asTarget = __pathG.find("path[target=" + nodeId + "]");
+
+        let nodeMap = {};
+        nodeMap[nodeId] = true;
+
+        __asSource.each((i) => {
+            let __theStroke = $(__asSource[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("target")] = true;
+                __theStroke.addClass("hovered-item");
+
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach(nodeId => {
+                    let validityCategory = __theStroke.attr("class").split(' ')[1];
+                    // add ref lines
+                    _self.drawRefLines(+nodeId, validityCategory);
+                    // light up bars
+                    _self.lightUpBars(validityCategory, nodeId);
+                });
+            }
+        });
+
+        __asTarget.each((i) => {
+            let __theStroke = $(__asTarget[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("source")] = true;
+                __theStroke.addClass("hovered-item");
+
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
+                    let validityCategory = __theStroke.attr("class").split(' ')[1];
+                    // add ref lines
+                    _self.drawRefLines(+nodeId, validityCategory);
+                    // light up bars
+                    _self.lightUpBars(validityCategory, nodeId);
+                });
+            }
+        });
+
+        Object.keys(nodeMap).forEach((nodeId) => {
+            $("#diffusion-node-" + nodeId).addClass("hovered-item");
+        });
+    },
+    turnOffStrokes(nodeId) {
+        let _self = this,
+            __pathG = $("#" + _self._attr.pathG.attr('id')),
+            __asSource = __pathG.find("path[source=" + nodeId + "]"),
+            __asTarget = __pathG.find("path[target=" + nodeId + "]");
+
+        let nodeMap = {};
+        nodeMap[nodeId] = true;
+
+        __asSource.each((i) => {
+            let __theStroke = $(__asSource[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("target")] = true;
+                __theStroke.removeClass("hovered-item");
+                // recover lighted bars
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
+                    $(".bar-" + nodeId).removeClass("hovered-item");
+                });
+            }
+        });
+
+        __asTarget.each((i) => {
+            let __theStroke = $(__asTarget[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("source")] = true;
+                __theStroke.removeClass("hovered-item");
+                // recover lighted bars
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
+                    $(".bar-" + nodeId).removeClass("hovered-item");
+                });
+            }
+        });
+
+        // remove ref lines
+        $("#diffusion-ref-line-group").empty();
+
+        Object.keys(nodeMap).forEach((nodeId) => {
+            $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+        });
+    },
     bindTriggers() {
         let _self = this,
-            __svg = this.$el;
+            __pathG = $("#" + _self._attr.pathG.attr('id')),
+            __circleG = $("#" + _self._attr.circleG.attr('id'));
 
-        let pathOverHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    classNameList = className.split(' '),
-                    isStroke = (classNameList[0] === 'diffusion-strokes'),
-                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
-
-                if (isStroke && isValidPath) {
-
-                    let validityCategory = classNameList[1];
-
-                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-                        // add ref lines
-                        _self.drawRefLines(+nodeId, validityCategory);
-
-                        // light up bars
-                        _self.lightUpBars(validityCategory, nodeId);
-
-                        // light up circles
-                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
-
-                        // move mouseovered nodes to front
-                        // d3.select("#diffusion-node-" + nodeId).moveToFront();
-                    });
-
-                    // light up mouseovered path
-                    _curr.addClass("hovered-item");
-
-                    // move mouseovered to front
-                    // d3.select("#" + pathId).moveToFront();
-
-                }
-            },
-            pathOutHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    classNameList = className.split(' '),
-                    isStroke = (classNameList[0] === 'diffusion-strokes'),
-                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
-
-                if (isStroke && isValidPath) {
-                    let _curr = $(e.target);
-
-                    // remove ref lines
-                    $("#diffusion-ref-line-group").empty();
-
-                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-
-                        // recover lighted bars
-                        $(".bar-" + nodeId).removeClass("hovered-item");
-
-                        // recover up circles
-                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-                    });
-
-                    // recover lighted path
-                    _curr.removeClass("hovered-item");
-
-                }
-            },
-            circleOverHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    isCircle = (className === "diffusion-circles");
-                if (isCircle) {
-                    let nodeId = _curr.attr("nodeId"),
-                        _pathG = $("#diffusion-path-group"),
-                        _asSource = _pathG.find("path[source=" + nodeId + "]"),
-                        _asTarget = _pathG.find("path[target=" + nodeId + "]");
-
-                    let nodeMap = {};
-                    nodeMap[nodeId] = true;
-
-                    _asSource.each((i) => {
-                        let _theStroke = $(_asSource[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("target")] = true;
-                            _theStroke.addClass("hovered-item");
-
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                let validityCategory = _theStroke.attr("class").split(' ')[1];
-                                // add ref lines
-                                _self.drawRefLines(+nodeId, validityCategory);
-                                // light up bars
-                                _self.lightUpBars(validityCategory, nodeId);
-                            });
-                        }
-                    });
-
-                    _asTarget.each((i) => {
-                        let _theStroke = $(_asTarget[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("source")] = true;
-                            _theStroke.addClass("hovered-item");
-
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                let validityCategory = _theStroke.attr("class").split(' ')[1];
-                                // add ref lines
-                                _self.drawRefLines(+nodeId, validityCategory);
-                                // light up bars
-                                _self.lightUpBars(validityCategory, nodeId);
-                            });
-                        }
-                    });
-
-                    Object.keys(nodeMap).forEach((nodeId) => {
-                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
-                    });
-                }
-            },
-            circleOutHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    classNameList = className.split(' '),
-                    isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
-
-                if (isCircle) {
-                    let nodeId = _curr.attr("nodeId"),
-                        _pathG = $("#diffusion-path-group"),
-                        _asSource = _pathG.find("path[source=" + nodeId + "]"),
-                        _asTarget = _pathG.find("path[target=" + nodeId + "]");
-
-                    let nodeMap = {};
-                    nodeMap[nodeId] = true;
-
-                    _asSource.each((i) => {
-                        let _theStroke = $(_asSource[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("target")] = true;
-                            _theStroke.removeClass("hovered-item");
-                            // recover lighted bars
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                $(".bar-" + nodeId).removeClass("hovered-item");
-                            });
-                        }
-                    });
-
-                    _asTarget.each((i) => {
-                        let _theStroke = $(_asTarget[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("source")] = true;
-                            _theStroke.removeClass("hovered-item");
-                            // recover lighted bars
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                $(".bar-" + nodeId).removeClass("hovered-item");
-                            });
-                        }
-                    });
-
-                    // remove ref lines
-                    $("#diffusion-ref-line-group").empty();
-
-                    Object.keys(nodeMap).forEach((nodeId) => {
-                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-                    });
-                }
-            };
-
-        __svg.off();
+        __pathG.off();
+        __circleG.off();
 
         // mouseover events
-        __svg.on('mouseover', pathOverHandler);
-        __svg.on('mouseover', circleOverHandler);
+        __pathG.on('mouseover', e => _self.pathOverHandler(e));
+        __circleG.on('mouseover', e => _self.circleOverHandler(e));
 
         // mouseout events
-        __svg.on('mouseout', pathOutHandler);
-        __svg.on('mouseout', circleOutHandler);
+        __pathG.on('mouseout', e => _self.pathOutHandler(e));
+        __circleG.on('mouseout', e => _self.circleOutHandler(e));
 
     },
     drawRefLines(nodeId, validityCategory) {

@@ -33,7 +33,9 @@ const GraphSettings = {
             top: 25,
             left: 15,
             bottom: 25,
-            right: 10
+            right: 10,
+            yLabelTransform: "translate(5,0) rotate(90)",
+            xLabel: -12
         },
         size: {
             // width: 850,
@@ -52,7 +54,8 @@ const GraphSettings = {
             rectHeight: 2
         },
         multiplier: {
-            snapshot: 0.25
+            snapshot: 0.25,
+            text: 7
         },
         config: {
             transitionTime: 1500
