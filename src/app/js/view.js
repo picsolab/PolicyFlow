@@ -2358,19 +2358,14 @@ let RingView = Backbone.View.extend({
         // create layout and arc generator
         let partition = d3.layout.partition()
             .sort((a, b) => a.size - b.size)
-            .size(method === "subject" ? [2 * Math.PI, 2 * gs.r.size.r] : [2 * Math.PI, gs.r.size.r * gs.r.size.r])
+            .size([2 * Math.PI, 2 * gs.r.size.r])
             .value(d => d.size),
-            arc = (method === "subject" ?
-                d3.svg.arc()
+            arc = (d3.svg.arc()
                 .startAngle(d => d.x)
                 .endAngle(d => d.x + d.dx)
                 .innerRadius(d => d.depth * d.y / 2)
-                .outerRadius(d => (d.depth * (d.y) + d.dy) / 2) :
-                d3.svg.arc()
-                .startAngle(d => d.x)
-                .endAngle(d => d.x + d.dx)
-                .innerRadius(d => Math.sqrt(d.y))
-                .outerRadius(d => Math.sqrt(d.y + d.dy))),
+                .outerRadius(d => (d.depth * (d.y) + d.dy) / 2)),
+
             tooltip = d3.select("body")
             .append("div")
             .attr("id", "ring-tooltip");
@@ -2391,14 +2386,18 @@ let RingView = Backbone.View.extend({
         paths.enter().append("path")
             .attr({
                 d: arc,
-                seq: d => getFullSeqStr(d)
+                seq: d => getFullSeqStr(d),
+                id: d => getElementId(d)  // Add id to each path
             })
             .style({
-                stroke: "#fff",
+                stroke: "",  // No stroke as default
                 fill: d => {
-                    if (d.depth === 0 || d.depth === 1) {
+                    if (d.depth === 0) {
+                        console.log("yes");
+                        return "#bdbdbd";  // Set central pie to light gray
+                    } else if(d.depth === 1) {
                         return colorSchema(d.name);
-                    } else {
+                    } else{
                         return d3.rgb(colorSchema(d.parent.name)).brighter(d.depth / 8);
                     }
                 },
@@ -2413,13 +2412,24 @@ let RingView = Backbone.View.extend({
         labels.enter().append("text")
             .attr({
                 transform: d => "rotate(" + computeTextRotation(d) + ")",
-                x: d => (method === "subject" ?
-                    d.depth * d.y / 2 :
-                    Math.sqrt(d.y)),
+                x: d => (d.depth * d.y / 2),
                 dx: 6, // margin
-                dy: ".35em"
+                dy: ".35em",
+                id: d => getElementId(d)  // Add id to each text, corresponds to path id
             }) // vertical-align
             .text(d => displayText(d));
+
+        /**
+         * get ID for each element.
+         * @param {object} d current node
+         */
+        function getElementId(d){
+            if(d.depth === 0){
+                return "node";
+            } else{
+                return method==="subject" ? d.id : d.name;
+            }
+        };
 
         /**
          * compute rotation angle for each label.
@@ -2473,9 +2483,7 @@ let RingView = Backbone.View.extend({
          */
         function displayText(d) {
             let text = getHead(d),
-                thickness = (method === "subject" ?
-                    (d.dy) / 2 :
-                    Math.sqrt(d.y + d.dy) - Math.sqrt(d.y));
+                thickness = ((d.dy) / 2);
             if (text.length * 8 < thickness) {
                 return text;
             } else {
@@ -2511,13 +2519,23 @@ let RingView = Backbone.View.extend({
         /* event handlers */
 
         function mouseOverArc(d) {
-            d3.select(this).style("stroke", "black");
+            // d3.select(this).style("stroke", "black");
+
+            // Change corresponding text color to red
+            if(d.depth === 0){
+                d3.select('g#ring-label-group').selectAll("text").filter(d => d.depth === 0).style("fill", "red");
+            } else {
+                d3.select('g#ring-label-group').selectAll("text").filter(d => (method === "subject" ? d.id : d.name) === parseInt(d3.select(this).attr("id"))).style("fill", "red");
+            }
             tooltip.html(formatDescription(d));
             return tooltip.style("opacity", 0.9);
         };
 
-        function mouseOutArc() {
-            d3.select(this).style("stroke", "");
+        function mouseOutArc(d) {
+            // d3.select(this).style("stroke", "white");
+
+            // Change all text color to black
+            d3.select('g#ring-label-group').selectAll("text").style("fill", "black");
             return tooltip.style("opacity", 0);
         };
 
@@ -2529,11 +2547,22 @@ let RingView = Backbone.View.extend({
         };
 
         function mouseClickArc() {
-            let __target = $(d3.event.target),
-                __prevSelected = $("#ring-group .hovered-item");
-            $("#ring-group path").removeClass("hovered-item");
-            if (__prevSelected[0] !== __target[0]) {
-                __target.addClass("hovered-item");
+            let __target = $(d3.event.target);
+            //     __prevSelected = $("#ring-group .hovered-item");
+            // $("#ring-group path").removeClass("hovered-item");
+            // $("#ring-group path")
+            // if (__prevSelected[0] !== __target[0]) {
+            //     __target.addClass("hovered-item");
+            // }
+
+            d3.select(this).moveToFront();
+            // Change event to change color of stroke
+            if(d3.select(this).style("stroke") === "none"){
+                d3.selectAll("#ring-group path").style("stroke", "");
+                d3.select(this).style("stroke", "black");
+                d3.select(this).style("stroke-width", 5);
+            } else{
+                d3.selectAll("#ring-group path").style("stroke", "");
             }
         };
 
