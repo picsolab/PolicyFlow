@@ -8,7 +8,7 @@ const printDiagnoseInfo = false;
 let colorList = [],
     colorMap = {};
 let color7 = [
-        css_variables['--color-cb-a'],
+        css_variables['--color-lightgray'],
         css_variables['--color-cb-b'],
         css_variables['--color-cb-c'],
         css_variables['--color-cb-d'],
@@ -2387,17 +2387,14 @@ let RingView = Backbone.View.extend({
             .attr({
                 d: arc,
                 seq: d => getFullSeqStr(d),
-                id: d => getElementId(d)  // Add id to each path
+                id: d => getElementId(d) // Add id to each path
             })
             .style({
-                stroke: "",  // No stroke as default
+                stroke: "", // No stroke as default
                 fill: d => {
-                    if (d.depth === 0) {
-                        console.log("yes");
-                        return "#bdbdbd";  // Set central pie to light gray
-                    } else if(d.depth === 1) {
+                    if (d.depth === 0 || d.depth === 1) {
                         return colorSchema(d.name);
-                    } else{
+                    } else {
                         return d3.rgb(colorSchema(d.parent.name)).brighter(d.depth / 8);
                     }
                 },
@@ -2415,7 +2412,7 @@ let RingView = Backbone.View.extend({
                 x: d => (d.depth * d.y / 2),
                 dx: 6, // margin
                 dy: ".35em",
-                id: d => getElementId(d)  // Add id to each text, corresponds to path id
+                id: d => getElementId(d) // Add id to each text, corresponds to path id
             }) // vertical-align
             .text(d => displayText(d));
 
@@ -2423,11 +2420,11 @@ let RingView = Backbone.View.extend({
          * get ID for each element.
          * @param {object} d current node
          */
-        function getElementId(d){
-            if(d.depth === 0){
+        function getElementId(d) {
+            if (d.depth === 0) {
                 return "node";
-            } else{
-                return method==="subject" ? d.id : d.name;
+            } else {
+                return method === "subject" ? d.id : d.name;
             }
         };
 
@@ -2522,7 +2519,7 @@ let RingView = Backbone.View.extend({
             // d3.select(this).style("stroke", "black");
 
             // Change corresponding text color to red
-            if(d.depth === 0){
+            if (d.depth === 0) {
                 d3.select('g#ring-label-group').selectAll("text").filter(d => d.depth === 0).style("fill", "red");
             } else {
                 d3.select('g#ring-label-group').selectAll("text").filter(d => (method === "subject" ? d.id : d.name) === parseInt(d3.select(this).attr("id"))).style("fill", "red");
@@ -2547,21 +2544,13 @@ let RingView = Backbone.View.extend({
         };
 
         function mouseClickArc() {
-            let __target = $(d3.event.target);
-            //     __prevSelected = $("#ring-group .hovered-item");
-            // $("#ring-group path").removeClass("hovered-item");
-            // $("#ring-group path")
-            // if (__prevSelected[0] !== __target[0]) {
-            //     __target.addClass("hovered-item");
-            // }
-
             d3.select(this).moveToFront();
             // Change event to change color of stroke
-            if(d3.select(this).style("stroke") === "none"){
+            if (d3.select(this).style("stroke") === "none") {
                 d3.selectAll("#ring-group path").style("stroke", "");
                 d3.select(this).style("stroke", "black");
                 d3.select(this).style("stroke-width", 5);
-            } else{
+            } else {
                 d3.selectAll("#ring-group path").style("stroke", "");
             }
         };
