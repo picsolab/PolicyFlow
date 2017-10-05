@@ -261,6 +261,7 @@ let PolicyView = Backbone.View.extend({
 
         // reverse changes made by mouseover event
         $(".partial").on('mouseout', (e) => {
+            let __target = (void 0);
             if (e.target.nodeName === "rect") {
                 __target = $(e.target);
             } else {
