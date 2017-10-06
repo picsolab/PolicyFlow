@@ -2479,6 +2479,9 @@ let RingView = Backbone.View.extend({
             }) // vertical-align
             .text(d => displayText(d));
 
+        // Inital ring
+        initialStroke();
+
         /**
          * get ID for each element.
          * @param {object} d current node
@@ -2608,14 +2611,17 @@ let RingView = Backbone.View.extend({
 
         function mouseClickArc() {
             d3.select(this).moveToFront();
-            // Change event to change color of stroke
-            if (d3.select(this).style("stroke") === "none") {
-                d3.selectAll("#ring-group path").style("stroke", "");
-                d3.select(this).style("stroke", "black");
-                d3.select(this).style("stroke-width", 5);
-            } else {
-                d3.selectAll("#ring-group path").style("stroke", "");
+            let __target = $(d3.event.target),
+                __prevSelected = $("#ring-group .clicked-item");
+            if (__prevSelected[0] !== __target[0]) {
+                $("#ring-group path").removeClass("clicked-item");
+                __target.addClass("clicked-item");
             }
+        };
+
+        function initialStroke() {
+            d3.select('#node').moveToFront();
+            $("#ring-group #node").addClass("clicked-item");
         };
 
         return this;

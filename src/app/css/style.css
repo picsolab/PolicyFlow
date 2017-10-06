@@ -58,6 +58,13 @@
 
 /*shared style*/
 
+.clicked-item {
+    stroke: var(--color-clicked) !important;
+    stroke-width: 5;
+    z-index: 50;
+    position: relative;
+}
+
 .hovered-item {
     fill: var(--color-hovered) !important;
     stroke: var(--color-hovered) !important;
