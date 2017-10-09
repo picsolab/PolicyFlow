@@ -1285,7 +1285,8 @@ let PolicyGroupView = Backbone.View.extend({
     el: "#policy-group-table",
     initialize() {
         this.$el.bootstrapTable({
-            sortClass: "relevance",
+            sortName: "adoption_count",
+            sortOrder: "desc",
             height: 400,
             pagination: true,
             onlyInfoPagination: false,
@@ -1311,21 +1312,26 @@ let PolicyGroupView = Backbone.View.extend({
                 title: 'Policy ID',
                 sortable: true,
                 searchable: true,
-                clickToSelect: true,
                 visible: false
             }, {
                 field: 'policy_name',
                 title: 'Policy Name',
                 sortable: true,
                 searchable: true,
-                clickToSelect: true
+                order: 'asc'
+            }, {
+                field: 'adoption_count',
+                title: 'Adoptions',
+                titleTooltip: 'Number of states that adopted this policy.',
+                sortable: true,
+                searchable: false,
+                order: 'desc'
             }, {
                 field: 'subject',
                 title: 'Subject',
                 titleTooltip: 'Subject to which a policy belongs.',
                 sortable: true,
                 searchable: false,
-                clickToSelect: true,
                 order: 'asc'
             }, {
                 field: 'policy_start',
@@ -1333,7 +1339,6 @@ let PolicyGroupView = Backbone.View.extend({
                 titleTooltip: 'The year that the first adoption occurred.',
                 sortable: true,
                 searchable: false,
-                clickToSelect: true,
                 order: 'asc'
             }, {
                 field: 'policy_end',
@@ -1341,7 +1346,6 @@ let PolicyGroupView = Backbone.View.extend({
                 titleTooltip: 'The year that the last adoption occurred.',
                 sortable: true,
                 searchable: false,
-                clickToSelect: true,
                 order: 'asc'
             }],
             formatLoadingMessage: () => 'Loading policies, please wait...',
@@ -1612,7 +1616,7 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .attrTween("d", (d) => {
                 let c = d.coords,
-                    n = _self.processCoordinates(nodes, cstat, _attr.c, d),
+                    n = _self.processCoordinates(d),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1652,7 +1656,7 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .attrTween("d", (d) => {
                 let c = d.gcoords,
-                    n = _self.processCoordinates(nodes, cstat, _attr.c, d),
+                    n = _self.processCoordinates(d),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1760,7 +1764,7 @@ let DiffusionView = Backbone.View.extend({
             .append('path')
             .attr({
                 d: (d) => {
-                    d.coords = _self.processCoordinates(nodes, cstat, _attr.c, d);
+                    d.coords = _self.processCoordinates(d);
                     return _self.linkBuilder(d);
                 },
                 class: (d) => {
@@ -1809,7 +1813,7 @@ let DiffusionView = Backbone.View.extend({
             .append('path')
             .attr({
                 d: (d) => {
-                    d.gcoords = _self.processCoordinates(nodes, cstat, _attr.c, d);
+                    d.gcoords = _self.processCoordinates(d);
                     return _self.guidanceBuilder(d);
                 },
                 class: (d) => {
@@ -2050,11 +2054,14 @@ let DiffusionView = Backbone.View.extend({
             [xScale(c.x1), yScale(c.y1)]
         ]);
     },
-    processCoordinates(nodes, cstat, c, d) {
-        const divider = 0.3,
+    processCoordinates(d) {
+        let divider = 0.3,
+            _attr = this._attr,
+            nodes = _attr.nodes,
+            cstat = _attr.cstat,
             // yPartition1 = 0.25,
             // yPartition2 = 0.75,
-            centralityType = c.get("centrality"),
+            centralityType = this._attr.c.get("centrality"),
             thicknessParam = nodes[d.source].centralities[centralityType],
             standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]);
         // ySeq = conf.pipe.metaToId[c.get("metadata")],

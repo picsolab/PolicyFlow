@@ -147,8 +147,8 @@ class PolicyService(BaseService):
         years = detail.keys()
         output["policyId"] = result.policyId
         output["policyName"] = result.policyName
-        output["policyStart"] = min(years)
-        output["policyEnd"] = max(years)
+        output["policyStart"] = None if len(years) == 0 else min(years)
+        output["policyEnd"] = None if len(years) == 0 else max(years)
         output["detail"] = detail
         output["message"] = "success"
         return json.dumps(output)
@@ -162,7 +162,7 @@ class PolicyService(BaseService):
         if policies is not None:
             return json.dumps({"policies": [
                 {"policy_id": p.policyId, "policy_name": p.policyName, "subject": p.subject.subjectName,
-                 "policy_start": p.policyStart, "policy_end": p.policyEnd}
+                 "policy_start": p.policyStart, "policy_end": p.policyEnd, "adoption_count": len(p.cascades)}
                 for p in policies]})
 
         return json.dumps({})

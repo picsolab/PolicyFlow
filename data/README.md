@@ -5,6 +5,12 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
+### 20171008
+
+trim leading spaces in policy names.
+
+`update policy set policy_name = trim(policy_name);`
+
 ### 20170924
 
 back up entire database of PolicyFlow `v2.0.0`.

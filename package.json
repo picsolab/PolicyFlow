@@ -45,6 +45,7 @@
         "mathjs": "^3.16.3",
         "rxjs": "5.0.1",
         "topojson": "^3.0.0",
+        "tsne": "^1.0.1",
         "underscore-template-loader": "^0.8.0"
     },
     "devDependencies": {
