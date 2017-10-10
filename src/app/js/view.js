@@ -3,7 +3,7 @@ let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
 let GRank = require('./grank.js');
-let GRankWorker = require("./grank.worker.js");
+let GRankWorker = require("./workers/grank.worker.js");
 const printDiagnoseInfo = false;
 
 let colorList = [],
@@ -610,14 +610,14 @@ let GeoView = Backbone.View.extend({
             // to color tract iff:
             // - one of six `metadata` options is chosen, and 
             // - a policy is specified
-            colorNeeded = (_attr.c.get("metadata") !== conf.bases.yAttributeList[0].id) && (_attr.c.get("policy") !== conf.bases.policy.default),
+            isColorNeeded = (_attr.c.get("metadata") !== conf.bases.yAttributeList[0].id) && (_attr.c.get("policy") !== conf.bases.policy.default),
             colorScale;
 
         // clear previous legend
         $(this.el).find("#geo-legend-group").empty();
 
         // apply gradient color to tracts and render the legend 
-        if (colorNeeded) {
+        if (isColorNeeded) {
             meta = conf.pipe.metaToId[_attr.c.get("metadata")];
             let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
                 colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]]
@@ -667,7 +667,7 @@ let GeoView = Backbone.View.extend({
                         return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         let node = _attr.nodes[title];
-                        if (colorNeeded && node.valid) {
+                        if (isColorNeeded && node.valid) {
                             // return corresponding color for one states that adopted current policy
                             return colorScale(node["metadata"][meta]);
                         } else {
@@ -838,41 +838,29 @@ let NetworkView = Backbone.View.extend({
             _legendXOffset = gs.n.margin.left + gs.n.size.width - gs.n.size.legendWidth;
 
         // dom element and groups
-        let svg = _attr.svg = d3.select(_self.el)
-            .attr({
-                'preserveAspectRatio': 'xMidYMid meet',
-                'viewBox': ("0 0 " + _width + " " + _height + ""),
-                'class': 'svg-content-responsive'
-            }),
-            edgeG = svg.append('g').attr({
-                'id': 'network-edge-group',
-                'class': 'edge-group',
-                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
-            }),
-            nodeG = svg.append('g').attr({
-                'id': 'network-node-group',
-                'class': 'node-group',
-                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
-            }),
-            labelG = svg.append('g').attr({
-                'id': 'network-label-group',
-                'class': 'label-group',
-                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
-            }),
-            legendG = svg.append('g').attr({
-                'id': 'network-legend-group',
-                'class': 'label-group',
-                'transform': "translate(" + _legendXOffset + "," + gs.n.margin.top + ")"
-            }),
+        // sorry i really cannot see the point in removing the feature in d3v4 that set multiple attributes 
+        // with hash for a selection.
+        let svg = d4.select(_self.el)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
+            .attr('class', 'svg-content-responsive'),
+            edgeG = svg.append('g')
+            .attr('id', 'network-edge-group')
+            .attr('class', 'edge-group')
+            .attr('transform', "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"),
+            nodeG = svg.append('g')
+            .attr('id', 'network-node-group')
+            .attr('class', 'node-group')
+            .attr('transform', "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"),
+            labelG = svg.append('g')
+            .attr('id', 'network-label-group')
+            .attr('class', 'label-group')
+            .attr('transform', "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"),
+            legendG = svg.append('g')
+            .attr('id', 'network-legend-group')
+            .attr('class', 'label-group')
+            .attr('transform', "translate(" + _legendXOffset + "," + gs.n.margin.top + ")"),
             defs = svg.append('defs');
-
-        // create force layout 
-        let force = d3.layout.force()
-            .size([_width, _height])
-            .linkDistance(100)
-            .charge(-500)
-            .gravity(0.4)
-            .friction(0.9);
 
         // expose variables to the view class
         $.extend(_attr, {
@@ -886,8 +874,7 @@ let NetworkView = Backbone.View.extend({
             nodes: nodes,
             edges: edges,
             stat: stat,
-            cstat: cstat,
-            force: force
+            cstat: cstat
         });
 
         // create the triangle symbol applied to arrows
@@ -906,19 +893,25 @@ let NetworkView = Backbone.View.extend({
             geoBase = _attr.c.get("geoBase"), // {"state", "region"}
             metaType = _attr.c.get("metadata"), // {conf.bases.yAttributeList[i].id} "centrality" or other attributes
             cType = _attr.c.get("centrality"), // {conf.bases.centralityList[i].id} centrality type
-            selectedIdList = d3.set(_self.getSelectedIds(_attr.c)), // selected states
-            filteredNodes = {},
-            filteredEdges = [],
-            isSpecificNetwork = _attr.c.get("policy") !== conf.bases.policy.default,
-            colorNeeded = (geoBase === "state" ?
-                (metaType !== conf.bases.yAttributeList[0].id) && isSpecificNetwork :
-                true),
-            opacity = css_variables["--opacity-state"],
             meta = conf.bases.yAttributeList[0].id,
-            colorScale;
+            opacity = css_variables["--opacity-state"];
+
+        let colorScale = (void 0),
+            sizeScale = d3.scale.linear()
+            .domain([cstat.min[cType], cstat.max[cType]])
+            .range(gs.n.config.circleSizeRange),
+            xScale = d3.scale.linear()
+            .range([gs.n.margin.left, gs.n.margin.left + gs.n.size.width]),
+            yScale = d3.scale.linear()
+            .range([gs.n.margin.top, gs.n.margin.top + gs.n.size.height]);
+
+        let isSpecificNetwork = _attr.c.get("policy") !== conf.bases.policy.default,
+            isColorNeeded = (geoBase === "state" ?
+                (metaType !== conf.bases.yAttributeList[0].id) && isSpecificNetwork :
+                true);
 
         // config `colorScale` and default `opacity` that'd be applied to render the map according to `geoBase`
-        if (colorNeeded) {
+        if (isColorNeeded) {
             meta = conf.pipe.metaToId[_attr.c.get("metadata")];
             switch (geoBase) {
                 case "state":
@@ -938,9 +931,12 @@ let NetworkView = Backbone.View.extend({
             }
         }
 
+        let filteredNodes = {},
+            filteredEdges = [];
+
         // iterate `edges` with `nodes` to filter and generate nodes and edges that are actually need to be rendered
         edges.forEach(edge => {
-            if (isAValidEdge(edge)) {
+            if (_self.isAValidEdge(edge)) {
                 let newEdge = {
                     source: filteredNodes[edge.source] || (filteredNodes[edge.source] = nodes[edge.source]),
                     target: filteredNodes[edge.target] || (filteredNodes[edge.target] = nodes[edge.target])
@@ -967,20 +963,141 @@ let NetworkView = Backbone.View.extend({
             $("#unable-to-process-network-notitication").hide();
         }
 
-        // toggle legend for specific network
+        let filteredNodeList = _.values(filteredNodes);
+
+        // create element groups with filtered nodes and edges
+        let links = _attr.edgeG.selectAll("path")
+            .data(filteredEdges, d => d.name),
+            circles = _attr.nodeG.selectAll(".network-node")
+            .data(filteredNodeList, d => d.stateId),
+            texts = _attr.labelG.selectAll("text")
+            .data(filteredNodeList, d => d.stateId);
+
+        // remove elements that are no longer need to display at current update
+        links.exit().remove();
+        circles.exit().transition().attr("r", 0).remove();
+        texts.exit().remove();
+
+        // add and render elements within current selection
+        links = links.enter().append("path")
+            .attr("class", d => "network-link " + _self.getLinkValidityClass(d))
+            .attr("marker-end", "url(#edge-marker)");
+
+        circles = circles.enter().append("circle")
+            .attr("class", "network-node")
+            .attr("title", d => d.stateId)
+            .attr("r", d => sizeScale(nodes[d.stateId].centralities[cType]))
+            .style("fill", d => {
+                switch (geoBase) {
+                    case "state":
+                        // to proceed only when the title string is from one of 50 states,
+                        // this validation is due to mismatch between state set from geo shape file and our database
+                        if (d4.set(conf.static.states).has(d.stateId)) {
+                            if (d.stateId === "NE") {
+                                // special case: no data for NE 
+                                return d4.rgb(css_variables["--color-unadopted"]).brighter(1);
+                            } else {
+                                let node = _attr.nodes[d.stateId];
+                                if (isColorNeeded && node.valid) {
+                                    // return corresponding color for one states that adopted current policy
+                                    d.fill = colorScale(node["metadata"][meta]);
+                                } else {
+                                    // return default color otherwise
+                                    d.fill = css_variables["--color-unadopted"];
+                                }
+                            }
+                        }
+                        break;
+                    case "region":
+                        d.fill = colorScale[conf.pipe.regionOf[d.stateId]];
+                        break;
+                    default:
+                        // won't ever happen
+                }
+                return d.fill;
+            })
+            .style("stroke", d => d4.rgb(d.fill).darker(1))
+            .style("opacity", opacity)
+            .on("mouseover", circleOverHandler)
+            .on("mouseleave", circleLeaveHandler)
+            .call(d4.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        texts = texts.enter().append("text")
+            .attr("y", ".31em")
+            .attr("x", d => {
+                let r = sizeScale(nodes[d.stateId].centralities[cType]);
+                if (r > 10) {
+                    return -5;
+                } else {
+                    return gs.n.margin.labelXShift + r;
+                }
+            })
+            .text(d => d.stateId);
+
+        // apply simulations
+        let centerX = gs.n.margin.left + gs.n.size.width / 2,
+            centerY = gs.n.margin.top + gs.n.size.height / 2,
+            forceLink = d4.forceLink().distance(100),
+            forceCenter = d4.forceCenter(centerX, centerY),
+            forceCollide = d4.forceCollide()
+            .radius(d => 5 + sizeScale(nodes[d.stateId].centralities[cType]));
+
+        let simulation = d4.forceSimulation()
+            .force('link', forceLink)
+            .force('center', forceCenter)
+            .force('collide', forceCollide);
+
+        // toggle legend and setup force
         if (isSpecificNetwork) {
             $("#network-legend-group").show();
+
+            let dists = filteredNodeList.map(d => filteredNodeList.map(e => Math.abs(d.adoptedYear - e.adoptedYear))),
+                tsne = new tsnejs.tSNE({
+                    dim: 2,
+                    perplexity: 10,
+                });
+
+            tsne.initDataDist(dists);
+            let tsneForce = function(alpha) {
+                tsne.step();
+                let pos = tsne.getSolution();
+
+                xScale.domain(d3.extent(pos.map(d => d[0])));
+                yScale.domain(d3.extent(pos.map(d => d[1])));
+
+                filteredNodeList.forEach((d, i) => {
+                    d.x += alpha * (45 * pos[i][0] - d.x);
+                    d.y += alpha * (45 * pos[i][1] - d.y);
+                });
+            }
+
+            // create tsne layout for specific network
+            simulation.force('tsne', tsneForce);
         } else {
             $("#network-legend-group").hide();
+
+            // create manyBody force layout for general network
+            let forceCharge = d4.forceManyBody()
+                .strength(-30)
+                .distanceMin(gs.n.config.circleSizeRange[1])
+                .distanceMax(gs.n.size.width / 4);
+
+            simulation.force('charge', forceCharge);
         }
 
-        let sizeScale = d3.scale.linear()
-            .domain([cstat.min[cType], cstat.max[cType]])
-            .range(gs.n.config.circleSizeRange),
-            force = _attr.force.on("tick", tick),
-            drag = force.drag()
-            .on("dragstart", dragstart),
-            graph = new GRank.Graph(),
+        simulation
+            .nodes(filteredNodeList)
+            .on("tick", ticked);
+
+        simulation
+            .force("link")
+            .links(filteredEdges);
+
+        // compute node similarity
+        let graph = new GRank.Graph(),
             nodeList = _.map(filteredNodes, node => node.stateId),
             edgeList = _.map(filteredEdges, edge => {
                 return (edge.validity ? {
@@ -992,15 +1109,9 @@ let NetworkView = Backbone.View.extend({
                 });
             });
 
+        // setup grank graph
         graph.nodes(nodeList)
             .edges(edgeList);
-
-        // expose filtered edges and nodes to the view class
-        $.extend(_attr, {
-            filteredEdges: filteredEdges,
-            filteredNodes: filteredNodes,
-            graph: graph
-        });
 
         // update graph according to filteredNodes and filteredEdges
         // and compute similarities for mouse event
@@ -1024,140 +1135,47 @@ let NetworkView = Backbone.View.extend({
             setTimeout(() => { graph.doPrank(); }, 350);
         }
 
-
-        // config force layout with filtered nodes and edges
-        force.nodes(d3.values(filteredNodes))
-            .links(filteredEdges)
-            .start();
-
-        // create element groups with filtered nodes and edges
-        let links = _attr.edgeG.selectAll("path")
-            .data(force.links(), (d) => d.name),
-            circles = _attr.nodeG.selectAll(".network-node")
-            .data(force.nodes(), (d) => d.stateId),
-            texts = _attr.labelG.selectAll("text")
-            .data(force.nodes(), (d) => d.stateId);
-
-        // remove elements that are no longer need to display at current update
-        links.exit().remove();
-        circles.exit().transition()
-            .attr("r", 0).remove();
-        texts.exit().remove();
-
-        // add and render elements within current selection
-        links.enter().append("path")
-            .attr({
-                "class": d => "network-link " + _self.getLinkValidityClass(d),
-                "marker-end": "url(#edge-marker)"
-            });
-
-        circles.enter().append("circle")
-            .attr({
-                class: "network-node",
-                title: (d) => d.stateId
-            })
-            .on("dblclick", dblclick)
-            .on("mouseover", circleOverHandler)
-            .on("mouseleave", circleLeaveHandler)
-            .call(drag);
-
-        circles.attr({
-                r: d => sizeScale(nodes[d.stateId].centralities[cType])
-            })
-            .style({
-                fill: (d) => {
-                    switch (geoBase) {
-                        case "state":
-                            // to proceed only when the title string is from one of 50 states,
-                            // this validation is due to mismatch between state set from geo shape file and our database
-                            if (d3.set(conf.static.states).has(d.stateId)) {
-                                if (d.stateId === "NE") {
-                                    // special case: no data for NE 
-                                    return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
-                                } else {
-                                    let node = _attr.nodes[d.stateId];
-                                    if (colorNeeded && node.valid) {
-                                        // return corresponding color for one states that adopted current policy
-                                        d.fill = colorScale(node["metadata"][meta]);
-                                    } else {
-                                        // return default color otherwise
-                                        d.fill = css_variables["--color-unadopted"];
-                                    }
-                                }
-                            }
-                            break;
-                        case "region":
-                            d.fill = colorScale[conf.pipe.regionOf[d.stateId]];
-                            break;
-                        default:
-                            // won't ever happen
-                    }
-                    return d.fill;
-                },
-                stroke: (d) => d3.rgb(d.fill).darker(1),
-                opacity: opacity
-            });
-
-        texts.enter().append("text")
-            .attr({
-                "y": ".31em"
-            })
-            .text(d => d.stateId);
-
-        texts.attr({
-            "x": d => {
-                let r = sizeScale(nodes[d.stateId].centralities[cType]);
-                if (r > 10) {
-                    return -5;
-                } else {
-                    return gs.n.margin.labelXShift + r;
-                }
-            }
-        });
-
-        // this is MAGIC to controll initial animation of force layout
-        while (!gs.n.config.animationSwitch && force.alpha() > 1e-5) { force.tick(); }
-
-        /**
-         * An edge is valid iff:
-         *  both source and target nodes have adopted current policy, and 
-         *  at lease one of two nodes are selected to show when render state-wise map, or
-         *  both source and target nodes are selected to show when render regional map.
-         */
-        function isAValidEdge(edge) {
-            return (nodes[edge.source].valid && nodes[edge.target].valid) &&
-                (geoBase === "state" ?
-                    selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :
-                    selectedIdList.has(edge.source) && selectedIdList.has(edge.target));
-        }
-
         // Use elliptical arc path segments to doubly-encode directionality.
-        function tick() {
-            links.attr({
-                d: (d) => {
+        function ticked() {
+            links
+                .attr("d", d => {
                     let dx = d.target.x - d.source.x,
                         dy = d.target.y - d.source.y,
                         dr = Math.sqrt(dx * dx + dy * dy);
                     return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
-                },
-                x1: (d) => d.source.x,
-                y1: (d) => d.source.y,
-                x2: (d) => d.target.x,
-                y2: (d) => d.target.y
-            });
-            circles.attr({
-                cx: (d) => d.x,
-                cy: (d) => d.y
-            });
-            texts.attr("transform", (d) => "translate(" + d.x + "," + d.y + ")");
+                })
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            circles
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            texts
+                .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
         }
 
-        function dragstart(d) {
-            d3.select(this).classed("fixed", d.fixed = true);
+        function dragstarted(d) {
+            if (!d4.event.active) {
+                simulation.alphaTarget(0.3).restart();
+            }
+            d.fx = d.x;
+            d.fy = d.y;
         }
 
-        function dblclick(d) {
-            d3.select(this).classed("fixed", d.fixed = false);
+        function dragged(d) {
+            d.fx = d4.event.x;
+            d.fy = d4.event.y;
+        }
+
+        function dragended(d) {
+            if (!d4.event.active) {
+                simulation.alphaTarget(0);
+            }
+            d.fx = null;
+            d.fy = null;
         }
 
         // pop up similar nodes when mouseover a node
@@ -1183,27 +1201,29 @@ let NetworkView = Backbone.View.extend({
             }
         }
 
+        // expose filtered edges and nodes to the view class
+        $.extend(_attr, {
+            filteredEdges: filteredEdges,
+            filteredNodes: filteredNodes,
+            graph: graph
+        });
+
         _self.postRender();
         return this;
     },
     /**
-     * Retrieve current selection of states as a list.
-     * @param {object} conditions Backbone.Model
-     * @returns {Array<string>} state list in their IDs.
+     * An edge is valid iff:
+     *  both source and target nodes have adopted current policy, and 
+     *  at lease one of two nodes are selected to show when render state-wise map, or
+     *  both source and target nodes are selected to show when render regional map.
      */
-    getSelectedIds(conditions) {
-        if ((conditions.get("regionList").length === 0 && conditions.get("stateList").length === 0) ||
-            conditions.get("policy") === "unselected") {
-            return _.flatMap(conf.static.regions);
-        }
-        switch (conditions.get("geoBase")) {
-            case "state":
-                return conditions.get("stateList");
-            case "region":
-                return _.flatten(conditions.get("regionList").map(region => conf.static.regions[region]))
-            default:
-                //shouldn't happen
-        }
+    isAValidEdge(edge) {
+        let _attr = this._attr,
+            selectedIdList = d3.set(_attr.c.getSelectedIds()); // selected states
+        return (_attr.nodes[edge.source].valid && _attr.nodes[edge.target].valid) &&
+            (_attr.c.get("geoBase") === "state" ?
+                selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :
+                selectedIdList.has(edge.source) && selectedIdList.has(edge.target));
     },
     getLinkValidityClass(edge) {
         return (edge.validity ?
@@ -1218,28 +1238,24 @@ let NetworkView = Backbone.View.extend({
     },
     prepareMarker() {
         this._attr.defs.append("marker")
-            .attr({
-                "id": "edge-marker",
-                "viewBox": "0 -5 10 10",
-                "refX": 15,
-                "refY": -1.5,
-                "markerWidth": 6,
-                "markerHeight": 6,
-                "orient": "auto"
-            })
+            .attr("id", "edge-marker")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", -1.5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
             .append("path")
             .attr("d", "M0,-5L10,0L0,5");
 
         this._attr.defs.append("marker")
-            .attr({
-                "id": "triangle-marker",
-                "viewBox": "0 -5 10 10",
-                "refX": 0,
-                "refY": 0,
-                "markerWidth": 6,
-                "markerHeight": 6,
-                "orient": "auto"
-            })
+            .attr("id", "triangle-marker")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 0)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
             .append("path")
             .attr("d", "M0,-5L10,0L0,5");
     },
@@ -1247,19 +1263,15 @@ let NetworkView = Backbone.View.extend({
         this._attr.legendG.selectAll("path")
             .data(["follow-the-rule", "violate-the-rule"])
             .enter().append("path")
-            .attr({
-                d: (d, i) => "M0," + (i * gs.n.margin.legendYShift) + "L20," + (i * gs.n.margin.legendYShift),
-                class: d => "network-link " + d,
-                "marker-end": "url(#triangle-marker)"
-            });
+            .attr("d", (d, i) => "M0," + (i * gs.n.margin.legendYShift) + "L20," + (i * gs.n.margin.legendYShift))
+            .attr("class", d => "network-link " + d)
+            .attr("marker-end", "url(#triangle-marker)");
 
         this._attr.legendG.selectAll("text")
             .data(["Expected Cascades", "Deviant Cascades"])
             .enter().append("text")
-            .attr({
-                x: 30,
-                y: (d, i) => gs.n.margin.legendYShift * i + gs.n.margin.legendTextShift
-            })
+            .attr("x", 30)
+            .attr("y", (d, i) => gs.n.margin.legendYShift * i + gs.n.margin.legendTextShift)
             .text(d => d);
 
     },

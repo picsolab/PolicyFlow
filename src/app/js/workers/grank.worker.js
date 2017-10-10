@@ -1,4 +1,4 @@
-let GRank = require('./grank.js');
+let GRank = require('../grank.js');
 /**
  * Web Worker that runs PRank in a separate thread.
  */

@@ -66,7 +66,9 @@ module.exports = {
             crossfilter: 'crossfilter',
             Backbone: 'backbone',
             d3tip: 'd3-tip',
-            topojson: 'topojson'
+            topojson: 'topojson',
+            tsnejs: 'tsne',
+            d4: "d3v4"
         }),
         new CopyWebpackPlugin([{
             from: helpers.root('src', 'data'),

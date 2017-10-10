@@ -30,6 +30,8 @@
         "Backbone": true,
         "d3tip": true,
         "topojson": true,
-        "__webpack_public_path__": true
+        "__webpack_public_path__": true,
+        "tsnejs": true,
+        "d4": true
     }
 }

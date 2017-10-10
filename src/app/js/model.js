@@ -40,6 +40,25 @@ let Conditions = Backbone.Model.extend({
             this.set(theListName, _.filter(theList, (o) => o !== tract));
         }
     },
+    /**
+     * Retrieve current selection of states as a list.
+     * @returns {Array<string>} state list in their IDs.
+     */
+    getSelectedIds() {
+        let _self = this;
+        if ((this.get("regionList").length === 0 && this.get("stateList").length === 0) ||
+            this.get("policy") === "unselected") {
+            return _.flatMap(conf.static.regions);
+        }
+        switch (this.get("geoBase")) {
+            case "state":
+                return this.get("stateList");
+            case "region":
+                return _.flatten(_self.get("regionList").map(region => conf.static.regions[region]))
+            default:
+                //shouldn't happen
+        }
+    },
     getTractList() {
         return this.get(this.getTractListName());
     },
