@@ -46,8 +46,7 @@ let Conditions = Backbone.Model.extend({
      */
     getSelectedIds() {
         let _self = this;
-        if ((this.get("regionList").length === 0 && this.get("stateList").length === 0) ||
-            this.get("policy") === "unselected") {
+        if ((this.get("regionList").length === 0 && this.get("stateList").length === 0)) {
             return _.flatMap(conf.static.regions);
         }
         switch (this.get("geoBase")) {

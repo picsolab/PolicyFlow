@@ -897,7 +897,7 @@ let NetworkView = Backbone.View.extend({
             opacity = css_variables["--opacity-state"];
 
         let colorScale = (void 0),
-            sizeScale = d3.scale.linear()
+            sizeScale = d4.scaleLinear()
             .domain([cstat.min[cType], cstat.max[cType]])
             .range(gs.n.config.circleSizeRange),
             xScale = d3.scale.linear()
@@ -917,9 +917,9 @@ let NetworkView = Backbone.View.extend({
                 case "state":
                     let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
                         colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]];
-                    colorScale = d3.scale.linear()
+                    colorScale = d4.scaleLinear()
                         .domain(valueDomain)
-                        .interpolate(d3.interpolateRgb)
+                        .interpolate(d4.interpolateRgb)
                         .range(colorRange);
                     break;
                 case "region":
@@ -974,59 +974,55 @@ let NetworkView = Backbone.View.extend({
             .data(filteredNodeList, d => d.stateId);
 
         // remove elements that are no longer need to display at current update
-        links.exit().remove();
-        circles.exit().transition().attr("r", 0).remove();
-        texts.exit().remove();
+        // and keep the exiting links connected to the moving remaining nodes.
+        links.exit()
+            .transition()
+            .attr("stroke-opacity", 0)
+            .attrTween("d", d => {
+                let dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+                return () => "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.source.x + "," + d.source.y;
+            })
+            .attrTween("x1", d => () => d.source.x)
+            .attrTween("y1", d => () => d.source.y)
+            .attrTween("x2", d => () => d.source.x)
+            .attrTween("y2", d => () => d.source.y)
+            .remove();
+
+        circles.exit()
+            .transition().attr("r", 0)
+            .remove();
+
+        texts.exit().transition().remove();
 
         // add and render elements within current selection
         links = links.enter().append("path")
+            .call(links => links.transition().attr("stroke-opacity", 1))
             .attr("class", d => "network-link " + _self.getLinkValidityClass(d))
-            .attr("marker-end", "url(#edge-marker)");
+            .attr("marker-end", "url(#edge-marker)")
+            .merge(links);
 
         circles = circles.enter().append("circle")
             .attr("class", "network-node")
             .attr("title", d => d.stateId)
-            .attr("r", d => sizeScale(nodes[d.stateId].centralities[cType]))
-            .style("fill", d => {
-                switch (geoBase) {
-                    case "state":
-                        // to proceed only when the title string is from one of 50 states,
-                        // this validation is due to mismatch between state set from geo shape file and our database
-                        if (d4.set(conf.static.states).has(d.stateId)) {
-                            if (d.stateId === "NE") {
-                                // special case: no data for NE 
-                                return d4.rgb(css_variables["--color-unadopted"]).brighter(1);
-                            } else {
-                                let node = _attr.nodes[d.stateId];
-                                if (isColorNeeded && node.valid) {
-                                    // return corresponding color for one states that adopted current policy
-                                    d.fill = colorScale(node["metadata"][meta]);
-                                } else {
-                                    // return default color otherwise
-                                    d.fill = css_variables["--color-unadopted"];
-                                }
-                            }
-                        }
-                        break;
-                    case "region":
-                        d.fill = colorScale[conf.pipe.regionOf[d.stateId]];
-                        break;
-                    default:
-                        // won't ever happen
-                }
-                return d.fill;
-            })
-            .style("stroke", d => d4.rgb(d.fill).darker(1))
             .style("opacity", opacity)
             .on("mouseover", circleOverHandler)
             .on("mouseleave", circleLeaveHandler)
+            .merge(circles)
             .call(d4.drag()
                 .on("start", dragstarted)
                 .on("drag", dragged)
-                .on("end", dragended));
+                .on("end", dragended))
+            .call(circles => circles.transition().attr("r", d => sizeScale(nodes[d.stateId].centralities[cType])))
+            .style("fill", d => {
+                return d.fill = getColor(d);
+            })
+            .style("stroke", d => d4.rgb(d.fill).darker(1));
 
         texts = texts.enter().append("text")
             .attr("y", ".31em")
+            .merge(texts)
             .attr("x", d => {
                 let r = sizeScale(nodes[d.stateId].centralities[cType]);
                 if (r > 10) {
@@ -1043,7 +1039,7 @@ let NetworkView = Backbone.View.extend({
             forceLink = d4.forceLink().distance(100),
             forceCenter = d4.forceCenter(centerX, centerY),
             forceCollide = d4.forceCollide()
-            .radius(d => 5 + sizeScale(nodes[d.stateId].centralities[cType]));
+            .radius(d => gs.n.margin.collisionMargin + sizeScale(nodes[d.stateId].centralities[cType]));
 
         let simulation = d4.forceSimulation()
             .force('link', forceLink)
@@ -1061,7 +1057,7 @@ let NetworkView = Backbone.View.extend({
                 });
 
             tsne.initDataDist(dists);
-            let tsneForce = function(alpha) {
+            let forceTsne = function(alpha) {
                 tsne.step();
                 let pos = tsne.getSolution();
 
@@ -1069,13 +1065,13 @@ let NetworkView = Backbone.View.extend({
                 yScale.domain(d3.extent(pos.map(d => d[1])));
 
                 filteredNodeList.forEach((d, i) => {
-                    d.x += alpha * (45 * pos[i][0] - d.x);
-                    d.y += alpha * (45 * pos[i][1] - d.y);
+                    d.x += alpha * (xScale(pos[i][0]) - d.x);
+                    d.y += alpha * (yScale(pos[i][1]) - d.y);
                 });
             }
 
             // create tsne layout for specific network
-            simulation.force('tsne', tsneForce);
+            simulation.force('tsne', forceTsne);
         } else {
             $("#network-legend-group").hide();
 
@@ -1088,13 +1084,11 @@ let NetworkView = Backbone.View.extend({
             simulation.force('charge', forceCharge);
         }
 
-        simulation
-            .nodes(filteredNodeList)
-            .on("tick", ticked);
-
-        simulation
-            .force("link")
-            .links(filteredEdges);
+        // update and restart the simulation.
+        simulation.nodes(filteredNodeList);
+        simulation.force("link").links(filteredEdges);
+        simulation.on("tick", ticked)
+        simulation.alpha(0.2).restart();
 
         // compute node similarity
         let graph = new GRank.Graph(),
@@ -1131,8 +1125,37 @@ let NetworkView = Backbone.View.extend({
         } else {
             // if Web Worker not enabled or not supported
             // add an interval to delay UI blocking caused by network computation
-            // to improve: create a Web Worker for this computation
             setTimeout(() => { graph.doPrank(); }, 350);
+        }
+
+        function getColor(d) {
+            let fillColor = (void 0);
+            switch (geoBase) {
+                case "state":
+                    // to proceed only when the title string is from one of 50 states,
+                    // this validation is due to mismatch between state set from geo shape file and our database
+                    if (d4.set(conf.static.states).has(d.stateId)) {
+                        if (d.stateId === "NE") {
+                            // special case: no data for NE 
+                            fillColor = d4.rgb(css_variables["--color-unadopted"]).brighter(1);
+                        } else {
+                            let node = _attr.nodes[d.stateId];
+                            if (isColorNeeded && node.valid) {
+                                // return corresponding color for one states that adopted current policy
+                                fillColor = colorScale(node["metadata"][meta]);
+                            } else {
+                                // return default color otherwise
+                                fillColor = css_variables["--color-unadopted"];
+                            }
+                        }
+                    }
+                    break;
+                case "region":
+                    fillColor = colorScale[conf.pipe.regionOf[d.stateId]];
+                default:
+                    // won't ever happen
+            }
+            return fillColor;
         }
 
         // Use elliptical arc path segments to doubly-encode directionality.
@@ -1219,7 +1242,7 @@ let NetworkView = Backbone.View.extend({
      */
     isAValidEdge(edge) {
         let _attr = this._attr,
-            selectedIdList = d3.set(_attr.c.getSelectedIds()); // selected states
+            selectedIdList = d4.set(_attr.c.getSelectedIds()); // selected states
         return (_attr.nodes[edge.source].valid && _attr.nodes[edge.target].valid) &&
             (_attr.c.get("geoBase") === "state" ?
                 selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :

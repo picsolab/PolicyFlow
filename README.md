@@ -13,7 +13,7 @@ cd diffusion2017vis
 
 ### frontend
 
-The frontend is powered by [Backbone.js](http://backbonejs.org/), [D3.js](https://d3js.org/) `v3.5.16`, [Bootstrap](http://getbootstrap.com/docs/3.3/) `v3.3.7`, [webpack](https://webpack.github.io/) `v2.2.1`, and other tools.
+The frontend is running on [Backbone.js](http://backbonejs.org/), [D3.js](https://d3js.org/) `v3.5.16` and `v4.2.2`, [Bootstrap](http://getbootstrap.com/docs/3.3/) `v3.3.7`, [webpack](https://webpack.github.io/) `v2.2.1`, and other tools.
 
 1. Install dependencies, with [`npm`](https://www.npmjs.com/get-npm) do:
 
@@ -81,7 +81,7 @@ The backend is powered by [Flask](http://flask.pocoo.org/). To begin with, make 
     # supposing "diffusion2017vis" as the database schema name, 3306 as its port
     SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://[your_database_user_name]:[your_database_password]@localhost:3306/diffusion2017vis'
     SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
-    
+    SQLALCHEMY_TRACK_MODIFICATIONS = True
     # set to False to disable database logs in console
     SQLALCHEMY_ECHO = True
     ```

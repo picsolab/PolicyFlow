@@ -14,7 +14,7 @@
     "rules": {
         "no-const-assign": "warn",
         "no-this-before-super": "warn",
-        "no-undef": "warn",
+        "no-undef": "error",
         "no-unreachable": "warn",
         "no-unused-vars": "warn",
         "constructor-super": "warn",
@@ -32,6 +32,7 @@
         "topojson": true,
         "__webpack_public_path__": true,
         "tsnejs": true,
-        "d4": true
+        "d4": true,
+        "define": true
     }
 }

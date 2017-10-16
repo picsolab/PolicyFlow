@@ -142,7 +142,8 @@ const GraphSettings = {
             right: 10,
             labelXShift: 2,
             legendYShift: 15,
-            legendTextShift: 3
+            legendTextShift: 3,
+            collisionMargin: 8
         },
         size: {
             height: 450,
