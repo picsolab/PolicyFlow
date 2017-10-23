@@ -79,19 +79,30 @@
                     original = _self.graph.get(indicies);
                 _self.graph.set(indicies, original + 1);
             });
+            return this;
         },
 
         // retrieve a column from `matrix` by `index`
         getCol(matrix, index) {
             let _self = this,
-                range = math.range(0, _self._size);
-            return matrix.subset(math.index(range, index)).toArray().reduce((a, b) => a.concat(b));
+                range = math.range(0, _self._size),
+                indices = [];
+            try {
+                indices = matrix.subset(math.index(range, index)).toArray().reduce((a, b) => a.concat(b));
+            } finally {
+                return indices;
+            }
         },
 
         getRow(matrix, index) {
             let _self = this,
-                range = math.range(0, _self._size);
-            return matrix.subset(math.index(index, range)).toArray()[0];
+                range = math.range(0, _self._size),
+                indices = [];
+            try {
+                indices = matrix.subset(math.index(index, range)).toArray()[0];
+            } finally {
+                return indices;
+            }
         },
 
         compute(is, js, type) {
@@ -174,7 +185,6 @@
                 _C = _attr.C || this._C,
                 _lambda = _attr.lambda || this._lambda;
 
-            this.init();
             this.prank = math.zeros(_self._size, _self._size);
             while (_iter-- > 0) {
                 // update entire prank matrix
@@ -220,9 +230,9 @@
                 simValues = this.getCol(this[type], index),
                 result = [],
                 _top = top || this._TOP;
-            _top++; // number of top `top` result plus the `nodeName` it self would be (top + 1)
+
             simValues.forEach((sim, i) => {
-                if (sim !== 0) {
+                if (sim !== 0 && _self.nodeList[i] !== nodeName) {
                     result.push({
                         name: _self.nodeList[i],
                         value: sim
@@ -234,6 +244,29 @@
                 result = result.sort(_self.compare(a => a.value));
             }
             return result.slice(0, length < _top ? length : _top);
+        },
+
+        getInNodes(nodeName) {
+            let inNodeList = this.getCol(this.graph, this.nodeMap.get(nodeName));
+            return this.getNameList(inNodeList, nodeName);
+        },
+
+        getOutNodes(nodeName) {
+            let outNodeList = this.getRow(this.graph, this.nodeMap.get(nodeName));
+            return this.getNameList(outNodeList, nodeName);
+        },
+
+        getNameList(indexList, nodeName) {
+            let nameList = [];
+            indexList.forEach((count, index) => {
+                if (count !== 0 && this.nodeList[index] !== nodeName) {
+                    nameList.push({
+                        name: this.nodeList[index],
+                        value: count
+                    });
+                }
+            });
+            return nameList;
         },
 
         // comparator to sort nodes

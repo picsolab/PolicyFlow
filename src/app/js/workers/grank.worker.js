@@ -8,6 +8,7 @@ self.onmessage = function(e) {
     let graph = new GRank.Graph();
     graph.nodes(e.data.nodes)
         .edges(e.data.edges)
+        .init()
         .doPrank();
 
     // post result to main thread

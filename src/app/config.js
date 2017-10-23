@@ -9,6 +9,15 @@ const Config = {
             default: 'unselected',
             description: '---'
         },
+        nodeRelevance: [{
+                id: "similar",
+                description: "Similar"
+            },
+            {
+                id: "connected",
+                description: "Connected"
+            }
+        ],
         yAttributeList: [
             // the first element will be choosen as the default
             // [prod]

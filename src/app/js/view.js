@@ -3,6 +3,7 @@ let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
 let GRank = require('./grank.js');
+let _graph = new GRank.Graph();
 let GRankWorker = require("./workers/grank.worker.js");
 const printDiagnoseInfo = false;
 
@@ -385,6 +386,10 @@ let GeoView = Backbone.View.extend({
     el: '#svg-geo-view',
     initialize() {
         this._attr = {};
+        $.extend(this._attr, {
+            _graph: _graph
+        });
+        this.bindTriggers();
     },
     /**
      * render and prepare static elements that do not change according to different `conditions`, including
@@ -523,6 +528,8 @@ let GeoView = Backbone.View.extend({
                 },
                 opacity: css_variables["--opacity-state"]
             })
+            .on("mouseover", d => _self.lightUp(d.stateId))
+            .on("mouseleave", d => _self.turnOff(d.stateId))
             .append("title")
             .text((d) => d.properties.id);
 
@@ -594,7 +601,6 @@ let GeoView = Backbone.View.extend({
 
         // to render the rest elements
         this.update();
-        this.bindTriggers();
 
         // toggle state-wise/regional layer according to user's interaction
         this.toggleTract({ silent: true });
@@ -690,29 +696,90 @@ let GeoView = Backbone.View.extend({
         return node.valid && node.adoptedYear === 9999;
     },
     bindTriggers() {
-        let _attr = this._attr,
-            __svg = this.$el;
+        let _self = this,
+            _attr = this._attr;
 
         // to modify the list of selected states according to use's interaction.
         let regionTractClickHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target);
-                if (_curr.hasClass("region-tract")) {
-                    _attr.c.toggleTractList(_curr.attr("title"));
+                let __curr = $(e.target);
+                if (__curr.hasClass("region-tract")) {
+                    _attr.c.toggleTractList(__curr.attr("title"));
                 }
             },
             stateTractClickHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target);
-                if (_curr.hasClass("state-tract")) {
-                    _attr.c.toggleTractList(_curr.attr("title"));
+                let __curr = $(e.target);
+                if (__curr.hasClass("state-tract")) {
+                    let stateId = __curr.attr("title");
+                    _self.turnOff(stateId);
+                    _attr.c.toggleTractList(stateId);
                 }
             };
 
-        __svg.off();
-
-        __svg.on('click', regionTractClickHandler);
-        __svg.on('click', stateTractClickHandler);
+        this.$el.on('click', regionTractClickHandler);
+        this.$el.on('click', stateTractClickHandler);
+    },
+    /**
+     * light up relevant tracts.
+     * @param {string} stateId stateId of the target tract
+     */
+    lightUp(stateId) {
+        this.findTractById(stateId).addClass("hovered");
+        switch (this._attr.c.get("nodeRelevance")) {
+            case conf.bases.nodeRelevance[0].id:
+                // similar
+                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                this.lightUpTracts(nodeList, "in-nodes");
+                break;
+            case conf.bases.nodeRelevance[1].id:
+                // connected
+                let inNodeList = this._attr._graph.getInNodes(stateId),
+                    outNodeList = this._attr._graph.getOutNodes(stateId);
+                this.lightUpTracts(inNodeList, "in-nodes");
+                this.lightUpTracts(outNodeList, "out-nodes");
+                break;
+        }
+    },
+    /**
+     * turn off relevant tracts.
+     * @param {string} stateId stateId of the target tract
+     */
+    turnOff(stateId) {
+        this.findTractById(stateId).removeClass("hovered");
+        switch (this._attr.c.get("nodeRelevance")) {
+            case conf.bases.nodeRelevance[0].id:
+                // similar
+                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                this.turnOffTracts(nodeList, "in-nodes");
+                break;
+            case conf.bases.nodeRelevance[1].id:
+                // connected
+                let inNodeList = this._attr._graph.getInNodes(stateId),
+                    outNodeList = this._attr._graph.getOutNodes(stateId);
+                this.turnOffTracts(inNodeList, "in-nodes");
+                this.turnOffTracts(outNodeList, "out-nodes");
+                break;
+        }
+    },
+    /**
+     * apply colorClass to tracts with ids in tractList.
+     * @param {Array} tractList array of object <name, value>
+     * @param {string} colorClass class name that is going to apply
+     */
+    lightUpTracts(tractList, colorClass) {
+        let _self = this;
+        tractList.length !== 0 && tractList.forEach(tract => _self.findTractById(tract.name).addClass(colorClass));
+    },
+    /**
+     * remove colorClass from tract with ids in tractList.
+     * @param {Array} tractList tractList: array of object <name, value>
+     * @param {string} colorClass class name that is going to remove
+     */
+    turnOffTracts(tractList, colorClass) {
+        let _self = this;
+        tractList.length !== 0 && tractList.forEach(tract => _self.findTractById(tract.name).removeClass(colorClass));
+    },
+    findTractById(stateId) {
+        return $("#state-tract-group").find("path[title=" + stateId + "]");
     },
     /**
      * toggle state-wise/regional layer according to user's interaction
@@ -812,6 +879,9 @@ let NetworkView = Backbone.View.extend({
     el: "#svg-network-view",
     initialize() {
         this._attr = {};
+        $.extend(this._attr, {
+            _graph: _graph
+        });
     },
     /**
      * render and prepare static elements that do not change according to different `conditions`, including
@@ -1007,8 +1077,8 @@ let NetworkView = Backbone.View.extend({
             .attr("class", "network-node")
             .attr("title", d => d.stateId)
             .style("opacity", opacity)
-            .on("mouseover", circleOverHandler)
-            .on("mouseleave", circleLeaveHandler)
+            .on("mouseover", d => _self.lightUp(d.stateId))
+            .on("mouseleave", d => _self.turnOff(d.stateId))
             .merge(circles)
             .call(d4.drag()
                 .on("start", dragstarted)
@@ -1091,7 +1161,7 @@ let NetworkView = Backbone.View.extend({
         simulation.alpha(0.2).restart();
 
         // compute node similarity
-        let graph = new GRank.Graph(),
+        let graph = _attr._graph,
             nodeList = _.map(filteredNodes, node => node.stateId),
             edgeList = _.map(filteredEdges, edge => {
                 return (edge.validity ? {
@@ -1105,11 +1175,12 @@ let NetworkView = Backbone.View.extend({
 
         // setup grank graph
         graph.nodes(nodeList)
-            .edges(edgeList);
+            .edges(edgeList)
+            .init();
 
         // update graph according to filteredNodes and filteredEdges
         // and compute similarities for mouse event
-        if (conf.enableWebWorker && window.Worker) {
+        if (true && conf.enableWebWorker && window.Worker) {
             // if Web Worker supported
             // show info span and mute pointer event
             $("#computing-node-similarity-span").show();
@@ -1201,38 +1272,77 @@ let NetworkView = Backbone.View.extend({
             d.fy = null;
         }
 
-        // pop up similar nodes when mouseover a node
-        function circleOverHandler() {
-            let simList = graph.getSimilarNodes("prank", $(this).attr("title"));
-
-            if (simList.length !== 0) {
-                simList.forEach(sim => {
-                    let __circle = $("#network-node-group").find("circle[title=" + sim.name + "]");
-                    __circle.addClass("fixed");
-                });
-            }
-        }
-        // clear pop up status on nodes when mouseleave
-        function circleLeaveHandler() {
-            let simList = graph.getSimilarNodes("prank", $(this).attr("title"));
-
-            if (simList.length !== 0) {
-                simList.forEach(sim => {
-                    let __circle = $("#network-node-group").find("circle[title=" + sim.name + "]");
-                    __circle.removeClass("fixed");
-                });
-            }
-        }
-
         // expose filtered edges and nodes to the view class
         $.extend(_attr, {
             filteredEdges: filteredEdges,
-            filteredNodes: filteredNodes,
-            graph: graph
+            filteredNodes: filteredNodes
         });
 
         _self.postRender();
         return this;
+    },
+    /**
+     * light up relevant nodes.
+     * @param {string} stateId stateId of the target node
+     */
+    lightUp(stateId) {
+        this.findNodeById(stateId).addClass("hovered");
+        switch (this._attr.c.get("nodeRelevance")) {
+            case conf.bases.nodeRelevance[0].id:
+                // similar
+                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                this.lightUpNodes(nodeList, "in-nodes");
+                break;
+            case conf.bases.nodeRelevance[1].id:
+                // connected
+                let inNodeList = this._attr._graph.getInNodes(stateId),
+                    outNodeList = this._attr._graph.getOutNodes(stateId);
+                this.lightUpNodes(inNodeList, "in-nodes");
+                this.lightUpNodes(outNodeList, "out-nodes");
+                break;
+        }
+    },
+    /**
+     * turn off relevant nodes.
+     * @param {string} stateId stateId of the target node
+     */
+    turnOff(stateId) {
+        this.findNodeById(stateId).removeClass("hovered");
+        switch (this._attr.c.get("nodeRelevance")) {
+            case conf.bases.nodeRelevance[0].id:
+                // similar
+                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                this.turnOffNodes(nodeList, "in-nodes");
+                break;
+            case conf.bases.nodeRelevance[1].id:
+                // connected
+                let inNodeList = this._attr._graph.getInNodes(stateId),
+                    outNodeList = this._attr._graph.getOutNodes(stateId);
+                this.turnOffNodes(inNodeList, "in-nodes");
+                this.turnOffNodes(outNodeList, "out-nodes");
+                break;
+        }
+    },
+    /**
+     * apply colorClass to circles with ids in nodeList.
+     * @param {Array} nodeList stateId list of nodes that need to light up
+     * @param {string} colorClass class name that is going to apply
+     */
+    lightUpNodes(nodeList, colorClass) {
+        let _self = this;
+        nodeList.length !== 0 && nodeList.forEach(node => _self.findNodeById(node.name).addClass(colorClass));
+    },
+    /**
+     * remove colorClass from circles with ids in nodeLists.
+     * @param {Array} nodeList stateId list of nodes that need to turn off
+     * @param {string} colorClass class name that is going to remove
+     */
+    turnOffNodes(nodeList, colorClass) {
+        let _self = this;
+        nodeList.length !== 0 && nodeList.forEach(node => _self.findNodeById(node.name).removeClass(colorClass));
+    },
+    findNodeById(stateId) {
+        return $("#network-node-group").find("circle[title=" + stateId + "]");
     },
     /**
      * An edge is valid iff:
@@ -2766,6 +2876,43 @@ let DropdownController = Backbone.View.extend({
     }
 });
 
+/**
+ * Switchs
+ * Customized switch component that:
+ * - can append a label as title
+ * - can apply two alignment
+ */
+let BootstrapSwitchView = Backbone.View.extend({
+    initialize() {
+        this.$el.hide();
+        this.$el.addClass("bs-switch-wrapper");
+        this.$el.append("<span></span>", "<input type='checkbox'>");
+    },
+    label(labelString) {
+        this.$el.find("span").html(labelString + "&nbsp;");
+        return this;
+    },
+    align(alignment) {
+        switch (alignment) {
+            case "right":
+                this.$el.addClass("bootstrap-switch-right");
+                break;
+            case "left":
+                this.$el.addClass("bootstrap-switch-left");
+                break;
+        }
+        return this;
+    },
+    render(opts) {
+        this.$el.find("input").bootstrapSwitch(opts);
+        this.$el.show();
+        return this;
+    },
+    $switch() {
+        return this.$el.find(".bootstrap-switch");
+    }
+});
+
 // util definition
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -2782,5 +2929,6 @@ module.exports = {
     NetworkView: NetworkView,
     DiffusionView: DiffusionView,
     PolicyGroupView: PolicyGroupView,
-    DropdownController: DropdownController
+    DropdownController: DropdownController,
+    BootstrapSwitchView: BootstrapSwitchView
 };

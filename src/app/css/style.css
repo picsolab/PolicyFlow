@@ -109,9 +109,21 @@ text .loader-img {
     z-index: 50;
 }
 
-.bootstrap-switch {
+.bs-switch-wrapper {
     position: absolute ! important;
+}
+
+.bs-switch-wrapper>span {
+    font: 12px sans-serif;
+}
+
+.bootstrap-switch-right {
     right: 2%;
+    top: 0px;
+}
+
+.bootstrap-switch-left {
+    left: 2%;
     top: 0px;
 }
 
@@ -281,6 +293,18 @@ text .loader-img {
     font-weight: 400;
 }
 
+#state-tract-group>path.hovered {
+    fill: var(--color-hovered) !important;
+}
+
+#state-tract-group>path.in-nodes {
+    fill: var(--color-in-nodes) !important;
+}
+
+#state-tract-group>path.out-nodes {
+    fill: var(--color-out-nodes) !important;
+}
+
 
 /* policy network panel */
 
@@ -312,7 +336,7 @@ text .loader-img {
     cursor: move;
 }
 
-.network-node.fixed {
+.network-node.hovered {
     fill: var(--color-hovered) !important;
     stroke: var(--color-unadopted-darker) !important;
 }
@@ -330,7 +354,17 @@ text .loader-img {
     display: none;
     position: absolute ! important;
     left: 2%;
-    top: 0px;
+    bottom: 0px;
+}
+
+.network-node.in-nodes {
+    fill: var(--color-in-nodes) !important;
+    stroke: var(--color-unadopted-darker) !important;
+}
+
+.network-node.out-nodes {
+    fill: var(--color-out-nodes) !important;
+    stroke: var(--color-unadopted-darker) !important;
 }
 
 

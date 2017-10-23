@@ -44,6 +44,15 @@ let policyView = new View.PolicyView({
     }),
     influenceDropdown = new View.DropdownController({
         el: "#centrality-dropdown"
+    }),
+    nodeRelevanceSwitch = new View.BootstrapSwitchView({
+        el: "#node-relevance-switch"
+    }),
+    geoSwitch = new View.BootstrapSwitchView({
+        el: "#geo-switch"
+    }),
+    sequenceSwitch = new View.BootstrapSwitchView({
+        el: "#sequence-switch"
     });
 
 $(document).ready(() => {
@@ -213,7 +222,7 @@ function bindDomEvents() {
     });
 
     // ring view click, update policy group
-    $(ringView.el).on('click', e => {
+    ringView.$el.on('click', e => {
         let seq = $(e.target).attr("seq"),
             seqList = seq.split("-");
         switch (conditions.get("method")) {
@@ -290,7 +299,7 @@ function bindDomEvents() {
     });
 
     // setup x-seq to conditions
-    $("#sequence-checkbox").on("switchChange.bootstrapSwitch", (e, state) => {
+    sequenceSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => {
         if (state) {
             conditions.set("sequence", conf.bases.xAttributeList[0].id);
         } else {
@@ -298,12 +307,20 @@ function bindDomEvents() {
         }
     });
 
+    // policy-geo-controller
+    geoSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => setTimeout(geoSwitchHandler, 350, e, state));
+
+    nodeRelevanceSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => {
+        if (state) {
+            conditions.set("nodeRelevance", conf.bases.nodeRelevance[0].id);
+        } else {
+            conditions.set("nodeRelevance", conf.bases.nodeRelevance[1].id);
+        }
+    });
+
     $("#add-snapshot").on("click", () => {
         snapshotCollection.add(diffusionView, conditions);
     });
-
-    // policy-geo-controller
-    $("#geo-controller-checkbox").on("switchChange.bootstrapSwitch", (e, state) => setTimeout(geoSwitchHandler, 350, e, state));
 
     document.getElementById("snapshot-wrapper").addEventListener('click', retrieveCascadeHandler, false);
 }
@@ -366,6 +383,11 @@ function bindCrossViewEvents() {
             });
         }
     });
+
+    networkView.$el.on('mouseover', e => $(e.target).hasClass("network-node") && geoView.lightUp($(e.target).attr("title")));
+    networkView.$el.on('mouseout', e => $(e.target).hasClass("network-node") && geoView.turnOff($(e.target).attr("title")));
+    geoView.$el.on('mouseover', e => $(e.target).hasClass("state-tract") && networkView.lightUp($(e.target).attr("title")));
+    geoView.$el.on('mouseout', e => $(e.target).hasClass("state-tract") && networkView.turnOff($(e.target).attr("title")));
 }
 
 function initDom() {
@@ -376,22 +398,42 @@ function initDom() {
     influenceDropdown.pickOption(conf.bases.centralityList[0].id);
 
     // sequence switch
-    $("#sequence-checkbox").bootstrapSwitch({
-        size: "mini",
-        onText: "Influence",
-        offText: "AdoptionYear",
-        onColor: "primary",
-        offColor: "primary"
-    });
+    sequenceSwitch
+        .label("X-Axis")
+        .align("right")
+        .render({
+            size: "mini",
+            state: true,
+            onText: "Influence",
+            offText: "AdoptionYear",
+            onColor: "primary",
+            offColor: "primary"
+        });
 
     // geo switch
-    $("#geo-controller-checkbox").bootstrapSwitch({
-        size: "mini",
-        onText: "State-wise",
-        offText: "Regional",
-        onColor: "primary",
-        offColor: "primary"
-    });
+    geoSwitch
+        .align("right")
+        .render({
+            size: "mini",
+            state: true,
+            onText: "State-wise",
+            offText: "Regional",
+            onColor: "primary",
+            offColor: "primary"
+        });
+
+    // relevant nodes switch
+    nodeRelevanceSwitch
+        .label("Hover")
+        .align("left")
+        .render({
+            size: "mini",
+            state: true,
+            onText: conf.bases.nodeRelevance[0].description,
+            offText: conf.bases.nodeRelevance[1].description,
+            onColor: "primary",
+            offColor: "primary"
+        });
 
     setupCentralityDropdown();
 

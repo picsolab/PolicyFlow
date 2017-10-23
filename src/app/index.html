@@ -76,10 +76,11 @@
                 <div class="tab-content">
                     <div id="network-views-wrapper" role="tabpanel" class="tab-pane fade in active">
                         <div id="policy-geo-wrapper" class="col-lg-7 col-md-7 col-sm-12">
-                            <input id="geo-controller-checkbox" type="checkbox" name="geo-controller-checkbox" checked>
+                            <div id="geo-switch"></div>
                             <svg id="svg-geo-view"></svg>
                         </div>
                         <div id="policy-network-wrapper" class="col-lg-5 col-md-5 col-sm-12">
+                            <div id="node-relevance-switch"></div>
                             <span id="computing-node-similarity-span">computing node similarity...</span>
                             <div id="unable-to-process-network-notitication" class="jumbotron" style="display:none;">
                                 <p>
@@ -97,7 +98,7 @@
                                     Please select a policy to inspect its diffusion pattern.
                                 </p>
                             </div>
-                            <input id="sequence-checkbox" type="checkbox" name="sequence-checkbox" checked>
+                            <div id="sequence-switch"></div>
                             <img class="loader-img" src="../static/assets/ellipsis.gif" alt="#" style="display:none;">
                             <svg id="svg-diffusion-view"></svg>
                         </div>

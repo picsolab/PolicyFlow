@@ -16,6 +16,8 @@
     --color-dark-gray: #666;
     --color-default-black: #311B92;
     --color-hovered: #ffa700;
+    --color-in-nodes: #F68F39;
+    --color-out-nodes: #F2C777;
     --color-clicked: #ffa700;
     --color-map-border: white;
     --color-a: #DA727E;
