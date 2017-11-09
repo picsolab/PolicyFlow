@@ -3,7 +3,9 @@ from flask import request, g, json
 from app import app
 
 import random
+import json
 
+from ..services.helper import rel_path
 from .helper import DecimalEncoder
 from .base_service import BaseService
 from .computing_service import ComputingService
@@ -336,6 +338,15 @@ class NetworkService(BaseService):
         """get_specified_diffusion_by policy_id"""
         data_list, stat = NetworkService.get_policy_detail(policy_id)
         return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
+
+    @staticmethod
+    @app.route("/api/diffusion2/<policy_id>")
+    def get_specified_diffusion2_by(policy_id):
+        """get_specified_diffusion2_by policy_id"""
+        # return a sample json file
+        sample_file_path = rel_path("../resource/ex-policy-diffusion.json")
+        with open(sample_file_path, "r") as sample:
+            return json.dumps(json.load(sample), cls=DecimalEncoder)
 
     @staticmethod
     @app.route("/api/geo/<policy_id>")

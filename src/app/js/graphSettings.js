@@ -1,5 +1,21 @@
 const css_variables = require('!css-variables-loader!../css/variables.css');
 const GraphSettings = {
+    // new diffusion view settings
+    f: {
+        size: {
+            width: 500,
+            height: 550,
+            timeLineHeight: 30
+        },
+        margin: {
+            timeLineBottom: 5
+        },
+        padding: 30,
+        config: {
+            smoothness: 0.35
+        }
+    },
+
     // policy view settings
     p: {
         margin: {

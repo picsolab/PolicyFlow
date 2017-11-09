@@ -6,6 +6,8 @@ let GRank = require('./grank.js');
 let _graph = new GRank.Graph();
 let GRankWorker = require("./workers/grank.worker.js");
 const printDiagnoseInfo = false;
+// vector computation
+let sylvester = require('../../assets/lib/sylvester');
 
 let colorList = [],
     colorMap = {};
@@ -36,6 +38,563 @@ let color7 = [
         css_variables['--color-cb-5'],
         css_variables['--color-cb-9']
     ]);
+
+/**
+ * DiffusionView: new diffusion view
+ */
+let DiffusionView2 = Backbone.View.extend({
+    el: "#new-diffusion-view",
+    initialize() {
+        this._attr = {
+            // xScale, yScale, xScale_timeline, yScale_timeline, xKernelScale_timeline, yKernelScale_timeline;
+            dims: [],
+            dimsClusterInfo: d4.map(),
+            timeView: {}
+        };
+    },
+    render(conditions) {
+        let _self = this;
+        var plot = d4.select("#new-diffusion-view"),
+            svg = plot
+            .append("svg")
+            .attr("width", gs.f.size.width)
+            .attr("height", gs.f.size.height),
+            xScale = d4.scalePoint().rangeRound([0, gs.f.size.width - gs.f.padding * 2], 1),
+            yScale = d4.scaleBand().range([gs.f.size.height - 100, gs.f.padding]);
+
+        let curvePaths = svg.append("g")
+            .attr("class", "curvePaths")
+            .attr("transform", "translate(30, 0)");
+
+        $.extend(_self._attr, {
+            svg: svg,
+            xScale: xScale,
+            yScale: yScale,
+            curvePaths: curvePaths,
+            c: conditions,
+            dims: _self.calcDimsFromClustering()
+        });
+
+        this.drawDims();
+
+        let curveData = [];
+        // Organize data for feeding to edge bundling part
+        this.model.get("data").forEach(function(edge) {
+            var edge_obj = {};
+
+            //@@@@@@@@@@@@@@@@@
+            // If source and target are placed at the same dimension, move the target to the next dimension
+            if (edge.sourceDimension == edge.targetDimension) {
+                edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
+            }
+
+            edge_obj[edge.sourceDimension] = edge.sourceName;
+            edge_obj[edge.targetDimension] = edge.targetName;
+            curveData.push(edge_obj);
+        });
+
+        _self.compute_cluster_centroids(_self._attr.c.get("centrality"));
+        //@@@@@@@@@@@@ Suppressed backward edge
+        curveData.forEach(function(d) {
+            // console.log(d);
+            //if(getDimNum(d4.keys(d)[0]) < getDimNum(d4.keys(d)[1])){
+            _self.draw_single_curve(d);
+            //}
+        });
+
+        //********* Timeline graph
+        _self._attr.timeView.xScale_timeline = d4.scaleTime().rangeRound([0, gs.f.size.width - gs.f.padding * 2]);
+        _self._attr.timeView.yScale_timeline = d4.scaleLinear().rangeRound([20, 10]);
+        _self._attr.timeView.xKernelScale_timeline = d4.scaleLinear().rangeRound([0, gs.f.size.width - gs.f.padding * 2]);
+        _self._attr.timeView.yKernelScale_timeline = d4.scaleLinear().rangeRound([20, 0]);
+
+        _self._attr.timeView.xScale_timeline.domain([new Date(d4.min(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }), 0, 1),
+            new Date(d4.max(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }), 0, 1)
+        ]).nice();
+        _self._attr.timeView.yScale_timeline.domain([d4.max(_self.model.get("yearCount"), function(d) { return d.count; }), 0]);
+        _self._attr.timeView.xKernelScale_timeline.domain([d4.min(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }),
+            d4.max(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; })
+        ]);
+        _self._attr.timeView.yKernelScale_timeline.domain([0, .1]);
+
+        var g_chart = svg.append("g")
+            .attr("class", "bar_chart")
+            .data(_self.model.get("yearCount"))
+            .attr("transform", "translate(" + gs.f.padding + ", 450)");
+
+        g_chart.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", "translate(0," + gs.f.size.timeLineHeight + ")")
+            .call(d4.axisBottom(_self._attr.timeView.xScale_timeline).tickFormat(d4.timeFormat("%Y")).ticks(5));
+
+        var rects = g_chart.selectAll(".bar")
+            .data(_self.model.get("yearCount")).enter()
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", function(d) { return _self._attr.timeView.xScale_timeline(new Date(d.year, 0, 1)) - 5; })
+            .attr("y", function(d) { return _self._attr.timeView.yScale_timeline(d.count); })
+            .attr("width", 7)
+            .attr("height", function(d) { return (gs.f.size.timeLineHeight - _self._attr.timeView.yScale_timeline(d.count)); })
+            .style("fill", function(d) {
+                if (d.year < 1865) {
+                    return "rgb(250, 200, 255)";
+                } else if (d.year >= 1865 && d.year < 1883) {
+                    return "rgb(200, 150, 255)";
+                } else if (d.year >= 1883 && d.year < 1905) {
+                    return "rgb(150, 100, 255)";
+                }
+                if (d.year >= 1905) {
+                    return "rgb(100, 50, 255)";
+                }
+            });
+
+        rects.transition()
+            .attr('height', function(d) {
+                return _self._attr.timeView.yScale_timeline(d.count);
+            })
+            .attr('y', function(d) { return gs.f.size.timeLineHeight - _self._attr.timeView.yScale_timeline(d.count); })
+            .delay(function(d, i) { return i * 200; })
+            .duration(2000)
+            .ease(d4.easeElastic);
+
+
+        /********** For tree structure
+        // Identify the data as tree strgucture
+        var edges_data_copy = edges_data.slice()
+        var root_id = find_root(edges_data_copy, edges_data[0]); // copy the array by slice()
+        var root_edge = {};
+        edges_data.forEach(function(edge){
+            if(edge.source == root_id){
+                edge.level = 1;
+                root_edge = edge;
+            }
+        });
+        // Calculate the number of phases by getting the tree height
+        var tree_height = calculate_height_of_tree(edges_data, nodes_data, root_edge);
+        console.log(tree_height);
+    
+        // Go over all nodes ("nodes" property") in the dataset
+        var states_to_ids = [];
+    
+        console.log(edges_data);
+        // Add more metadata to nodes(add level) and edges(add state abbreviation)
+        nodes_data.forEach(function(node){
+            if("adoptedYear" != 9999){
+                states_to_ids.push({ "stateName": node.stateId, "stateId": node.metadataOrder, "level": node.level }); }
+        });
+    
+        // Get stateNames from nodes_data and add them to edges
+        edges_data.forEach(function(edge){
+            nodes_data.forEach(function(node){
+                if(edge.source == node.metadataOrder){
+                    edge.sourceState = node.stateId;
+                }
+                if(edge.target == node.metadataOrder){
+                    edge.targetState = node.stateId;
+                }
+            });
+        });
+        ***** The end of For tree structure *******/
+
+    },
+    drawDims: function() {
+        var _self = this,
+            _attr = this._attr;
+
+        _attr.xScale.domain(_self._attr.dims);
+        _attr.yScale.domain(_self.model.get("nodes").sort(function(a, b) {
+                return b.centralities[_self._attr.c.get("centrality")] - a.centralities[_self._attr.c.get("centrality")]
+            })
+            .map(function(d) { return d.stateId; }));
+
+        var dimensions = _attr.svg.selectAll(".dimension")
+            .data(_self._attr.dims)
+            .enter()
+            .append("g")
+            .attr("class", function(d) { return d; })
+            .attr("transform", function(d) { return "translate(" + _attr.xScale(d) + ", 0)"; });
+
+        // Inject axis to svg
+        dimensions.append("g")
+            .attr("class", function(d) { return d; })
+            .attr("class", "y-axis")
+            .attr("transform", "translate(" + gs.f.padding + ",0)")
+            .each(function(d) {
+                d4.select(this).call(d4.axisLeft(_attr.yScale).tickSize(1));
+                d4.select(this).select("path").attr("opacity", 0);
+                //d4.select(this).selectAll(".tick").attr("transform", "translate(6, -3)");
+                d4.select(this).selectAll("text")
+                    .style("opacity", function(label) {
+                        var label_match = _self.model.get("data").filter(function(edge) {
+                            return (edge.sourceDimension == d && edge.sourceName == label) || (edge.targetDimension == d && edge.targetName == label);
+                        });
+                        if (label_match == undefined || label_match.length == 0) {
+                            return 0;
+                        } else {
+                            return 1;
+                        }
+                    })
+                    .attr("fill", "#717171")
+                    .attr("y", -4)
+                    .attr("x", 18);
+
+                d4.select(this).selectAll(".tick")
+                    .each(function() {
+                        var stateName = d4.select(this).select("text").text();
+                        var attr_measure = _self.model.get("nodes").filter(function(node) {
+                            return node.stateId == stateName;
+                        }).map(function(d) { return d.centralities[_self._attr.c.get("centrality")]; });
+                        d4.select(this).append("circle")
+                            .attr("class", "attr_circle")
+                            .attr("r", 100 * attr_measure)
+                            .style("fill", "#D9D3DF")
+                            .style("opacity", function() {
+                                var label_match = _self.model.get("data").filter(function(edge) {
+                                    return (edge.sourceDimension == d && edge.sourceName == stateName) || (edge.targetDimension == d && edge.targetName == stateName);
+                                });
+                                if (label_match == undefined || label_match.length == 0) {
+                                    return 0;
+                                } else {
+                                    return 1;
+                                }
+                            })
+                            .style("stroke", "#3C0078")
+                            .attr("cy", -4);
+                    });
+
+            });
+    },
+    calcDimsFromClustering: function() {
+        // Get dimension of states
+        var dims_array = [],
+            stateDimsData = conf.static.stateDims;
+        var nDim = d4.max(Object.values(stateDimsData)) + 1;
+        d4.range(0, nDim, 1).forEach(function(num_dim) {
+            var dim = "dim_" + num_dim.toString();
+            dims_array.push(dim);
+        }); // dimension => ["dim_0", "dim_1", "dim_2", ...]
+
+        return dims_array;
+    },
+    compute_cluster_centroids: function() {
+        let _self = this;
+        var dimClusterCentroids = {};
+        var dims = _self._attr.dims;
+        var nodesOnDimWithDuplicates = [];
+        var dupCheckArray = [];
+        var nodesOnDim = []; // Nodes that have an edge on the dimension
+        var attrOnDim = [];
+
+        // Get the metadata for sorting
+        // For each dimension?? dim0, dim1, ...
+        for (var i = 0; i < dims.length; i++) {
+            // Investigate which nodes are on which dimensions (Get nodes for each dimension)
+            // if it is the first dimension, look at the source of edges starting from it
+            // if(i == 0){
+            //  nodesOnDimWithDuplicates = dataset.data.filter(function(edge){ 
+            //                  return edge.sourceDimension == dims[i];
+            //              }).map(function(d){ return { 
+            //                                      "id": d.source,
+            //                                      "dimension": d.sourceDimension,
+            //                                      "name": d.sourceName,
+            //                                      "stateInfo": d.sourceStateInfo,
+            //                                      "centralities": d.sourceCentralities  }; 
+            //                                  });
+            //  // Check duplicates of nodes
+            //  nodesOnDimWithDuplicates.forEach(function(node1){
+            //      var dupCheckArray = nodesOnDim.filter(function(node2){
+            //                              return node1.id == node2.id;
+            //                          });
+            //      // If there is no match, then add the unique node
+            //      if(typeof dupCheckArray == undefined || dupCheckArray.length == 0){
+            //          nodesOnDim.push(node1);
+            //      }
+            //  });
+            // // if it is not the first one, just look at the target of edges
+            // } else {
+            nodesOnDim = _self.model.get("data").filter(function(edge) {
+                return (edge.sourceDimension == dims[i] || edge.targetDimension == dims[i]);
+            }).map(function(d) {
+                if (d.sourceDimension == dims[i]) {
+                    return {
+                        "id": d.source,
+                        "dimension": d.sourceDimension,
+                        "name": d.sourceName,
+                        "stateInfo": d.sourceStateInfo,
+                        "centralities": d.sourceCentralities
+                    };
+                } else if (d.targetDimension == dims[i]) {
+                    return {
+                        "id": d.target,
+                        "dimension": d.targetDimension,
+                        "name": d.targetName,
+                        "stateInfo": d.targetStateInfo,
+                        "centralities": d.targetCentralities
+                    };
+                }
+            });
+            // }
+
+            attrOnDim = nodesOnDim.map(function(d) { return d.centralities[_self._attr.c.get("centrality")]; });
+
+            //@@@@@@@@@@@@@@@@@@@@@@
+            nodesOnDim = nodesOnDim.sort(function(a, b) { return d4.descending(a.centralities[_self._attr.c.get("centrality")], b.centralities[_self._attr.c.get("centrality")]); })
+
+            // Clustering based on the attribute
+            // Save clustering information into "diffView._attr.dimsClusterInfo"
+            for (var j = 0; j < nodesOnDim.length; j++) {
+                var cluster;
+                var node = nodesOnDim[j];
+
+                // For now, simply create clusters based on index (the first half / the second half)
+                if (j < nodesOnDim.length / 3) {
+                    // Insert clustering data into edge dataset (Which clusters do source and target of edge belong to?)
+                    cluster = dims[i] + "-cl_" + 0;
+                } else if ((j >= nodesOnDim.length / 3) && (j < nodesOnDim.length / 3 * 2)) {
+                    cluster = dims[i] + "-cl_" + 1;
+                } else {
+                    cluster = dims[i] + "-cl_" + 2;
+                }
+
+                // Organize cluster information 
+                // dimsClusterInfo = [ { dim: "dim_1", cl: "dim_1-cl_1", nodes: [ nodeObj1, nodeObj2, ... ] } ]
+                // If the array is empty, push a first object
+                if (!_self._attr.dimsClusterInfo.has(dims[i])) {
+                    _self._attr.dimsClusterInfo.set(dims[i], d4.map());
+                }
+                if (!_self._attr.dimsClusterInfo.get(dims[i]).has(cluster)) {
+                    _self._attr.dimsClusterInfo.get(dims[i]).set(cluster, d4.map());
+                }
+                if (!_self._attr.dimsClusterInfo.get(dims[i]).get(cluster).has("nodes")) {
+                    _self._attr.dimsClusterInfo.get(dims[i]).get(cluster).set("nodes", []);
+                }
+                _self._attr.dimsClusterInfo.get(dims[i]).get(cluster).get("nodes").push(node);
+            }
+        }
+
+    },
+    // draw single cubic bezier curve
+    draw_single_curve: function(d) {
+        var _self = this,
+            centroids = _self.compute_centroids(d);
+        //console.log(centroids);
+        var cps = _self.compute_control_points(centroids);
+
+        var cubicPath = function(c) {
+            return `M${c.start[0]},${c.start[1]} C${c.control1[0]},${c.control1[1]} ${c.control2[0]},${c.control2[1]} ${c.end[0]},${c.end[1]}`;
+        }
+
+        for (var i = 0; i < cps.length - 1; i += 3) {
+            var curvePoints = {};
+            curvePoints.start = [cps[i].e(1), cps[i].e(2)];
+            //console.log("i = ", i);
+
+            //curves.push([cps[i].e(1), cps[i].e(2), cps[i+1].e(1), cps[i+1].e(2), cps[i+2].e(1), cps[i+2].e(2) ]);
+            //path.lineTo(cps[i].e(1), cps[i].e(2), cps[i+1].e(1), cps[i+1].e(2), cps[i+2].e(1), cps[i+2].e(2));
+            curvePoints.control1 = [cps[i + 1].e(1), cps[i + 1].e(2)];
+            curvePoints.control2 = [cps[i + 2].e(1), cps[i + 2].e(2)];
+            curvePoints.end = [cps[i + 3].e(1), cps[i + 3].e(2)];
+            //path.closePath();
+
+            _self._attr.curvePaths
+                .append("path")
+                .attr("class", "curvePath")
+                .attr("stroke", function() {
+                    if (_self.getDimNum(Object.keys(d)[0]) > _self.getDimNum(Object.keys(d)[1])) {
+                        return "#FF0A84";
+                    }
+                    return "purple";
+                })
+                .attr("stroke-width", 1.2)
+                .attr("opacity", 0.5)
+                .style("fill", "none")
+                .attr("d", cubicPath(curvePoints));
+        }
+    },
+    compute_centroids: function(edge) {
+        var _self = this,
+            _attr = this._attr,
+            dimsClusterInfo = _self._attr.dimsClusterInfo,
+            sourceDim, targetDim,
+            sourceState, targetState,
+            sourceCl, targetCl, sourceCls, targetCls,
+            nodesInSourceCluster, nodesInTargetCluster,
+            sourceCentroid, targetCentroid,
+            sourceCX, sourceCY, targetCX, targetCY;
+        var centroids = [];
+
+        console.log(edge);
+
+        //// Source
+        /// Get the source cluster
+        sourceDim = d4.keys(edge)[0];
+        sourceState = d4.values(edge)[0];
+        sourceCls = dimsClusterInfo.get(sourceDim).entries();
+        sourceCls.forEach(function(cluster) {
+            var nodes = cluster.value.get("nodes");
+            var sourceStateIsMatched = nodes.filter(function(node) {
+                return node.name == sourceState;
+            });
+            if (sourceStateIsMatched && sourceStateIsMatched.length) {
+                sourceCl = cluster.key;
+            }
+        });
+
+        nodesInSourceCluster = dimsClusterInfo.get(sourceDim).get(sourceCl).get("nodes");
+
+        /// Get the target cluster
+        targetDim = d4.keys(edge)[1];
+        targetState = d4.values(edge)[1];
+        targetCls = dimsClusterInfo.get(targetDim).entries();
+        targetCls.forEach(function(cluster) {
+            var nodes = cluster.value.get("nodes");
+            var targetStateIsMatched = nodes.filter(function(node) {
+                return node.name == targetState;
+            });
+            if (targetStateIsMatched && targetStateIsMatched.length) {
+                targetCl = cluster.key;
+            }
+        });
+
+        console.log(dimsClusterInfo.get(targetDim));
+        console.log(targetCl);
+        nodesInTargetCluster = dimsClusterInfo.get(targetDim).get(targetCl).get("nodes");
+
+        /// Source part
+        // centroids on 'real' axes
+        var sourceX = _attr.xScale(sourceDim);
+        var sourceY = _attr.yScale(sourceState);
+
+        var targetX = _attr.xScale(targetDim);
+        var targetY = _attr.yScale(targetState);
+
+        var sourceVirtualCentroid, targetVirtualCentroid;
+
+        var sourceClusterWidth = d4.max(nodesInSourceCluster, function(d) { return _attr.yScale(d.name); }) -
+            d4.min(nodesInSourceCluster, function(d) { return _attr.yScale(d.name); });
+
+        var sourceClusterCentroid = d4.min(nodesInSourceCluster, function(d) { return _attr.yScale(d.name); }) +
+            (sourceClusterWidth / 2);
+
+        var targetClusterWidth = d4.max(nodesInTargetCluster, function(d) { return _attr.yScale(d.name); }) -
+            d4.min(nodesInTargetCluster, function(d) { return _attr.yScale(d.name); });
+
+        var targetClusterCentroid = d4.min(nodesInTargetCluster, function(d) { return _attr.yScale(d.name); }) +
+            (targetClusterWidth / 2);
+
+        // Compare y coordinates of source and target cluster
+        if (sourceClusterCentroid >= targetClusterCentroid) {
+            sourceVirtualCentroid = sourceClusterCentroid - 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
+            targetVirtualCentroid = targetClusterCentroid + 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
+        } else {
+            sourceVirtualCentroid = sourceClusterCentroid + 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
+            targetVirtualCentroid = targetClusterCentroid - 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
+        }
+
+        // If the edge goes backward,
+        if (_self.getDimNum(sourceDim) > _self.getDimNum(targetDim)) {
+            sourceCX = sourceX - (1 / 7) * (sourceX - _attr.xScale("dim_" + (_self.getDimNum(sourceDim) - 1).toString()));
+            sourceCY = sourceVirtualCentroid + 1 / 20 * (sourceY - sourceClusterCentroid);
+            targetCX = targetX + (1 / 7) * (_attr.xScale("dim_" + (_self.getDimNum(targetDim) + 1).toString()) - targetX);
+            targetCY = targetVirtualCentroid + 1 / 20 * (targetY - targetClusterCentroid);
+            //console.log(sourceX, sourceCX, targetX, targetCX);
+        } else {
+            sourceCX = sourceX + (1 / 7) * (_attr.xScale("dim_" + (_self.getDimNum(sourceDim) + 1).toString()) - sourceX);
+            sourceCY = sourceVirtualCentroid + 1 / 80 * (sourceY - sourceClusterCentroid);
+            targetCX = targetX - (1 / 7) * (targetX - _attr.xScale("dim_" + (_self.getDimNum(targetDim) - 1).toString()));
+            targetCY = targetVirtualCentroid + 1 / 80 * (targetY - targetClusterCentroid);
+            //console.log(sourceX, sourceCX, targetX, targetCX);
+        }
+
+        _self._attr.curvePaths
+            .append("circle")
+            .attr("r", 2)
+            .attr("class", "control-point")
+            .attr("cx", sourceCX)
+            .attr("cy", sourceCY);
+
+        _self._attr.curvePaths
+            .append("circle")
+            .attr("r", 2)
+            .attr("class", "control-point")
+            .attr("cx", targetCX)
+            .attr("cy", targetCY);
+
+
+        centroids.push(sylvester.$V([sourceX, sourceY]));
+        centroids.push(sylvester.$V([sourceCX, sourceCY]));
+        centroids.push(sylvester.$V([targetCX, targetCY]));
+        centroids.push(sylvester.$V([targetX, targetY]));
+
+        return centroids;
+    },
+    compute_control_points: function(centroids) {
+        //console.log(centroids);
+        var cols = centroids.length;
+        var a = gs.f.config.smoothness;
+        var cps = [];
+
+        var sourceV = centroids[0];
+        var sourceCV = centroids[1];
+        var targetCV = centroids[2];
+        var targetV = centroids[3];
+
+        //console.log(centroids[0], centroids[0].e(1), centroids[0].e(2), centroids[1]);
+        cps.push(centroids[0]);
+
+        // if the edge goes forward, (virtual axis is on the right of actual axis)
+        if (centroids[1].e(1) - centroids[0].e(1) > 0) {
+            cps.push(sylvester.$V([centroids[0].e(1) + a * 2 * (centroids[1].e(1) - centroids[0].e(1)), centroids[0].e(2)]));
+        } else {
+            cps.push(sylvester.$V([centroids[1].e(1) - a * 2 * (centroids[0].e(1) - centroids[1].e(1)), centroids[0].e(2)]));
+        }
+
+        // For the source-side virtual axis
+        // centroids[1] => right on the virtual axis
+        // centroids[0],[2] => control points on both sides of centroids[1]
+        var diff = centroids[0].subtract(centroids[1]);
+
+        cps.push(sylvester.$V([centroids[1].e(1) - a * 2 * (centroids[1].e(1) - centroids[0].e(1)), centroids[1].e(2)]));
+        cps.push(centroids[1]);
+        cps.push(sylvester.$V([centroids[1].e(1) + a * 2 * (centroids[2].e(1) - centroids[1].e(1)), centroids[1].e(2)]));
+
+        // For the target-side virtual axis
+        // centroids[1] => right on the virtual axis
+        // centroids[0],[2] => control points on both sides of centroids[1]
+        cps.push(sylvester.$V([centroids[2].e(1) - a * 2 * (centroids[2].e(1) - centroids[1].e(1)), centroids[2].e(2)]));
+        cps.push(centroids[2]);
+        cps.push(sylvester.$V([centroids[2].e(1) + a * 2 * (centroids[3].e(1) - centroids[2].e(1)), centroids[2].e(2)]));
+
+        this._attr.curvePaths
+            .append("circle")
+            .attr("r", 2)
+            .attr("class", "control-point")
+            .style("fill", "green")
+            .attr("cx", centroids[1].e(1) + a * 2 * (centroids[1].e(1) - centroids[0].e(1)))
+            .attr("cy", centroids[1].e(2));
+
+        // If the edge goes forward,
+        if (centroids[3].e(1) - centroids[2].e(1) > 0) {
+            cps.push(sylvester.$V([centroids[3].e(1) - a * 2 * (centroids[3].e(1) - centroids[2].e(1)), centroids[3].e(2)]));
+        } else {
+            cps.push(sylvester.$V([centroids[3].e(1) + a * 2 * (centroids[2].e(1) - centroids[3].e(1)), centroids[3].e(2)]));
+        }
+        cps.push(centroids[3]);
+
+        this._attr.curvePaths
+            .append("circle")
+            .attr("r", 2)
+            .attr("class", "control-point")
+            .style("fill", "red")
+            .attr("cx", centroids[3].e(1) + a * 2 * (centroids[2].e(1) - centroids[3].e(1)))
+            .attr("cy", centroids[0].e(2));
+        return cps;
+    },
+    getDimNum: function(dim) {
+        return parseInt(dim.replace("dim_", ""));
+    }
+});
+
 /**
  * PolicyView: adoption sequence
  * - to display states in the order of the year that they adopt one specific policy.
@@ -2930,5 +3489,6 @@ module.exports = {
     DiffusionView: DiffusionView,
     PolicyGroupView: PolicyGroupView,
     DropdownController: DropdownController,
-    BootstrapSwitchView: BootstrapSwitchView
+    BootstrapSwitchView: BootstrapSwitchView,
+    DiffusionView2: DiffusionView2
 };

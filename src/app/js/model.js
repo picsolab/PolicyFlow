@@ -316,6 +316,126 @@ let RingModel = Backbone.Model.extend({
     }
 });
 
+let DiffusionModel2 = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.diffusionBase2;
+        this.url = this.urlRoot + conf.models.conditions.defaults.policy;
+    },
+    populate() {
+        let _self = this;
+        $.getJSON(_self.url).done(data => {
+            let nodes = data.nodes,
+                edges = data.edges,
+                edgesData = _self.setData(edges, nodes),
+                nodesWithEdge = nodes.filter(function(d) { return d.adoptedYear != 9999; });
+            // Reorganize dataset to include dimension information
+            _self.setDimsInfoToNodes(nodes); // Add dimension info to nodes data
+            _self.setDimesInfoToData(edgesData, nodes); // Add dimension info to data
+
+            _self.set({
+                "rawData": data,
+                "nodes": nodes,
+                "edges": edges,
+                "data": edgesData,
+                "nodesWithEdge": nodesWithEdge,
+                "stateYear": _self.setStateYearData(nodes),
+                "yearCount": _self.setYearCountData(nodesWithEdge)
+            });
+        });
+    },
+    setData: function(edgesData, nodes) {
+        edgesData.forEach(function(edge) {
+            edge.sourceStateInfo = {};
+            edge.targetStateInfo = {};
+
+            nodes.forEach(function(node) {
+                if (edge.source == node.metadataOrder) {
+                    edge.sourceStateInfo.adoptedYear = node.adoptedYear;
+                    edge.sourceStateInfo.metadata = node.metadata;
+                    edge.sourceName = node.stateId;
+                    edge.sourceCentralities = node.centralities;
+                }
+                if (edge.target == node.metadataOrder) {
+                    edge.targetStateInfo.adoptedYear = node.adoptedYear;
+                    edge.targetStateInfo.metadata = node.metadata;
+                    edge.targetName = node.stateId;
+                    edge.targetCentralities = node.centralities;
+                }
+            });
+        });
+
+        return edgesData;
+    },
+    // For the coordinates of pcView
+    setStateYearData: function(nodes) {
+        var stateYear = {};
+        nodes.filter(function(d, i) {
+                return d.adoptedYear != 9999;
+            })
+            .forEach(function(d) { stateYear[d.stateId] = d.adoptedYear; });
+
+        return stateYear;
+    },
+    setNodesWithEdges: function() {
+        var _self = this;
+
+        return _self.nodes.filter(function(d) { return d.adoptedYear != 9999; });
+    },
+    setYearCountData: function(nodesWithEdge) {
+        var yearCount = [];
+
+        nodesWithEdge.forEach(function(node) {
+            var year_overlaps = yearCount.filter(function(d) { return node.adoptedYear == d.year; });
+            // if year_count does not have a year
+            if (year_overlaps.length == 0 || year_overlaps == "undefined") {
+                yearCount.push({
+                    "year": node.adoptedYear,
+                    "count": 1
+                });
+            } else { // If a year exists
+                yearCount.forEach(function(d) {
+                    if (d.year == node.adoptedYear) {
+                        d.count += 1;
+                    }
+                });
+            }
+        });
+
+        return yearCount;
+    },
+    setDimsInfoToNodes: function(nodes) {
+        // Organize data to put dimension information
+        nodes.forEach(function(node, i) { // Assign dimension to nodes
+            if (conf.static.stateDims[node.stateId] != undefined) {
+                node.dimension = "dim_" + conf.static.stateDims[node.stateId].toString();
+            }
+        });
+    },
+    setDimesInfoToData: function(edgesData, nodes) {
+        edgesData.forEach(function(edge) { // and Insert dimension information into dataset(edge data)
+            nodes.forEach(function(node) {
+                if (node.dimension == undefined) {
+                    node.dimension = "dim_3";
+                }
+                if (edge.source == node.metadataOrder) {
+                    edge.sourceDimension = node.dimension;
+                }
+                //console.log(edge.target == node.metadataOrder);
+                if (edge.target == node.metadataOrder) {
+                    edge.targetDimension = node.dimension;
+                }
+            });
+        });
+
+        //@@@@@@@
+        edgesData.forEach(function(edge) {
+            if (edge.sourceDimension == edge.targetDimension) {
+                edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
+            }
+        });
+    }
+});
+
 module.exports = {
     Conditions: Conditions,
     PolicyModel: PolicyModel,
@@ -329,5 +449,6 @@ module.exports = {
     DiffusionModel: DiffusionModel,
     StateModel: StateModel,
     PolicyGroupModel: PolicyGroupModel,
-    RingModel: RingModel
+    RingModel: RingModel,
+    DiffusionModel2: DiffusionModel2
 };

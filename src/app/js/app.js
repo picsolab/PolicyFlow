@@ -13,6 +13,7 @@ let conditions = new Model.Conditions(),
     ringModel = new Model.RingModel(),
     networkModel = new Model.NetworkModel(),
     diffusionModel = new Model.DiffusionModel(),
+    diffusionModel2 = new Model.DiffusionModel2(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
     snapshotCollection = new Collection.SnapshotCollection();
 let policyView = new View.PolicyView({
@@ -35,6 +36,9 @@ let policyView = new View.PolicyView({
     }),
     diffusionView = new View.DiffusionView({
         model: diffusionModel
+    }),
+    diffusionView2 = new View.DiffusionView2({
+        model: diffusionModel2
     }),
     policyGroupView = new View.PolicyGroupView({
         model: policyGroupModel
@@ -172,6 +176,10 @@ function setupRenderingTriggers() {
         diffusionView.render(conditions);
     });
 
+    diffusionModel2.on("change", () => {
+        diffusionView2.render(conditions);
+    });
+
     geoModel.on("change", () => {
         geoView.render(conditions);
     });
@@ -206,6 +214,7 @@ function initRendering() {
     policyModel.populate(conditions);
     geoModel.populate(conditions);
     dynamicNetworkModel.populate(conditions);
+    diffusionModel2.populate(conditions);
 }
 
 function bindDomEvents() {
