@@ -437,6 +437,8 @@ let GeoView = Backbone.View.extend({
         regionBorder = topojson.mesh(regionTopo);
 
         $(_self.el).empty();
+        // mute utill network rendered 
+        this.$el.css("pointer-events", "none");
 
         // compute actual full canvas size
         let _width = gs.g.margin.left + gs.g.margin.right + gs.g.size.mapWidth,
@@ -723,20 +725,24 @@ let GeoView = Backbone.View.extend({
      * @param {string} stateId stateId of the target tract
      */
     lightUp(stateId) {
-        this.findTractById(stateId).addClass("hovered");
-        switch (this._attr.c.get("nodeRelevance")) {
-            case conf.bases.nodeRelevance[0].id:
-                // similar
-                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
-                this.lightUpTracts(nodeList, "in-nodes");
-                break;
-            case conf.bases.nodeRelevance[1].id:
-                // connected
-                let inNodeList = this._attr._graph.getInNodes(stateId),
-                    outNodeList = this._attr._graph.getOutNodes(stateId);
-                this.lightUpTracts(inNodeList, "in-nodes");
-                this.lightUpTracts(outNodeList, "out-nodes");
-                break;
+        try {
+            this.findTractById(stateId).addClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.lightUpTracts(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.lightUpTracts(inNodeList, "in-nodes");
+                    this.lightUpTracts(outNodeList, "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
         }
     },
     /**
@@ -744,20 +750,24 @@ let GeoView = Backbone.View.extend({
      * @param {string} stateId stateId of the target tract
      */
     turnOff(stateId) {
-        this.findTractById(stateId).removeClass("hovered");
-        switch (this._attr.c.get("nodeRelevance")) {
-            case conf.bases.nodeRelevance[0].id:
-                // similar
-                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
-                this.turnOffTracts(nodeList, "in-nodes");
-                break;
-            case conf.bases.nodeRelevance[1].id:
-                // connected
-                let inNodeList = this._attr._graph.getInNodes(stateId),
-                    outNodeList = this._attr._graph.getOutNodes(stateId);
-                this.turnOffTracts(inNodeList, "in-nodes");
-                this.turnOffTracts(outNodeList, "out-nodes");
-                break;
+        try {
+            this.findTractById(stateId).removeClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.turnOffTracts(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.turnOffTracts(inNodeList, "in-nodes");
+                    this.turnOffTracts(outNodeList, "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
         }
     },
     /**
@@ -1011,10 +1021,13 @@ let NetworkView = Backbone.View.extend({
                     source: filteredNodes[edge.source] || (filteredNodes[edge.source] = nodes[edge.source]),
                     target: filteredNodes[edge.target] || (filteredNodes[edge.target] = nodes[edge.target])
                 }
+                let validity = _self.isFollowingNetworkRule(newEdge);
                 $.extend(newEdge, {
-                    validity: _self.isFollowingNetworkRule(newEdge),
-                    name: newEdge.source.stateId + "-" + newEdge.target.stateId
-                })
+                    validity: validity,
+                    name: (validity ?
+                        newEdge.source.stateId + "-" + newEdge.target.stateId :
+                        newEdge.target.stateId + "-" + newEdge.source.stateId)
+                });
                 filteredEdges.push(newEdge);
             }
         });
@@ -1071,6 +1084,7 @@ let NetworkView = Backbone.View.extend({
             .call(links => links.transition().attr("stroke-opacity", 1))
             .attr("class", d => "network-link " + _self.getLinkValidityClass(d))
             .attr("marker-end", "url(#edge-marker)")
+            .attr("edge-name", d => d.name)
             .merge(links);
 
         circles = circles.enter().append("circle")
@@ -1192,6 +1206,8 @@ let NetworkView = Backbone.View.extend({
                 // hide info span and recover pointer event
                 $("#computing-node-similarity-span").hide();
                 $(_self.el).css("pointer-events", "");
+                // muted at geoView.render()
+                $("#svg-geo-view").css("pointer-events", "");
             }
         } else {
             // if Web Worker not enabled or not supported
@@ -1286,41 +1302,54 @@ let NetworkView = Backbone.View.extend({
      * @param {string} stateId stateId of the target node
      */
     lightUp(stateId) {
-        this.findNodeById(stateId).addClass("hovered");
-        switch (this._attr.c.get("nodeRelevance")) {
-            case conf.bases.nodeRelevance[0].id:
-                // similar
-                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
-                this.lightUpNodes(nodeList, "in-nodes");
-                break;
-            case conf.bases.nodeRelevance[1].id:
-                // connected
-                let inNodeList = this._attr._graph.getInNodes(stateId),
-                    outNodeList = this._attr._graph.getOutNodes(stateId);
-                this.lightUpNodes(inNodeList, "in-nodes");
-                this.lightUpNodes(outNodeList, "out-nodes");
-                break;
+        try {
+            this.findNodeById(stateId).addClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.lightUpNodes(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.lightUpNodes(inNodeList, "in-nodes");
+                    this.lightUpNodes(outNodeList, "out-nodes");
+                    this.lightUpEdges(this.getEdgeNameList(inNodeList, stateId), "in-nodes");
+                    this.lightUpEdges(this.getEdgeNameList(stateId, outNodeList), "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
         }
+
     },
     /**
      * turn off relevant nodes.
      * @param {string} stateId stateId of the target node
      */
     turnOff(stateId) {
-        this.findNodeById(stateId).removeClass("hovered");
-        switch (this._attr.c.get("nodeRelevance")) {
-            case conf.bases.nodeRelevance[0].id:
-                // similar
-                let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
-                this.turnOffNodes(nodeList, "in-nodes");
-                break;
-            case conf.bases.nodeRelevance[1].id:
-                // connected
-                let inNodeList = this._attr._graph.getInNodes(stateId),
-                    outNodeList = this._attr._graph.getOutNodes(stateId);
-                this.turnOffNodes(inNodeList, "in-nodes");
-                this.turnOffNodes(outNodeList, "out-nodes");
-                break;
+        try {
+            this.findNodeById(stateId).removeClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.turnOffNodes(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.turnOffNodes(inNodeList, "in-nodes");
+                    this.turnOffNodes(outNodeList, "out-nodes");
+                    this.turnOffEdges(this.getEdgeNameList(inNodeList, stateId), "in-nodes");
+                    this.turnOffEdges(this.getEdgeNameList(stateId, outNodeList), "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
         }
     },
     /**
@@ -1341,8 +1370,41 @@ let NetworkView = Backbone.View.extend({
         let _self = this;
         nodeList.length !== 0 && nodeList.forEach(node => _self.findNodeById(node.name).removeClass(colorClass));
     },
+    lightUpEdges(edgeList, colorClass) {
+        let _self = this;
+        edgeList.length !== 0 && edgeList.forEach(edgeName => _self.findEdgeByName(edgeName).addClass(colorClass));
+    },
+    turnOffEdges(edgeList, colorClass) {
+        let _self = this;
+        edgeList.length !== 0 && edgeList.forEach(edgeName => _self.findEdgeByName(edgeName).removeClass(colorClass));
+    },
     findNodeById(stateId) {
         return $("#network-node-group").find("circle[title=" + stateId + "]");
+    },
+    findEdgeByName(edgeName) {
+        return $("#network-edge-group").find("path[edge-name=" + edgeName + "]");
+    },
+    /**
+     * create edge name list.
+     * @param {Array<string>} sourceNodeNameList
+     * @param {string} targetNode
+     * OR
+     * @param {string} sourceNode
+     * @param {Array<string>} targetNodeNameList
+     */
+    getEdgeNameList() {
+        let edgeNameList = []
+        try {
+            if (Array.isArray(arguments[0])) {
+                edgeNameList = arguments[0].map(sourceNode => sourceNode.name + "-" + arguments[1]);
+            } else {
+                edgeNameList = arguments[1].map(targetNode => arguments[0] + "-" + targetNode.name);
+            }
+        } catch (e) {
+            console.log("invalid edge args.");
+        } finally {
+            return edgeNameList;
+        }
     },
     /**
      * An edge is valid iff:

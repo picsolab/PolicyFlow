@@ -223,7 +223,7 @@
             return this;
         },
 
-        // retrieve similary nodes of `nodeName`
+        // retrieve similar nodes of `nodeName`
         getSimilarNodes(type, nodeName, top) {
             let _self = this,
                 index = this.nodeMap.get(nodeName),

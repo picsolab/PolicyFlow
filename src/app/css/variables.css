@@ -51,4 +51,6 @@
     --color-lightgray: #bdbdbd;
     --opacity-state: 1;
     --opacity-region: 1;
+    --attr-link-width: 1px;
+    --attr-hovered-link-width: 2px;
 }
