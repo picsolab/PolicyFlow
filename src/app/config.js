@@ -10,12 +10,12 @@ const Config = {
             description: '---'
         },
         nodeRelevance: [{
-                id: "similar",
-                description: "Similar"
-            },
-            {
                 id: "connected",
                 description: "Connected"
+            },
+            {
+                id: "similar",
+                description: "Similar"
             }
         ],
         yAttributeList: [

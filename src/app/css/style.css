@@ -349,7 +349,22 @@ text .loader-img {
 .network-link {
     fill: none;
     stroke: var(--color-dark-gray);
-    stroke-width: 1.5px;
+    stroke-width: var(--attr-link-width);
+}
+
+.network-link.hovered {
+    stroke: var(--color-hovered) !important;
+    stroke-width: var(--attr-hovered-link-width) !important;
+}
+
+.network-link.in-nodes {
+    stroke: var(--color-in-nodes) !important;
+    stroke-width: var(--attr-hovered-link-width) !important;
+}
+
+.network-link.out-nodes {
+    stroke: var(--color-out-nodes) !important;
+    stroke-width: var(--attr-hovered-link-width) !important;
 }
 
 .network-link.violate-the-rule {
@@ -366,15 +381,6 @@ text .loader-img {
     font: 10px sans-serif;
 }
 
-.network-node {
-    cursor: move;
-}
-
-.network-node.hovered {
-    fill: var(--color-hovered) !important;
-    stroke: var(--color-unadopted-darker) !important;
-}
-
 #network-legend-group {
     display: none;
 }
@@ -389,6 +395,15 @@ text .loader-img {
     position: absolute ! important;
     left: 2%;
     bottom: 0px;
+}
+
+.network-node {
+    cursor: move;
+}
+
+.network-node.hovered {
+    fill: var(--color-hovered) !important;
+    stroke: var(--color-unadopted-darker) !important;
 }
 
 .network-node.in-nodes {
