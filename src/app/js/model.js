@@ -85,6 +85,7 @@ let PolicyOptionsModel = Backbone.Model.extend({
 });
 
 let PolicyModel = Backbone.Model.extend({
+    idAttribute: "policyId",
     initialize() {
         this.urlRoot = conf.api.root + conf.api.policyBase;
         this.url = this.urlRoot + conf.bases.policy.default;
@@ -221,6 +222,19 @@ let NetworkModel = Backbone.Model.extend({
     }
 });
 
+let PolicyNetworkModel = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.policyBase + conf.api.networkBase;
+        this.url = this.urlRoot;
+    },
+    populate() {
+        let _self = this;
+        $.getJSON(_self.url).done(data => {
+            _self.set(data);
+        });
+    }
+});
+
 let StateModel = Backbone.Model.extend({
     initialize() {
         this.urlRoot = '/api/root/';
@@ -322,6 +336,7 @@ module.exports = {
     PolicyOptionsModel: PolicyOptionsModel,
     PolicyDetailModel: PolicyDetailModel,
     PolicyTrendModel: PolicyTrendModel,
+    PolicyNetworkModel: PolicyNetworkModel,
     GeoModel: GeoModel,
     NetworkModel: NetworkModel,
     DynamicNetworkModel: DynamicNetworkModel,

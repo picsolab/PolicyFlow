@@ -5,6 +5,20 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
+### 20171117
+
+new policy text from Scott, and convert character set to utf-8.
+
+Dump: 
+
+- `./backup/diffusion_v2_utf8.sql`
+- `./backup/diffusion_v2_1.sql`
+
+Script:
+
+- `./scripts/db_migration/migrate_1117_add_full_text.sql`
+- `./scripts/migrate.py`
+
 ### 20171008
 
 trim leading spaces in policy names.

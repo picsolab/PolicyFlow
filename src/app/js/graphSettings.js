@@ -1,5 +1,21 @@
 const css_variables = require('!css-variables-loader!../css/variables.css');
 const GraphSettings = {
+    // policy network settings
+    pn: {
+        margin: {
+            top: 50,
+            right: 50,
+            bottom: 50,
+            left: 50
+        },
+        size: {
+            width: 500,
+            height: 500
+        },
+        multiplier: {},
+        config: {}
+    },
+
     // policy view settings
     p: {
         margin: {

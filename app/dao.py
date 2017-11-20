@@ -104,6 +104,10 @@ class PolicyDao(BaseDao):
         return Policy.query.all()
 
     @staticmethod
+    def get_policy_ids():
+        return Policy.query.with_entities(Policy.policyId).all()
+
+    @staticmethod
     def get_policy_id_name_subject():
         return Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId).all()
 
@@ -152,7 +156,8 @@ class PolicyDao(BaseDao):
             return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyLda2 == params[2],
                                        Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year)
 
-    def get_top_similar_policies(self, q_policies, policy_id, top_count):
+    @staticmethod
+    def get_top_similar_policies(q_policies, policy_id, top_count):
         p_id_1 = PolicySimilarity.policyId1.label('policyId1')
         p_id_2 = PolicySimilarity.policyId2.label('policyId2')
         p_ts = PolicySimilarity.policyTextSimilarity.label('policyTextSimilarity')
@@ -165,6 +170,22 @@ class PolicyDao(BaseDao):
         cascade_top = all_filtered_policies.from_self(p_id_2, p_name, p_cs) \
             .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_cs.desc()).limit(top_count)
         return text_top, cascade_top
+
+
+class PolicySimilarityDao(BaseDao):
+    """policy similarity dao providing policy similarity related data"""
+
+    @staticmethod
+    def get_all_similarities():
+        return PolicySimilarity.query.all()
+
+    @staticmethod
+    def get_text_similarity():
+        return Session().query(PolicySimilarity.policyId1, PolicySimilarity.policyId2, PolicySimilarity.policyTextSimilarity).all()
+
+    @staticmethod
+    def get_cascade_similarity():
+        return Session().query(PolicySimilarity.policyId1, PolicySimilarity.policyId2, PolicySimilarity.policyCascadeSimilarity).all()
 
 
 class TextQueryDao(BaseDao):

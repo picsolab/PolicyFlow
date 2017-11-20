@@ -2,8 +2,10 @@ const conf = require('../config.js');
 
 let View = require('./view.js');
 let Model = require('./model.js');
+let Router = require('./router.js');
 let Collection = require('./collection.js');
 
+let appRouter = new Router.AppRouter();
 let conditions = new Model.Conditions(),
     policyGroupModel = new Model.PolicyGroupModel(),
     policyModel = new Model.PolicyModel(),
@@ -67,6 +69,8 @@ $(document).ready(() => {
     bindCrossViewEvents();
 
     initRendering();
+
+    Backbone.history.start();
 });
 
 function setupRenderingControllers() {
@@ -219,33 +223,6 @@ function bindDomEvents() {
             "startYear": 0,
             "endYear": 9999
         });
-    });
-
-    // ring view click, update policy group
-    ringView.$el.on('click', e => {
-        let seq = $(e.target).attr("seq"),
-            seqList = seq.split("-");
-        switch (conditions.get("method")) {
-            case "subject":
-                let subjectId = (seqList.length === 1 ?
-                        conf.bases.subject.id :
-                        seqList[1]),
-                    subjectName = conf.pipe.subjectIdToName[subjectId];
-                conditions.set({
-                    "subject": subjectName,
-                    "param": seq,
-                    "policy": conf.bases.policy.default
-                });
-                break;
-            case "text":
-                conditions.set({
-                    "param": seq,
-                    "policy": conf.bases.policy.default
-                });
-                break;
-            default:
-                break;
-        }
     });
 
     policyGroupView.$el.on('check.bs.table', (row) => {

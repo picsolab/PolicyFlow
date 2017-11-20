@@ -23,7 +23,7 @@
                         </a>
                     </th>
                     <td>
-                        <%= snippet.text %>
+                        <%= snippet.text.trim() === "" ? "Full text unavailable." : snippet.text %>
                     </td>
                 </tr>
                 <% }); %>

@@ -5,6 +5,7 @@ let utils = require('./utils.js');
 let GRank = require('./grank.js');
 let _graph = new GRank.Graph();
 let GRankWorker = require("./workers/grank.worker.js");
+let tSNEWorker = require("./workers/tsne.worker.js");
 const printDiagnoseInfo = false;
 
 let colorList = [],
@@ -36,6 +37,44 @@ let color7 = [
         css_variables['--color-cb-5'],
         css_variables['--color-cb-9']
     ]);
+
+/**
+ * Primary view that holds experimental views.
+ */
+let PlaygroundView = Backbone.View.extend({
+    el: "#playground",
+    initialize() {
+        this._views = {};
+    },
+    template: require('../templates/playground-template.html'),
+    put(viewName, viewObject) {
+        this._views[viewName] = viewObject;
+    },
+    get(viewName) {
+        return this._views[viewName];
+    },
+    renderView(aView) {
+        let __containter = this.$("#playground-view"),
+            __loading = this.$("#playground-notification-badge");
+        aView.listenTo(aView.model, "change", () => {
+            __containter.empty();
+            __loading.html("computing...").show();
+            __containter.html(aView.render().el);
+            __loading.hide();
+        });
+        __loading.html("data loading...").show();
+        aView.model.populate();
+    },
+    render() {
+        let _self = this;
+        this.$el.empty();
+        if (Object.keys(this._views) !== 0) {
+            this.$el.html(this.template({ views: this._views }));
+        }
+        return this;
+    }
+});
+
 /**
  * PolicyView: adoption sequence
  * - to display states in the order of the year that they adopt one specific policy.
@@ -1123,7 +1162,7 @@ let NetworkView = Backbone.View.extend({
             let dists = filteredNodeList.map(d => filteredNodeList.map(e => Math.abs(d.adoptedYear - e.adoptedYear))),
                 tsne = new tsnejs.tSNE({
                     dim: 2,
-                    perplexity: 10,
+                    perplexity: 10
                 });
 
             tsne.initDataDist(dists);
@@ -1131,8 +1170,8 @@ let NetworkView = Backbone.View.extend({
                 tsne.step();
                 let pos = tsne.getSolution();
 
-                xScale.domain(d3.extent(pos.map(d => d[0])));
-                yScale.domain(d3.extent(pos.map(d => d[1])));
+                xScale.domain(d4.extent(pos, d => d[0]));
+                yScale.domain(d4.extent(pos, d => d[1]));
 
                 filteredNodeList.forEach((d, i) => {
                     d.x += alpha * (xScale(pos[i][0]) - d.x);
@@ -1416,6 +1455,74 @@ let NetworkView = Backbone.View.extend({
     postRender() {
         $("#policy-network-wrapper .loader-img").hide();
         this.$el.show();
+    }
+});
+
+let PolicyNetworkView = Backbone.View.extend({
+    id: 'new-policy-network-view',
+    tagName: 'div',
+    initialize() {
+        this._attr = {};
+    },
+    render() {
+        let _self = this,
+            _width = gs.pn.margin.left + gs.pn.margin.right + gs.pn.size.width,
+            _height = gs.pn.margin.top + gs.pn.margin.bottom + gs.pn.size.height;
+
+        let containter = this.el,
+            meter = document.querySelector('#playground-progress'),
+            canvas = document.createElement("canvas");
+        canvas.setAttribute('width', _width);
+        canvas.setAttribute('height', _height);
+        containter.appendChild(canvas);
+        let context = canvas.getContext('2d');
+
+        let nodes = this.model.get("policies");
+        if (conf.enableWebWorker && window.Worker) {
+            let tsneWorker = new tSNEWorker();
+            tsneWorker.postMessage({
+                nodes: nodes,
+                xRange: [gs.pn.margin.left, gs.pn.margin.left + gs.pn.size.width],
+                yRange: [gs.pn.margin.top, gs.pn.margin.top + gs.pn.size.height],
+                dists: this.model.get("text_similarities")
+            });
+            tsneWorker.onmessage = function(event) {
+                switch (event.data.type) {
+                    case "tick":
+                        return ticked(event.data);
+                    case "end":
+                        return ended(event.data);
+                }
+            }
+        }
+
+        function ticked(data) {
+            let progress = data.progress;
+            meter.style.width = 100 * progress + "%";
+        }
+
+        function ended(data) {
+            var nodes = data.nodes;
+            meter.style.display = "none";
+
+            context.clearRect(0, 0, _width, _height);
+            context.save();
+
+            context.beginPath();
+            nodes.forEach(drawNode);
+            context.fill();
+            context.strokeStyle = "#fff";
+            context.stroke();
+
+            context.restore();
+        }
+
+        function drawNode(d) {
+            context.moveTo(d.x + 3, d.y);
+            context.arc(d.x, d.y, 3, 0, 2 * Math.PI);
+        }
+
+        return this;
     }
 });
 
@@ -2534,7 +2641,10 @@ let RingView = Backbone.View.extend({
     initialize() {
         this._attr = {};
     },
-    render() {
+    events: {
+        'click': 'switchCluster'
+    },
+    render(conditions) {
         let _self = this,
             _attr = this._attr,
             clusterObj = _self.model.get("cluster"),
@@ -2594,7 +2704,8 @@ let RingView = Backbone.View.extend({
         // expose variables for modular access
         $.extend(_attr, {
             ringG: ringG,
-            labelG: labelG
+            labelG: labelG,
+            c: conditions
         });
 
         // create paths (arcs) and bind events
@@ -2777,6 +2888,36 @@ let RingView = Backbone.View.extend({
         };
 
         return this;
+    },
+    /**
+     * ring view click, update policy group
+     * @param {object} e event
+     */
+    switchCluster(e) {
+        let seq = $(e.target).attr("seq"),
+            seqList = seq.split("-"),
+            conditions = this._attr.c;
+        switch (conditions.get("method")) {
+            case "subject":
+                let subjectId = (seqList.length === 1 ?
+                        conf.bases.subject.id :
+                        seqList[1]),
+                    subjectName = conf.pipe.subjectIdToName[subjectId];
+                conditions.set({
+                    "subject": subjectName,
+                    "param": seq,
+                    "policy": conf.bases.policy.default
+                });
+                break;
+            case "text":
+                conditions.set({
+                    "param": seq,
+                    "policy": conf.bases.policy.default
+                });
+                break;
+            default:
+                break;
+        }
     }
 });
 
@@ -2924,11 +3065,13 @@ module.exports = {
     PolicyView: PolicyView,
     PolicyDetailView: PolicyDetailView,
     PolicyTrendView: PolicyTrendView,
+    PolicyNetworkView: PolicyNetworkView,
     GeoView: GeoView,
     RingView: RingView,
     NetworkView: NetworkView,
     DiffusionView: DiffusionView,
     PolicyGroupView: PolicyGroupView,
     DropdownController: DropdownController,
-    BootstrapSwitchView: BootstrapSwitchView
+    BootstrapSwitchView: BootstrapSwitchView,
+    PlaygroundView: PlaygroundView
 };
