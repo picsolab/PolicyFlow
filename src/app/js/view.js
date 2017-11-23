@@ -66,7 +66,6 @@ let PlaygroundView = Backbone.View.extend({
         aView.model.populate();
     },
     render() {
-        let _self = this;
         this.$el.empty();
         if (Object.keys(this._views) !== 0) {
             this.$el.html(this.template({ views: this._views }));
@@ -1188,8 +1187,8 @@ let NetworkView = Backbone.View.extend({
                 yScale.domain(d4.extent(pos, d => d[1]));
 
                 filteredNodeList.forEach((d, i) => {
-                    d.x += alpha * (xScale(pos[i][0]) - d.x);
-                    d.y += alpha * (yScale(pos[i][1]) - d.y);
+                    d.vx += alpha * (xScale(pos[i][0]) - d.x);
+                    d.vy += alpha * (yScale(pos[i][1]) - d.y);
                 });
             }
 
@@ -1210,7 +1209,8 @@ let NetworkView = Backbone.View.extend({
         // update and restart the simulation.
         simulation.nodes(filteredNodeList);
         simulation.force("link").links(filteredEdges);
-        simulation.on("tick", ticked)
+        simulation.on("tick", ticked);
+        simulation.on("end", _self.postRender.bind(_self));
         simulation.alpha(0.2).restart();
 
         // compute node similarity
@@ -1333,7 +1333,6 @@ let NetworkView = Backbone.View.extend({
             filteredNodes: filteredNodes
         });
 
-        _self.postRender();
         return this;
     },
     /**
@@ -1661,6 +1660,17 @@ let PolicyGroupView = Backbone.View.extend({
                 sortable: true,
                 searchable: false,
                 order: 'asc'
+            }, {
+                field: 'has_full_text',
+                title: 'Full Text',
+                titleTooltip: "Whether there's full text available or not.",
+                sortable: true,
+                searchable: false,
+                formatter: function(value, row, index) {
+                    return value ?
+                        '<span class="glyphicon glyphicon-star" aria-hidden="true"></span>' :
+                        '<span class="glyphicon glyphicon-star-empty" aria-hidden="true"></span>';
+                }
             }],
             formatLoadingMessage: () => 'Loading policies, please wait...',
             formatNoMatches: () => 'Oops! No matching policies. Please try to adjust your time window.',

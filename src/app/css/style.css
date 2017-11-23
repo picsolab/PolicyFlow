@@ -99,7 +99,7 @@
     text-shadow: none !important;
 }
 
-text .loader-img {
+.loader-img {
     display: inline-block;
     position: absolute;
     top: 50%;

@@ -89,6 +89,10 @@ class PolicyTextDao(BaseDao):
     def get_policy_text_by_policy_id(policy_id):
         return PolicyText.query.filter(PolicyText.policyId == policy_id).first()
 
+    @staticmethod
+    def get_policy_with_full_text():
+        return PolicyText.query.filter(PolicyText.fullText1 != "").all()
+
 
 class PolicyDao(BaseDao):
     """policy dao providing policy related data"""

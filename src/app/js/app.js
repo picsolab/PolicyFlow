@@ -81,9 +81,6 @@ function setupRenderingControllers() {
             policyTrendModel.populate(conditions);
             if (!conditions.hasChanged('param')) {
                 // force loading   
-                policyGroupView.preRender();
-                networkView.preRender();
-                diffusionView.preRender();
                 policyGroupModel.populate(conditions);
                 dynamicNetworkModel.populate(conditions);
             }
@@ -99,8 +96,6 @@ function setupRenderingControllers() {
             if (!(conditions.hasChanged("param") ||
                     conditions.hasChanged("startYear") ||
                     conditions.hasChanged("endYear"))) {
-                networkView.preRender();
-                diffusionView.preRender();
                 networkModel.populate(conditions);
                 diffusionModel.populate(conditions);
             }
@@ -115,12 +110,14 @@ function setupRenderingControllers() {
                         diffusionView.doSort("sequence");
                     }
                 }
+                networkView.preRender();
                 networkView.update();
             }
             if (conditions.hasChanged('metadata')) {
                 diffusionView.doSort("metadata");
                 geoView.update();
                 if (conditions.get("geoBase") === "state") {
+                    networkView.preRender();
                     networkView.update();
                 }
             }
@@ -140,9 +137,6 @@ function setupRenderingControllers() {
         if (conditions.hasChanged("param") ||
             conditions.hasChanged("startYear") ||
             conditions.hasChanged("endYear")) {
-            policyGroupView.preRender();
-            networkView.preRender();
-            diffusionView.preRender();
             policyGroupModel.populate(conditions);
             dynamicNetworkModel.populate(conditions);
         }
@@ -153,11 +147,13 @@ function setupRenderingControllers() {
         }
         if (conditions.hasChanged('geoBase')) {
             geoView.toggleTract();
+            networkView.preRender();
             networkView.update();
         }
         if (conditions.hasChanged('stateList') ||
             conditions.hasChanged('regionList')) {
             geoView.updateSelection();
+            networkView.preRender();
             networkView.update();
         }
     });
@@ -169,10 +165,12 @@ function setupRenderingTriggers() {
     });
 
     networkModel.on('change', () => {
+        networkView.preRender();
         networkView.render(conditions);
     });
 
     diffusionModel.on("change", () => {
+        diffusionView.preRender();
         diffusionView.render(conditions);
     });
 
@@ -198,6 +196,7 @@ function setupRenderingTriggers() {
     });
 
     policyGroupModel.on("change", () => {
+        policyGroupView.preRender();
         policyGroupView.render(conditions);
     });
 }

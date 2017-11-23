@@ -170,6 +170,7 @@ class PolicyService(BaseService):
     @staticmethod
     @app.route("/api/policies/")
     def get_policies_by_params():
+        global policy_contains_full_text_set
         method, param, start_year, end_year = PolicyService.parse_args(request.args)
         policies = PolicyService.get_policy_group(method, param, start_year, end_year)
 
@@ -180,7 +181,8 @@ class PolicyService(BaseService):
                 "subject": p.subject.subjectName,
                 "policy_start": p.policyStart,
                 "policy_end": p.policyEnd,
-                "adoption_count": len(p.cascades)}
+                "adoption_count": len(p.cascades),
+                "has_full_text": p.policyId in policy_contains_full_text_set}
                 for p in policies]})
 
         return json.dumps({})
@@ -400,6 +402,16 @@ class PolicySimilarityService(BaseService):
         return text_similarities, cascade_similarities
 
 
+class PolicyTextService(BaseService):
+    @staticmethod
+    def get_policy_contain_full_text():
+        policy_set = set()
+        policies = PolicyTextDao.get_policy_with_full_text()
+        for policy in policies:
+            policy_set.add(policy.policyId)
+        return policy_set
+
+
 class SubjectService(BaseService):
     @staticmethod
     def get_valid_subject_pipe():
@@ -436,6 +448,9 @@ def __init__():
 
     global text_similarity_list, cascade_similarity_list
     text_similarity_list, cascade_similarity_list = PolicySimilarityService.get_similarity_matrices()
+
+    global policy_contains_full_text_set
+    policy_contains_full_text_set = PolicyTextService.get_policy_contain_full_text()
 
 
 __init__()
