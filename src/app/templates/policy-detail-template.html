@@ -79,7 +79,7 @@
                             </tr>
                         </thead>
                         <% _.each(cascade_similarities, function(policy, index, list) { %>
-                            <tr>
+                            <tr pid="<%= policy.policy_id %>">
                                 <td>
                                     <%= policy.policy_name %>
                                 </td>
