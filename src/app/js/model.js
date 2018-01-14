@@ -329,8 +329,8 @@ let DiffusionModel2 = Backbone.Model.extend({
                 edgesData = _self.setData(edges, nodes),
                 nodesWithEdge = nodes.filter(function(d) { return d.adoptedYear != 9999; });
             // Reorganize dataset to include dimension information
-            _self.setDimsInfoToNodes(nodes); // Add dimension info to nodes data
-            _self.setDimesInfoToData(edgesData, nodes); // Add dimension info to data
+            //_self.setDimsInfoToNodes(nodes); // Add dimension info to nodes data
+            _self.setDimsInfoToData(edgesData, nodes); // Add dimension info to data
 
             _self.set({
                 "rawData": data,
@@ -339,7 +339,8 @@ let DiffusionModel2 = Backbone.Model.extend({
                 "data": edgesData,
                 "nodesWithEdge": nodesWithEdge,
                 "stateYear": _self.setStateYearData(nodes),
-                "yearCount": _self.setYearCountData(nodesWithEdge)
+                "yearCount": _self.setYearCountData(nodesWithEdge),
+                "dMatrix": _self.setMatrixData(nodes, edgesData)
             });
         });
     },
@@ -411,9 +412,9 @@ let DiffusionModel2 = Backbone.Model.extend({
             }
         });
     },
-    setDimesInfoToData: function(edgesData, nodes) {
-        edgesData.forEach(function(edge) { // and Insert dimension information into dataset(edge data)
-            nodes.forEach(function(node) {
+    setDimsInfoToData: function(edgesData, nodes) {
+        edgesData.forEach(function (edge) { // and Insert dimension information into dataset(edge data)
+            nodes.forEach(function (node) {
                 if (node.dimension == undefined) {
                     node.dimension = "dim_3";
                 }
@@ -427,12 +428,69 @@ let DiffusionModel2 = Backbone.Model.extend({
             });
         });
 
-        //@@@@@@@
-        edgesData.forEach(function(edge) {
-            if (edge.sourceDimension == edge.targetDimension) {
-                edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
-            }
+        // //@@@@@@@
+        // edgesData.forEach(function(edge) {
+        //     if (edge.sourceDimension == edge.targetDimension) {
+        //         edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
+        //     }
+        // });
+    },
+    setMatrixData: function(nodes, edgesData) {
+        var dMatrix = [];
+        var years = nodes.filter(function(d){ return d.adoptedYear != 9999; })
+                                .map(function(d){ return d.adoptedYear; });
+        var yearArray = [];
+
+        var minYear = d4.min(years),
+            maxYear = d4.max(years);
+
+        for(i=minYear; i<=maxYear; i++){
+            yearArray.push(i);
+        }
+
+        edgesData = edgesData.filter(function(d){ return d.sourceStateInfo.adoptedYear != 9999 && d.targetStateInfo.adoptedYear != 9999; });
+
+        // Initialize matrix
+        nodes.forEach(function(node){
+           yearArray.forEach(function(year){
+               // Identify edges that are connected to the corresponding cell
+               // sourceEdges = edges from sources to this node
+               var inEdgeMatch = edgesData.filter(function(edge){
+                   return edge.targetName == node.stateId
+                       && edge.targetStateInfo.adoptedYear == year
+                       && edge.sourceStateInfo.adoptedYear != 9999
+                       && edge.targetStateInfo.adoptedYear != 9999; });
+
+               // targetEdge = edges from this node to target
+               var outEdgeMatch = edgesData.filter(function(edge){
+                   return edge.sourceName == node.stateId
+                       && edge.sourceStateInfo.adoptedYear == year
+                       && edge.sourceStateInfo.adoptedYear != 9999
+                       && edge.targetStateInfo.adoptedYear != 9999; });
+
+               var cellInfo = {
+                   isSource: false,
+                   isTarget: false,
+                   node: node.stateId,
+                   year: year,
+                   outEdges: [],  // this node is a source node, and the edge goes from this node
+                   inEdges: []       // this node is a target node, and the edge goes to this node
+               };
+
+               if(inEdgeMatch && inEdgeMatch.length != 0){
+                   cellInfo.isTarget = true;
+                   cellInfo.inEdges = inEdgeMatch;
+               }
+               if(outEdgeMatch && outEdgeMatch.length != 0){
+                   cellInfo.isSource = true;
+                   cellInfo.outEdges = outEdgeMatch;
+               }
+
+               dMatrix.push(cellInfo);
+           });
         });
+
+        return dMatrix;
     }
 });
 

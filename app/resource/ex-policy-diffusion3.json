@@ -1,52 +1,20 @@
 {
   "nodes": [
     {
-      "adoptedYear": 1907,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 41.3709,
-        "lp": 0.11,
-        "md": 0.421286,
-        "pci": 0.935358,
-        "pd": 62.457,
-        "pop": 3.274
-      },
-      "stateId": "AL",
-      "stateName": "Alabama",
-      "valid": true,
-      "centralities": {
-        "close": 0.000443262,
-        "betweenness": 0,
-        "pageRank": 0.020020345,
-        "hit": 0,
-        "outdegree": 0
-      },
-      "metadataOrder": 25,
-      "sequenceOrder": 14,
-      "circleX": 200,
-      "circleR": 3,
-      "labelX": 197,
-      "labelY": 10,
-      "meta": 0,
-      "width": 0,
-      "pad": 0,
-      "upY": 165.81632653061226,
-      "bottomY": 484.1836734693877
-    },
-    {
-      "adoptedYear": 9999,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 67.4244,
-        "lp": 0.224,
-        "md": 0.368085,
-        "pci": 1.86099,
-        "pd": 0.344162,
-        "pop": 0.229
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 0,
       "stateId": "AK",
       "stateName": "Alaska",
-      "valid": false,
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.368085,
+        "ci": 66.1731,
+        "pd": 0.407284,
+        "pop": 0.271,
+        "pci": 2.02687,
+        "lp": 0.224
+      },
       "centralities": {
         "close": 0,
         "betweenness": 0,
@@ -67,19 +35,54 @@
       "bottomY": 504.0816326530612
     },
     {
-      "adoptedYear": 1909,
-      "dataYear": 1960,
+      "adoptedYear": 1965,
+      "stateIndex": 1,
+      "stateId": "AL",
+      "stateName": "Alabama",
+      "dataYear": 1965,
+      "valid": true,
       "metadata": {
-        "ci": 25.7046,
-        "lp": 0.076,
-        "md": 0.34212,
-        "pci": 0.849055,
-        "pd": 33.6414,
-        "pop": 1.789
+        "md": 0.421286,
+        "ci": 10.8097,
+        "pd": 65.6809,
+        "pop": 3.443,
+        "pci": 1.14222,
+        "lp": 0.11
       },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020020345,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 25,
+      "sequenceOrder": 14,
+      "circleX": 200,
+      "circleR": 3,
+      "labelX": 197,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 165.81632653061226,
+      "bottomY": 484.1836734693877
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 2,
       "stateId": "AR",
       "stateName": "Arkansas",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.34212,
+        "ci": 21.5312,
+        "pd": 35.6159,
+        "pop": 1.894,
+        "pci": 1.0617,
+        "lp": 0.076
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -100,19 +103,20 @@
       "bottomY": 358.1632653061224
     },
     {
-      "adoptedYear": 1912,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 38.1759,
-        "lp": 0.183,
-        "md": 0.188124,
-        "pci": 1.25383,
-        "pd": 11.5887,
-        "pop": 1.321
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 3,
       "stateId": "AZ",
       "stateName": "Arizona",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.188124,
+        "ci": 41.8533,
+        "pd": 13.6503,
+        "pop": 1.556,
+        "pci": 1.34287,
+        "lp": 0.183
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -133,19 +137,20 @@
       "bottomY": 537.2448979591837
     },
     {
-      "adoptedYear": 1879,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 63.8196,
-        "lp": 0.41,
-        "md": 0.150559,
-        "pci": 1.71513,
-        "pd": 96.9487,
-        "pop": 15.87
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 4,
       "stateId": "CA",
       "stateName": "California",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.150559,
+        "ci": 55.8222,
+        "pd": 107.933,
+        "pop": 17.668,
+        "pci": 1.82252,
+        "lp": 0.41
+      },
       "centralities": {
         "close": 0.001375516,
         "betweenness": 89,
@@ -166,19 +171,20 @@
       "bottomY": 650
     },
     {
-      "adoptedYear": 1911,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 68.7495,
-        "lp": 0.167,
-        "md": 0.0592476,
-        "pci": 1.41671,
-        "pd": 16.9943,
-        "pop": 1.769
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 5,
       "stateId": "CO",
       "stateName": "Colorado",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.0592476,
+        "ci": 53.4849,
+        "pd": 18.5986,
+        "pop": 1.936,
+        "pci": 1.48623,
+        "lp": 0.167
+      },
       "centralities": {
         "close": 0.000483325,
         "betweenness": 20,
@@ -199,19 +205,20 @@
       "bottomY": 616.8367346938775
     },
     {
-      "adoptedYear": 1901,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 68.1593,
-        "lp": 0.124,
-        "md": 0.0841671,
-        "pci": 1.70115,
-        "pd": 458.923,
-        "pop": 2.544
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 6,
       "stateId": "CT",
       "stateName": "Connecticut",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0841671,
+        "ci": 60.4425,
+        "pd": 515.387,
+        "pop": 2.857,
+        "pci": 1.95777,
+        "lp": 0.124
+      },
       "centralities": {
         "close": 0.006024096,
         "betweenness": 9,
@@ -232,19 +239,20 @@
       "bottomY": 643.3673469387754
     },
     {
-      "adoptedYear": 1921,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 31.9498,
-        "lp": 0.164,
-        "md": 0.239917,
-        "pci": 1.71209,
-        "pd": 180.414,
-        "pop": 0.449
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 7,
       "stateId": "DE",
       "stateName": "Delaware",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.239917,
+        "ci": 54.1415,
+        "pd": 203.719,
+        "pop": 0.507,
+        "pci": 1.98575,
+        "lp": 0.164
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -265,19 +273,20 @@
       "bottomY": 530.6122448979592
     },
     {
-      "adoptedYear": 1913,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 17.958,
-        "lp": 0.101,
-        "md": 0.294807,
-        "pci": 1.22526,
-        "pd": 76.0975,
-        "pop": 5.004
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 8,
       "stateId": "FL",
       "stateName": "Florida",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.294807,
+        "ci": 31.9409,
+        "pd": 85.5869,
+        "pop": 5.628,
+        "pci": 1.29163,
+        "lp": 0.101
+      },
       "centralities": {
         "close": 0.000452694,
         "betweenness": 4,
@@ -298,19 +307,20 @@
       "bottomY": 570.4081632653061
     },
     {
-      "adoptedYear": 1913,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 19.9729,
-        "lp": 0.153,
-        "md": 0.408485,
-        "pci": 1.02409,
-        "pd": 66.5711,
-        "pop": 3.956
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 9,
       "stateId": "GA",
       "stateName": "Georgia",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.408485,
+        "ci": 14.418,
+        "pd": 72.8984,
+        "pop": 4.332,
+        "pci": 1.27986,
+        "lp": 0.153
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -331,19 +341,20 @@
       "bottomY": 477.55102040816325
     },
     {
-      "adoptedYear": 9999,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 78.8678,
-        "lp": 0.199,
-        "md": 0.471544,
-        "pci": 1.41367,
-        "pd": 58.7282,
-        "pop": 0.642
-      },
+      "adoptedYear": 1967,
+      "stateIndex": 10,
       "stateId": "HI",
       "stateName": "Hawaii",
-      "valid": false,
+      "dataYear": 1967,
+      "valid": true,
+      "metadata": {
+        "md": 0.471544,
+        "ci": 70.5834,
+        "pd": 66.1378,
+        "pop": 0.723,
+        "pci": 1.94551,
+        "lp": 0.199
+      },
       "centralities": {
         "close": 0,
         "betweenness": 0,
@@ -364,19 +375,20 @@
       "bottomY": 451.0204081632653
     },
     {
-      "adoptedYear": 1929,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 57.3585,
-        "lp": 0.16,
-        "md": 0.0207141,
-        "pci": 1.25079,
-        "pd": 48.9757,
-        "pop": 2.756
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 11,
       "stateId": "IA",
       "stateName": "Iowa",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0207141,
+        "ci": 41.639,
+        "pd": 48.7269,
+        "pop": 2.742,
+        "pci": 1.61339,
+        "lp": 0.16
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -397,19 +409,20 @@
       "bottomY": 431.12244897959187
     },
     {
-      "adoptedYear": 1913,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 47.9871,
-        "lp": 0.068,
-        "md": 0.0291011,
-        "pci": 1.14382,
-        "pd": 8.0293,
-        "pop": 0.671
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 12,
       "stateId": "ID",
       "stateName": "Idaho",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.0291011,
+        "ci": 49.2071,
+        "pd": 8.17289,
+        "pop": 0.683,
+        "pci": 1.25812,
+        "lp": 0.068
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -430,19 +443,20 @@
       "bottomY": 411.2244897959184
     },
     {
-      "adoptedYear": 1919,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 58.5965,
-        "lp": 0.233,
-        "md": 0.190575,
-        "pci": 1.62275,
-        "pd": 174.156,
-        "pop": 10.086
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 13,
       "stateId": "IL",
       "stateName": "Illinois",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.190575,
+        "ci": 47.3343,
+        "pd": 184.637,
+        "pop": 10.693,
+        "pci": 1.89666,
+        "lp": 0.233
+      },
       "centralities": {
         "close": 0.000483325,
         "betweenness": 12,
@@ -463,19 +477,20 @@
       "bottomY": 610.2040816326531
     },
     {
-      "adoptedYear": 1891,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 57.1581,
-        "lp": 0.129,
-        "md": 0.110722,
-        "pci": 1.3377,
-        "pd": 128.338,
-        "pop": 4.674
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 14,
       "stateId": "IN",
       "stateName": "Indiana",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.110722,
+        "ci": 42.4462,
+        "pd": 135.147,
+        "pop": 4.922,
+        "pci": 1.62881,
+        "lp": 0.129
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -496,19 +511,20 @@
       "bottomY": 344.8979591836735
     },
     {
-      "adoptedYear": 1907,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 48.9513,
-        "lp": 0.127,
-        "md": 0.0878782,
-        "pci": 1.30124,
-        "pd": 26.5319,
-        "pop": 2.183
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 15,
       "stateId": "KS",
       "stateName": "Kansas",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0878782,
+        "ci": 28.4059,
+        "pd": 26.8114,
+        "pop": 2.206,
+        "pci": 1.51344,
+        "lp": 0.127
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -529,19 +545,20 @@
       "bottomY": 550.5102040816327
     },
     {
-      "adoptedYear": 1917,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 61.4204,
-        "lp": 0.135,
-        "md": 0.133352,
-        "pci": 0.982764,
-        "pd": 75.2577,
-        "pop": 3.041
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 16,
       "stateId": "KY",
       "stateName": "Kentucky",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.133352,
+        "ci": 63.1125,
+        "pd": 77.4355,
+        "pop": 3.129,
+        "pci": 1.13337,
+        "lp": 0.135
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -562,19 +579,20 @@
       "bottomY": 543.8775510204082
     },
     {
-      "adoptedYear": 1921,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 30.4027,
-        "lp": 0.178,
-        "md": 0.437072,
-        "pci": 1.02288,
-        "pd": 62.2397,
-        "pop": 3.26
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 17,
       "stateId": "LA",
       "stateName": "Louisiana",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.437072,
+        "ci": 34.2304,
+        "pd": 65.7908,
+        "pop": 3.446,
+        "pci": 1.15658,
+        "lp": 0.178
+      },
       "centralities": {
         "close": 0.000452694,
         "betweenness": 6,
@@ -595,19 +613,20 @@
       "bottomY": 577.0408163265306
     },
     {
-      "adoptedYear": 1864,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 74.9602,
-        "lp": 0.444,
-        "md": 0.0476567,
-        "pci": 1.51699,
-        "pd": 488.896,
-        "pop": 5.16
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 18,
       "stateId": "MA",
       "stateName": "Maine",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.0476567,
+        "ci": 71.912,
+        "pd": 516.183,
+        "pop": 5.448,
+        "pci": 1.69222,
+        "lp": 0.444
+      },
       "centralities": {
         "close": 0.000452694,
         "betweenness": 2,
@@ -628,19 +647,20 @@
       "bottomY": 583.6734693877552
     },
     {
-      "adoptedYear": 1914,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 65.185,
-        "lp": 0.136,
-        "md": 0.282957,
-        "pci": 1.42765,
-        "pd": 250.928,
-        "pop": 3.113
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 19,
       "stateId": "MD",
       "stateName": "Maryland",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.282957,
+        "ci": 76.0408,
+        "pd": 281.478,
+        "pop": 3.492,
+        "pci": 1.63187,
+        "lp": 0.136
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -661,19 +681,20 @@
       "bottomY": 523.9795918367347
     },
     {
-      "adoptedYear": 1891,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 67.286,
-        "lp": 0.11,
-        "md": 0.012273,
-        "pci": 1.15537,
-        "pd": 27.5581,
-        "pop": 0.975
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 20,
       "stateId": "ME",
       "stateName": "Massachusetts",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.012273,
+        "ci": 74.5564,
+        "pd": 28.18,
+        "pop": 0.997,
+        "pci": 1.35068,
+        "lp": 0.11
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -694,19 +715,20 @@
       "bottomY": 517.3469387755102
     },
     {
-      "adoptedYear": 1899,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 62.5002,
-        "lp": 0.346,
-        "md": 0.171199,
-        "pci": 1.48114,
-        "pd": 81.0021,
-        "pop": 7.834
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 21,
       "stateId": "MI",
       "stateName": "Michigan",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.171199,
+        "ci": 55.9422,
+        "pd": 84.6521,
+        "pop": 8.187,
+        "pci": 1.71717,
+        "lp": 0.346
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -727,19 +749,20 @@
       "bottomY": 510.71428571428567
     },
     {
-      "adoptedYear": 1907,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 57.3286,
-        "lp": 0.151,
-        "md": 0.024541,
-        "pci": 1.30245,
-        "pd": 39.3969,
-        "pop": 3.425
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 22,
       "stateId": "MN",
       "stateName": "Minnesota",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.024541,
+        "ci": 60.2145,
+        "pd": 40.6162,
+        "pop": 3.531,
+        "pci": 1.43802,
+        "lp": 0.151
+      },
       "centralities": {
         "close": 0.001402525,
         "betweenness": 58,
@@ -760,19 +783,20 @@
       "bottomY": 596.9387755102041
     },
     {
-      "adoptedYear": 1917,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 56.588,
-        "lp": 0.228,
-        "md": 0.167106,
-        "pci": 1.33102,
-        "pd": 62.0598,
-        "pop": 4.326
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 23,
       "stateId": "MO",
       "stateName": "Missouri",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.167106,
+        "ci": 40.0543,
+        "pd": 64.0825,
+        "pop": 4.467,
+        "pci": 1.59169,
+        "lp": 0.228
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -793,19 +817,20 @@
       "bottomY": 497.44897959183675
     },
     {
-      "adoptedYear": 1916,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 12.7608,
-        "lp": 0.164,
-        "md": 0.48991,
-        "pci": 0.745734,
-        "pd": 45.0531,
-        "pop": 2.182
-      },
+      "adoptedYear": 1966,
+      "stateIndex": 24,
       "stateId": "MS",
       "stateName": "Mississippi",
+      "dataYear": 1966,
       "valid": true,
+      "metadata": {
+        "md": 0.48991,
+        "ci": 0.96254,
+        "pd": 46.3539,
+        "pop": 2.245,
+        "pci": 1.00888,
+        "lp": 0.164
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -826,19 +851,20 @@
       "bottomY": 490.8163265306123
     },
     {
-      "adoptedYear": 1913,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 54.3621,
-        "lp": 0.066,
-        "md": 0.0689608,
-        "pci": 1.25565,
-        "pd": 4.6178,
-        "pop": 0.679
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 25,
       "stateId": "MT",
       "stateName": "Montana",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0689608,
+        "ci": 43.3426,
+        "pd": 4.80142,
+        "pop": 0.706,
+        "pci": 1.44548,
+        "lp": 0.066
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -859,19 +885,20 @@
       "bottomY": 557.1428571428571
     },
     {
-      "adoptedYear": 1901,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 13.0603,
-        "lp": 0.155,
-        "md": 0.383285,
-        "pci": 0.984588,
-        "pd": 84.9697,
-        "pop": 4.573
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 26,
       "stateId": "NC",
       "stateName": "North Carolina",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.383285,
+        "ci": 2.27626,
+        "pd": 90.3582,
+        "pop": 4.863,
+        "pci": 1.2159,
+        "lp": 0.155
+      },
       "centralities": {
         "close": 0.000462321,
         "betweenness": 4,
@@ -892,19 +919,20 @@
       "bottomY": 590.3061224489795
     },
     {
-      "adoptedYear": 1912,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 43.2322,
-        "lp": 0.062,
-        "md": 0.0400567,
-        "pci": 1.13592,
-        "pd": 8.96768,
-        "pop": 0.634
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 27,
       "stateId": "ND",
       "stateName": "North Dakota",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0400567,
+        "ci": 41.7896,
+        "pd": 9.17985,
+        "pop": 0.649,
+        "pci": 1.42721,
+        "lp": 0.062
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -925,12 +953,13 @@
       "bottomY": 470.9183673469388
     },
     {
-      "adoptedYear": 1921,
-      "dataYear": -1,
-      "metadata": {},
+      "adoptedYear": 1965,
+      "stateIndex": 28,
       "stateId": "NE",
       "stateName": "Nebraska",
+      "dataYear": -1,
       "valid": true,
+      "metadata": {},
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -951,19 +980,20 @@
       "bottomY": 464.28571428571433
     },
     {
-      "adoptedYear": 1911,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 54.6593,
-        "lp": 0.079,
-        "md": 0.00849652,
-        "pci": 1.33284,
-        "pd": 65.1395,
-        "pop": 0.609
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 29,
       "stateId": "NH",
       "stateName": "New Hampshire ",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.00849652,
+        "ci": 48.4337,
+        "pd": 72.306,
+        "pop": 0.676,
+        "pci": 1.538,
+        "lp": 0.079
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -984,19 +1014,20 @@
       "bottomY": 457.65306122448976
     },
     {
-      "adoptedYear": 1915,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 75.9012,
-        "lp": 0.132,
-        "md": 0.159217,
-        "pci": 1.62275,
-        "pd": 699.678,
-        "pop": 6.103
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 30,
       "stateId": "NJ",
       "stateName": "New Jersey",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.159217,
+        "ci": 73.4947,
+        "pd": 763.536,
+        "pop": 6.66,
+        "pci": 1.80712,
+        "lp": 0.132
+      },
       "centralities": {
         "close": 0.000462535,
         "betweenness": 4,
@@ -1017,19 +1048,20 @@
       "bottomY": 603.5714285714287
     },
     {
-      "adoptedYear": 1915,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 49.6031,
-        "lp": 0.115,
-        "md": 0.148186,
-        "pci": 1.14869,
-        "pd": 7.84602,
-        "pop": 0.954
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 31,
       "stateId": "NM",
       "stateName": "New Mexico",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.148186,
+        "ci": 41.4976,
+        "pd": 8.32303,
+        "pop": 1.012,
+        "pci": 1.27929,
+        "lp": 0.115
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1050,19 +1082,20 @@
       "bottomY": 444.3877551020408
     },
     {
-      "adoptedYear": 1913,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 56.4972,
-        "lp": 0.112,
-        "md": 0.144414,
-        "pci": 1.7759,
-        "pd": 2.63177,
-        "pop": 0.291
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 32,
       "stateId": "NV",
       "stateName": "Nevada",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.144414,
+        "ci": 21.2402,
+        "pd": 4.01549,
+        "pop": 0.444,
+        "pci": 1.91265,
+        "lp": 0.112
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1083,19 +1116,20 @@
       "bottomY": 437.7551020408163
     },
     {
-      "adoptedYear": 1896,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 67.2589,
-        "lp": 0.364,
-        "md": 0.163109,
-        "pci": 1.71513,
-        "pd": 308.643,
-        "pop": 16.838
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 33,
       "stateId": "NY",
       "stateName": "New York ",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.163109,
+        "ci": 66.701,
+        "pd": 322.409,
+        "pop": 17.589,
+        "pci": 1.91681,
+        "lp": 0.364
+      },
       "centralities": {
         "close": 0.007246377,
         "betweenness": 37,
@@ -1116,19 +1150,20 @@
       "bottomY": 636.7346938775511
     },
     {
-      "adoptedYear": 1910,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 50.633,
-        "lp": 0.21,
-        "md": 0.150863,
-        "pci": 1.44953,
-        "pd": 217.153,
-        "pop": 9.734
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 34,
       "stateId": "OH",
       "stateName": "Ohio",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.150863,
+        "ci": 46.9154,
+        "pd": 222.775,
+        "pop": 9.986,
+        "pci": 1.52856,
+        "lp": 0.21
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1149,19 +1184,20 @@
       "bottomY": 424.48979591836735
     },
     {
-      "adoptedYear": 1907,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 46.6814,
-        "lp": 0.136,
-        "md": 0.175255,
-        "pci": 1.16266,
-        "pd": 33.4197,
-        "pop": 2.336
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 35,
       "stateId": "OK",
       "stateName": "Oklahoma",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.175255,
+        "ci": 36.5615,
+        "pd": 34.9076,
+        "pop": 2.44,
+        "pci": 1.33868,
+        "lp": 0.136
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1182,19 +1218,20 @@
       "bottomY": 417.85714285714283
     },
     {
-      "adoptedYear": 1909,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 63.7115,
-        "lp": 0.193,
-        "md": 0.0408615,
-        "pci": 1.37842,
-        "pd": 18.0121,
-        "pop": 1.772
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 36,
       "stateId": "OR",
       "stateName": "Oregon",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.0408615,
+        "ci": 62.2014,
+        "pd": 18.8354,
+        "pop": 1.853,
+        "pci": 1.48388,
+        "lp": 0.193
+      },
       "centralities": {
         "close": 0.000483559,
         "betweenness": 16,
@@ -1215,19 +1252,20 @@
       "bottomY": 630.1020408163266
     },
     {
-      "adoptedYear": 1929,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 70.6788,
-        "lp": 0.286,
-        "md": 0.141379,
-        "pci": 1.39362,
-        "pd": 245.992,
-        "pop": 11.329
-      },
+      "adoptedYear": 1967,
+      "stateIndex": 37,
       "stateId": "PA",
       "stateName": "Pennsylvania",
+      "dataYear": 1967,
       "valid": true,
+      "metadata": {
+        "md": 0.141379,
+        "ci": 54.3675,
+        "pd": 253.635,
+        "pop": 11.681,
+        "pci": 1.74675,
+        "lp": 0.286
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1248,19 +1286,20 @@
       "bottomY": 404.5918367346939
     },
     {
-      "adoptedYear": 1912,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 85.6268,
-        "lp": 0.135,
-        "md": 0.0473028,
-        "pci": 1.37478,
-        "pd": 553.437,
-        "pop": 0.855
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 38,
       "stateId": "RI",
       "stateName": "Rhode Island",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.0473028,
+        "ci": 83.3153,
+        "pd": 572.856,
+        "pop": 0.885,
+        "pci": 1.58312,
+        "lp": 0.135
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1281,19 +1320,20 @@
       "bottomY": 397.9591836734694
     },
     {
-      "adoptedYear": 1915,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 6.70937,
-        "lp": 0.174,
-        "md": 0.455077,
-        "pci": 0.867288,
-        "pd": 74.7022,
-        "pop": 2.392
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 39,
       "stateId": "SC",
       "stateName": "South Carolina",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.455077,
+        "ci": 1.26105,
+        "pd": 77.8876,
+        "pop": 2.494,
+        "pci": 1.10853,
+        "lp": 0.174
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1314,19 +1354,20 @@
       "bottomY": 391.32653061224494
     },
     {
-      "adoptedYear": 1913,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 55.7054,
-        "lp": 0.097,
-        "md": 0.0775117,
-        "pci": 1.14747,
-        "pd": 8.85682,
-        "pop": 0.683
-      },
+      "adoptedYear": 1964,
+      "stateIndex": 40,
       "stateId": "SD",
       "stateName": "South Dakota",
+      "dataYear": 1964,
       "valid": true,
+      "metadata": {
+        "md": 0.0775117,
+        "ci": 49.9523,
+        "pd": 9.09024,
+        "pop": 0.701,
+        "pci": 1.15658,
+        "lp": 0.097
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1347,19 +1388,20 @@
       "bottomY": 384.69387755102036
     },
     {
-      "adoptedYear": 1923,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 41.135,
-        "lp": 0.061,
-        "md": 0.276065,
-        "pci": 0.987019,
-        "pd": 84.8277,
-        "pop": 3.575
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 41,
       "stateId": "TN",
       "stateName": "Tennessee",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.276065,
+        "ci": 41.2274,
+        "pd": 88.2208,
+        "pop": 3.718,
+        "pci": 1.09292,
+        "lp": 0.061
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1380,19 +1422,20 @@
       "bottomY": 378.0612244897959
     },
     {
-      "adoptedYear": 1905,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 27.476,
-        "lp": 0.19,
-        "md": 0.220366,
-        "pci": 1.1888,
-        "pd": 35.8307,
-        "pop": 9.624
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 42,
       "stateId": "TX",
       "stateName": "Texas",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.220366,
+        "ci": 26.5729,
+        "pd": 38.6379,
+        "pop": 10.378,
+        "pci": 1.38552,
+        "lp": 0.19
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1413,19 +1456,20 @@
       "bottomY": 371.42857142857144
     },
     {
-      "adoptedYear": 1898,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 50.9205,
-        "lp": 0.057,
-        "md": 0.0372513,
-        "pci": 1.23377,
-        "pd": 10.6011,
-        "pop": 0.9
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 43,
       "stateId": "UT",
       "stateName": "Utah",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0372513,
+        "ci": 40.9739,
+        "pd": 11.7083,
+        "pop": 0.994,
+        "pci": 1.41578,
+        "lp": 0.057
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1446,19 +1490,20 @@
       "bottomY": 364.795918367347
     },
     {
-      "adoptedYear": 1916,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 6.21622,
-        "lp": 0.094,
-        "md": 0.330148,
-        "pci": 1.15841,
-        "pd": 93.1854,
-        "pop": 3.986
-      },
+      "adoptedYear": 1966,
+      "stateIndex": 44,
       "stateId": "VA",
       "stateName": "Virginia",
+      "dataYear": 1966,
       "valid": true,
+      "metadata": {
+        "md": 0.330148,
+        "ci": 3.58069,
+        "pd": 104.173,
+        "pop": 4.456,
+        "pci": 1.50527,
+        "lp": 0.094
+      },
       "centralities": {
         "close": 0.000452694,
         "betweenness": 6,
@@ -1479,19 +1524,20 @@
       "bottomY": 563.7755102040816
     },
     {
-      "adoptedYear": 1882,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 57.9153,
-        "lp": 0.213,
-        "md": 0.00404131,
-        "pci": 1.16266,
-        "pd": 40.4519,
-        "pop": 0.389
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 45,
       "stateId": "VT",
       "stateName": "Vermont",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.00404131,
+        "ci": 57.1878,
+        "pd": 42.0117,
+        "pop": 0.404,
+        "pci": 1.40036,
+        "lp": 0.213
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1512,19 +1558,20 @@
       "bottomY": 351.53061224489795
     },
     {
-      "adoptedYear": 1905,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 63.481,
-        "lp": 0.098,
-        "md": 0.0694573,
-        "pci": 1.46837,
-        "pd": 40.0432,
-        "pop": 2.855
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 46,
       "stateId": "WA",
       "stateName": "Washington",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0694573,
+        "ci": 49.5903,
+        "pd": 41.6141,
+        "pop": 2.967,
+        "pci": 1.74474,
+        "lp": 0.098
+      },
       "centralities": {
         "close": 0.000517598,
         "betweenness": 28,
@@ -1545,19 +1592,20 @@
       "bottomY": 623.469387755102
     },
     {
-      "adoptedYear": 1899,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 64.8879,
-        "lp": 0.275,
-        "md": 0.0460818,
-        "pci": 1.36688,
-        "pd": 60.4919,
-        "pop": 3.962
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 47,
       "stateId": "WI",
       "stateName": "Wisconsin",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0460818,
+        "ci": 52.7298,
+        "pd": 64.6143,
+        "pop": 4.232,
+        "pci": 1.58769,
+        "lp": 0.275
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1578,19 +1626,20 @@
       "bottomY": 338.26530612244903
     },
     {
-      "adoptedYear": 1904,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 76.8063,
-        "lp": 0.119,
-        "md": 0.0923985,
-        "pci": 1.00404,
-        "pd": 76.4753,
-        "pop": 1.853
-      },
+      "adoptedYear": 1965,
+      "stateIndex": 48,
       "stateId": "WV",
       "stateName": "West Virginia",
+      "dataYear": 1965,
       "valid": true,
+      "metadata": {
+        "md": 0.0923985,
+        "ci": 45.9752,
+        "pd": 73.7102,
+        "pop": 1.786,
+        "pci": 1.23074,
+        "lp": 0.119
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -1611,19 +1660,20 @@
       "bottomY": 331.63265306122446
     },
     {
-      "adoptedYear": 1909,
-      "dataYear": 1960,
-      "metadata": {
-        "ci": 42.1007,
-        "lp": 0.048,
-        "md": 0.0426219,
-        "pci": 1.40152,
-        "pd": 3.38401,
-        "pop": 0.331
-      },
+      "adoptedYear": 1963,
+      "stateIndex": 49,
       "stateId": "WY",
       "stateName": "Wyoming",
+      "dataYear": 1963,
       "valid": true,
+      "metadata": {
+        "md": 0.0426219,
+        "ci": 38.5459,
+        "pd": 3.43513,
+        "pop": 0.336,
+        "pci": 1.48153,
+        "lp": 0.048
+      },
       "centralities": {
         "close": 0.000443262,
         "betweenness": 0,
@@ -2810,7 +2860,7 @@
         "ym1": 0,
         "ym2": 4.333333333333333
       },
-      "isValid": false,
+      "isValid": true,
       "gcoords": {
         "x1": 0,
         "x2": 20,
@@ -2834,7 +2884,7 @@
         "ym1": 0,
         "ym2": 4.333333333333333
       },
-      "isValid": false,
+      "isValid": true,
       "gcoords": {
         "x1": 0,
         "x2": 15,
@@ -2848,20 +2898,20 @@
   ],
   "stat": {
     "max": {
-      "ci": 85.6268,
-      "lp": 0.444,
       "md": 0.48991,
-      "pci": 1.86099,
-      "pd": 699.678,
-      "pop": 16.838
+      "ci": 83.3153,
+      "lp": 0.444,
+      "pop": 17.668,
+      "pci": 2.02687,
+      "pd": 763.536
     },
     "min": {
-      "ci": 6.21622,
-      "lp": 0.048,
       "md": 0.00404131,
-      "pci": 0.745734,
-      "pd": 0.344162,
-      "pop": 0.229
+      "ci": 0.96254,
+      "lp": 0.048,
+      "pop": 0.271,
+      "pci": 1.00888,
+      "pd": 0.407284
     }
   },
   "cstat": {

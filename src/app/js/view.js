@@ -39,6 +39,804 @@ let color7 = [
         css_variables['--color-cb-9']
     ]);
 
+let DiffusionView3 = Backbone.View.extend({
+    el: "#new-diffusion-view",
+    initialize() {
+
+    },
+    render(conditions){
+        let _self = this;
+        var plot = d4.select("#new-diffusion-view"),
+            svg = plot
+                .append("svg")
+                .attr("width", gs.f.size.width)
+                .attr("height", gs.f.size.height);
+        var dMatrix = _self.model.get("dMatrix"),
+            nodes = _self.model.get("nodes"),
+            g_matrix = svg.append("g")
+                            .attr("class", "g_matrix")
+                            .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")")
+                            .data(dMatrix);
+
+        var xScale = d4.scaleTime(),     // xScale.range is dynamic according to the length of yearly timeline
+            yScale = d4.scaleBand().range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]);
+
+        var minYear = d4.min(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }),
+            maxYear = d4.max(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }),
+            yearRange = maxYear - minYear,
+            ticks = [],
+            xAxisSetting;
+
+        // Set tick values
+        if(yearRange <= 5) {
+            ticks = [new Date(minYear, 0, 1), new Date(maxYear, 0, 1)];
+            xAxisSetting = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
+        }
+        else if (yearRange <= 10){
+            ticks = [new Date(minYear, 0, 1), new Date(Math.ceil((maxYear-minYear)/2), 0, 1), new Date(maxYear, 0, 1)];
+            xAxisSetting = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
+        }
+        else{
+            xScale.nice();
+            xAxisSetting = d4.axisBottom(xScale).tickSize(5);
+        }
+
+        xScale.domain([new Date(minYear, 0, 1),
+                        new Date(maxYear + 1, 0, 1)
+                        ]);
+
+        yScale.domain(nodes.map(function(d){ return d.stateId; }));
+
+        var cellSideLength = yScale.bandwidth();
+        var matrixWidth = cellSideLength * (xScale.domain()[1].getYear() - xScale.domain()[0].getYear() + 1);
+
+        xScale.rangeRound([0, matrixWidth]);
+
+        var xAxis = g_matrix.append("g")
+                        .attr("class", "xAxis")
+                        .attr("transform", "translate(0," + (gs.f.size.height - 100) + ")")
+                        .call(xAxisSetting)
+                        .selectAll("text")
+                        .attr("class", "x-label")
+                        .style("text-anchor","middle");
+        var yAxis = g_matrix.append("g")
+                        .attr("class", "yAxis")
+                        .attr("transform", "translate(" + matrixWidth + ",0)")
+                        .call(d4.axisRight(yScale).tickSize(0))
+                        .selectAll("text")
+                        .attr("class", "y-label")
+                        .style("text-anchor","middle")
+                        .attr("dx","1em");
+
+        var gcells = g_matrix.selectAll(".gcell")
+                                .data(dMatrix)
+                                .enter().append("g")
+                                .attr("class", function(d){ return "gcell " + d.node; })
+                                .attr("transform", function(d){
+                                    return "translate(" + xScale(new Date(d.year, 0, 1)) + "," + yScale(d.node) + ")";
+                                });
+        //*** Lines to source and targets
+        // Define arrows
+        svg.append("defs")
+            .append("marker")
+            .attr("id", "arrow")
+            .attr("refX", 3)
+            .attr("refY", 3)
+            .attr("markerWidth", 20)
+            .attr("markerHeight", 20)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,6L6,3L0,0")
+            .style("stroke-width", 1)
+            .style("stroke", "gray")
+            .style("fill", "none");
+
+        svg.append("defs")
+            .append("marker")
+            .attr("id", "arrow-mouseover")
+            .attr("refX", 3)
+            .attr("refY", 3)
+            .attr("markerWidth", 20)
+            .attr("markerHeight", 20)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,6L6,3L0,0")
+            .style("stroke-width", 1.5)
+            .style("stroke", "purple")
+            .style("fill", "none");
+
+        // Draw inEdges
+        // Disabled at this point
+        // gcells.append("path")
+        //     .filter(function(d){
+        //         return d.isTarget == true; })
+        //     .attr("class", function(d){
+        //         return "path_from_source " + d.node;
+        //     })
+        //     .attr("d", addLineFromSource)
+        //     .style("stroke", function(d){
+        //         if(d.year >= d.inEdges[0].sourceStateInfo.adoptedYear){  // If it goes forward,
+        //             return "purple"
+        //         }else{ return "#ff0099"; }
+        //     })
+        //     .style("marker-end", "url(#arrow)")
+        //     .style("opacity", 0.8);
+
+        // Draw outEdges
+        // Disabled at this point since there are many targets, and meaningless to draw arrows to all targets
+        // gcells.append("path")
+        //     .filter(function(d){
+        //         return d.isSource == true; })
+        //     .attr("class", function(d){
+        //         return "path_to_targets " + d.node;
+        //     })
+        //     .attr("d", addLineToTargets)
+        //     .style("stroke", "mediumpurple")
+        //     .style("marker-end", "url(#arrow)");
+
+        // Draw source node rectangles of the cell node
+        // Changed to arrow at this point
+        // gcells.append("circle")
+        //     .filter(function(d){
+        //         return d.isTarget == true; })
+        //     .attr("class", function(d){
+        //         return "circle_source " + "circle_source_" + d.inEdges[0].sourceName + " " + d.node;
+        //     })
+        //     .attr("cx", function(d){
+        //         var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+        //         return xScale(new Date(sourceYear, 0, 1)) - xScale(new Date(d.year, 0, 1)) + (cellSideLength / 2);
+        //     })
+        //     .attr("cy", cellSideLength / 2)
+        //     .attr("r", cellSideLength / 3)
+        //     .style("fill", "#E3C5FC")
+        //     .attr("stroke", "black")
+        //     .attr("stroke-width", 0.5);
+
+        // Draw source rect and node
+        // gcells.append("rect")
+        //     .filter(function(d){
+        //         return d.isTarget == true; })
+        //     .attr("x", function(d){
+        //         var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+        //         return xScale(new Date(sourceYear, 0, 1)) - xScale(new Date(d.year, 0, 1));
+        //     })
+        //     .attr("y", 0)
+        //     .attr("class", function(d){
+        //         return "rect rect_" + d.node;
+        //     })
+        //     .attr("width", cellSideLength)
+        //     .attr("height", cellSideLength)
+        //     .style("fill", "lavender");
+
+        gcells.append("path")
+            .filter(function(d){
+                return d.isTarget == true; })
+            .attr("class", "arrow_source")
+            .attr("d", function(d){
+                var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+                if(d.year >= sourceYear) return "M3,9 L9,6 L3,3";   // If going forward,
+                if(d.year < sourceYear) return "M9,9 L3,6 L9,3";
+            })
+            .attr("transform", function(d){
+                        var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+                        return "translate(" + (xScale(new Date(sourceYear, 0, 1)) - xScale(new Date(d.year, 0, 1))) + ",0)";
+                    })
+            .style("stroke", "mediumpurple")
+            .style("stroke-width", 1.5)
+            .style("fill", "none");
+
+        // Draw target node rectangles of the cell node
+        gcells
+            .filter(function(d){
+                return d.isSource == true; })
+            .each(function(d){
+                var gcell = d4.select(this);
+                d.outEdges.forEach(function(outEdge){
+                    gcell.append("rect")
+                        .attr("class", function(d){
+                            return "rect_target " + "rect_target_" + outEdge.targetName + " " + + outEdge.node;
+                        })
+                        .attr("x", xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - xScale(new Date(d.year, 0, 1)) + (cellSideLength / 7))
+                        .attr("y", cellSideLength / 5)
+                        .attr("width", cellSideLength / 1.5)
+                        .attr("height", cellSideLength / 1.5)
+                        // .attr("x", xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - xScale(new Date(d.year, 0, 1)))
+                        // .attr("y", cellSideLength)
+                        // .attr("width", cellSideLength)
+                        // .attr("height", cellSideLength)
+                        .style('shape-rendering','crispEdges')
+                        .style("stroke", "indigo")
+                        .style("stroke-width", 2)
+                        .style("fill", "none");
+                });
+            });
+        var g_mouseover = svg.append("g")
+                                    .attr("class", "mouseover-group")
+                                    .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")"),
+            g_nodes = svg.append("g")
+                        .attr("class", "g_nodes")
+                        .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")")
+
+        // Rectangles in the background
+        gcells.append("rect")
+            .attr("class", function(d){
+                return "rect rect_" + d.node;
+            })
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", cellSideLength)
+            .attr("height", cellSideLength)
+            .style("fill", "none")
+            .style('shape-rendering','crispEdges')
+            .style("stroke", "#EAECEE")
+            .style("stroke-dasharray", "3, 3")
+            .style("stroke-opacity", 0.5);
+
+        // Rectangles for the corresponding year
+        g_nodes.selectAll("rect")
+            .data(dMatrix.filter(function(d){
+                return d.isSource === true || d.isTarget === true;
+            }))
+            .enter().append("rect")
+            .attr("class", function(d){
+                return "rect_node rect_node_" + d.node + " " + d.node;
+            })
+            .attr("x", function(d){ return xScale(new Date(d.year, 0, 1)); })
+            .attr("y", function(d){ return yScale(d.node); })
+            .attr("width", cellSideLength)
+            .attr("height", cellSideLength)
+            .style("fill", "mediumpurple")
+            .style("stroke-width", 0.3)
+            .style("stroke", "white");
+
+        _self.colorRectsBetween();
+
+        // Mouseover, Mouseout
+        svg.selectAll(".rect_node")
+            .on("mouseover", function(d){
+                console.log("mouseovered node:", d);
+                var sourceNode, targetNodes,
+                    sourceCircle, targetRects,
+                    gSourceNode, dataSourceNode;
+                var relevantNodes = {};  // { node: "CA", source: "DE", targets: ["WA", "NC", ...], targetsOfSource: ["CT", "MN", ...] }
+                // Select source nodes => Highlight source node row
+                if(d.inEdges && d.inEdges.length){
+                    sourceNode = d.inEdges;
+                    dataSourceNode = d4.select(".rect_node_" + sourceNode[0].sourceName).datum();
+                    console.log("mouseover from source", d, dataSourceNode);
+
+                    // Go to source node row and Highlight source node
+                    // from source to target of the source node
+                    g_mouseover
+                        .selectAll(".mouseover_path_from_source_to_targets")
+                        .data(dataSourceNode.outEdges)
+                        .enter().append("path")
+                        .attr("class", "mouseover_path_from_source_to_targets")
+                        .attr("d", _self.drawPathToTargets)
+                        .style("shape-rendering", "crispEdges")
+                        .style("stroke", "gray")
+                        .style("stroke-width", 1)
+                        .style("stroke-opacity", 0.6)
+                        .style("marker-end", "url(#arrow)")
+                        .style("fill", "none")
+                        .attr("opacity", 1);
+
+                    // from source to node
+                    g_mouseover
+                        .selectAll(".mouseover_path_from_source")
+                        .data(sourceNode)
+                        .enter().append("path")
+                        .attr("class", "mouseover_path_from_source")
+                        .attr("d", _self.drawPathFromSource)
+                        .style("shape-rendering", "crispEdges")
+                        .style("stroke", "mediumpurple")
+                        .style("stroke-width", 1.5)
+                        .style("marker-end", "url(#arrow-mouseover)")
+                        .style("fill", "none")
+                        .attr("opacity", 1);
+                }
+
+                if(d.outEdges && d.outEdges.length){
+                    targetNodes = d.outEdges;
+                    console.log("mouseovered node: 1 data: target exists:", d.outEdges);
+                        
+                    g_mouseover
+                        .selectAll(".mouseover_path_from_node_to_targets")
+                        .data(targetNodes)
+                        .enter().append("path")
+                        .attr("class", "mouseover_path_from_node_to_targets")
+                        .attr("d", _self.drawPathToTargets)
+                        .style("shape-rendering", "crispEdges")
+                        .style("stroke", "indigo")
+                        .style("stroke-width", 1.5)
+                        .style("marker-end", "url(#arrow-mouseover)")
+                        .style("fill", "none")
+                        .attr("opacity", 1);
+                }
+
+                // Hide all circles and rects except for once in the row of the node itself, source and target nodes
+                // Highlight the row
+
+                // Sum up all the state name of the node, and its source and target nodes
+
+                // // Add source node for mouseover
+                // if(d.inEdges && d.inEdges.length){
+                //     console.log("come in");
+                //     g_mouseover.selectAll(".mouseover_source_node")
+                //             .data(sourceNode)
+                //             .enter().append("rect")
+                //             .attr("x", function(e){ 
+                //                 console.log("mouseover_source_node", e);
+                //                 return xScale(new Date(e.sourceStateInfo.adoptedYear, 0, 1)); })
+                //             .attr("y", function(e){ return yScale(e.sourceName); })
+                //             .attr("class", "mouseover_source_node")
+                //             .attr("width", cellSideLength)
+                //             .attr("height", cellSideLength)
+                //             .style("fill", "mediumpurple")
+                //             .style('shape-rendering','crispEdges')
+                //             .style("stroke", "#EAECEE")
+                //             .style("stroke-dasharray", "3, 3")
+                //             .style("stroke-opacity", 0.5);
+
+                //     g_mouseover.selectAll(".mouseover_target_node_of_source_node")
+                //             .data(dataSourceNode.outEdges)
+                //             .enter().append("rect")
+                //             .attr("x", function(e){ 
+                //                 console.log("mouseover_target_node_of_source_node", e);
+                //                 return xScale(new Date(e.targetStateInfo.adoptedYear, 0, 1)); })
+                //             .attr("y", function(e){ return yScale(e.targetName); })
+                //             .attr("class", "mouseover_target_node_of_source_node")
+                //             .attr("width", cellSideLength)
+                //             .attr("height", cellSideLength)
+                //             .style("fill", "mediumpurple")
+                //             .style('shape-rendering','crispEdges')
+                //             .style("stroke", "#EAECEE")
+                //             .style("stroke-dasharray", "3, 3")
+                //             .style("stroke-opacity", 0.5);
+                // }
+                // // Add target nodes for mouseover
+                // if(d.outEdges && d.outEdges.length){
+                //     g_mouseover.selectAll(".mouseover_target_node")
+                //             .data(targetNodes)
+                //             .enter().append("rect")
+                //             .attr("x", function(e){
+                //                 console.log("mouseover_target_node", e);
+                //                 return xScale(new Date(e.targetStateInfo.adoptedYear, 0, 1)); })
+                //             .attr("y", function(e){ return yScale(e.targetName); })
+                //             .attr("class", "mouseover_target_node")
+                //             .attr("width", cellSideLength)
+                //             .attr("height", cellSideLength)
+                //             .style("fill", "mediumpurple")
+                //             .style('shape-rendering','crispEdges')
+                //             .style("stroke", "#EAECEE")
+                //             .style("stroke-dasharray", "3, 3")
+                //             .style("stroke-opacity", 0.5);
+                // }
+                relevantNodes.node = d.node;
+                relevantNodes.targetsOfSource = [];
+                if(sourceNode !== null){
+                    relevantNodes.source = sourceNode[0].sourceName;
+                    // and also add target nodes the source node
+                    var targetNamesOfSourceNode = dataSourceNode.outEdges.map(function(e){
+                        return e.targetName; });
+
+                    targetNamesOfSourceNode.forEach(function(targetName){
+                        relevantNodes.targetsOfSource.push(targetName); 
+                    });
+                }
+                if(targetNodes && targetNodes.length){
+                    var targetNodeNames = targetNodes.map(function(d){ return d.targetName; });
+                    relevantNodes.targets = targetNodeNames;
+                }
+
+                // Highlight the row
+                g_matrix.selectAll(".rect")
+                        .style("fill", function(e){  
+                            if(relevantNodes.node === e.node){ return "lemonchiffon"; }
+                            if(relevantNodes.source !== null){
+                                if(relevantNodes.source === e.node){ return "lightyellow"; }
+                                if(relevantNodes.targetsOfSource.indexOf(e.node) > -1){ return "ghostwhite"; }
+                            }
+                            if(relevantNodes.targets && relevantNodes.targets.length){
+                                if(relevantNodes.targets.indexOf(e.node) > -1){ return "lightyellow"; }
+                            }
+                            
+                            return "none";
+                        })
+                        .style("opacity", function(e){
+                            var allRelevantNodes = Object.keys(relevantNodes).map(function(key){ return relevantNodes.key; })
+                            if(allRelevantNodes.indexOf(e.node) > -1){ return 0.1; }
+                            return 1;
+                        });
+
+                // Highlight the year column by adding rects
+                g_mouseover.selectAll(".mouseover_rect_year_highlight")
+                        .data(nodes)
+                        .enter().append("rect")
+                        .attr("class", "mouseover_rect_year_highlight")
+                        .attr("x", function(e){ return xScale(new Date(d.year, 0, 1)); })
+                        .attr("y", function(e){ return yScale(e.stateId); })
+                        .attr("width", cellSideLength)
+                        .attr("height", cellSideLength)
+                        .style("fill", "lightgoldenrodyellow");
+
+                g_mouseover.selectAll(".mouseover_rect_year_highlight")
+                            .each(function(d){ 
+                                var firstChild = this.parentNode.firstChild;
+                                this.parentNode.insertBefore(this, firstChild); });
+
+                // Highlight the year bar and the attribute bar
+                // store the previous color
+                g_chart.select("." + d.node).style("fill", "gold");
+                g_attrGraph.select("." + d.node).style("fill", "gold");
+                g_chart.select(".bar_" + d.year).style("fill", "gold");
+
+                // Color the node rects
+                d4.selectAll(".rect_node")
+                        .style("fill", function(e){  
+                            if(relevantNodes.node === e.node){ return "gold"; }
+                            if(relevantNodes.source !== null){
+                                if(relevantNodes.source === e.node){ return "lavender"; }
+                                if(relevantNodes.targetsOfSource.indexOf(e.node) > -1){ return "mediumpurple"; }
+                            }
+                            if(relevantNodes.targets && relevantNodes.targets.length){
+                                if(relevantNodes.targets.indexOf(e.node) > -1){ return "indigo"; }
+                            }
+                            
+                            return "none";
+                        })
+                        .style("opacity", function(e){
+                            var allRelevantNodes = Object.keys(relevantNodes).map(function(key){ return relevantNodes.key; })
+                            if(allRelevantNodes.indexOf(e.node) > -1){ return 0.1; }
+                            
+                            return 1;
+                        });
+
+                // // Put the nodes on top so that it doesn't get hidden by arrows
+                // d4.selectAll(".rect_node")
+                //     .each(function(d){ this.parentNode.appendChild(this); });
+                // Hide source arrow
+                // d4.selectAll("path.arrow_source")
+                //         .style("opacity", function(e){
+                //             console.log(e);
+                //             if(relevantNodes.indexOf(e.node) > -1){ return 1; }
+                //             return 0; });
+                // Hide target rects
+                g_matrix.selectAll(".rect_target").style("opacity", 0);
+                g_matrix.selectAll(".path_from_source").style("opacity", 0);
+                g_matrix.selectAll(".path_to_targets").style("opacity", 0);
+                g_matrix.selectAll(".arrow_source").style("opacity", 0);
+
+                // Highlight the label
+                d4.selectAll(".tick").style("font-weight", function(label){
+                    return (label == d.node)? "bold": "normal";
+                });
+            })
+            //***- end of mouseover
+            //***- mouseout
+            .on("mouseout", function(d){
+                svg.selectAll(".mouseover_path_from_source").remove();
+                svg.selectAll(".mouseover_path_from_source_to_targets").remove();
+                svg.selectAll(".mouseover_path_from_node_to_targets").remove();
+                svg.selectAll(".mouseover_rect_year_highlight").remove();
+
+                // Dehighlight the selected row
+                g_matrix.selectAll(".rect:not(.rect_node)").style("fill", "none");
+                // Get all nodes back
+                g_matrix.selectAll(".arrow_source, .path_from_source, .path_to_targets, .rect_node, .rect_target").style("opacity", 1);
+                g_nodes.selectAll(".rect_node").style("fill", "mediumpurple");
+                // Get the between-rects back
+                colorRectsBetween();
+                // Dehighlight the label
+                d3.selectAll(".y-label").style("font-weight", "normal");
+                // Get back to the original color of attribute bar
+                g_attrGraph.select("." + d.node).style("fill", function(d){
+                    return attrGraph_colorScale(d.centralities.pageRank); });
+                g_chart.select(".bar_" + d.year).style("fill", function(d){
+                    return timeline_colorScale(d.count); });
+            });
+            //***- end of mouseout
+
+        //***** sorting
+        d4.select(".sorted_by_pagerank").on("change", function(){
+            var transition = svg.transition().duration(750),
+                transition2 = g_attrGraph.transition().duration(750),
+                sortedNodes = nodes.sort(function(a, b){ 
+                            return d4.ascending(a.centralities.pageRank, b.centralities.pageRank); });
+
+            yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
+            transition.select(".yAxis").call(d4.axisRight(yScale).tickSize(0));
+
+            transition.selectAll(".gcell")
+                    .attr("transform", function(d){
+                        return "translate(" + xScale(new Date(d.year, 0, 1)) + "," + yScale(d.node) + ")";
+                    });
+            transition.selectAll(".rect_node")
+                    .attr("x", function(d){ return xScale(new Date(d.year, 0, 1)); })
+                    .attr("y", function(d){ return yScale(d.node); });
+
+            // Sort the attribute bars
+            attrGraph_yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
+            transition2.selectAll("rect")
+                       .attr("y", function(d){ return attrGraph_yScale(d.stateId); });
+        });
+        // updateMatrix();
+        //d4.select(".sort_by_outdegree").property("checked", true).each(updateMatrix);
+
+        // var sortTimeout = setTimeout(function() {
+        //     d4.select("input").property("checked", true).each(updateMatrix);
+        // }, 2000);
+
+        //************* Attribute graph
+        var g_attrGraph = svg.append("g")
+                            .attr("transform", "translate(" + (matrixWidth + 40) + "," + gs.f.size.upperPaneHeight + ")")
+                            .style("fill", "green");
+
+        var attrGraph_xScale = d4.scaleLinear().range([0, gs.f.size.rightPaneWidth]),
+            attrGraph_yScale = d4.scaleBand().range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]),
+            attrGraph_colorScale = d4.scaleLinear().range(["lavender", "mediumpurple", "indigo"]);
+
+        attrGraph_xScale.domain([0, d4.max(nodes, function(d){ return d.centralities.pageRank; })]);
+        attrGraph_yScale.domain(nodes.map(function(d){ return d.stateId; }));
+        attrGraph_colorScale.domain(d4.extent(nodes, function(d){ return d.centralities.pageRank }));
+
+        g_attrGraph.selectAll(".attrRect")
+            .data(nodes)
+            .enter().append("rect")
+            .attr("class", function(d){
+                return "attrRect " + d.stateId;
+            })
+            .attr("x", 0)
+            .attr("y", function(d){
+                return attrGraph_yScale(d.stateId); })
+            .attr("width", function(d){ return attrGraph_xScale(d.centralities.pageRank); })
+            .attr("height", attrGraph_yScale.bandwidth())
+            .style("fill", function(d){
+                return attrGraph_colorScale(d.centralities.pageRank);
+            })
+            .style("stroke", "white")
+            .style("stroke-width", 2);
+
+        //************* Yearly timeline
+        var timeline_colorScale = d4.scaleLinear().range(["lavender", "mediumpurple", "indigo"]);
+        timeline_colorScale.domain(d4.extent(_self.model.get("yearCount"), function(d){ return d.count; }));
+
+        var g_chart = svg.append("g")
+            .attr("class", "bar_chart")
+            .data(_self.model.get("yearCount"))
+            .attr("transform", "translate(10, 25)");
+
+        var yScale_timeline = d4.scaleLinear().rangeRound([gs.f.size.upperPaneHeight, 0]);
+        yScale_timeline.domain([d4.max(_self.model.get("yearCount"), function(d) { return d.count; }), 0]);
+
+        var rects = g_chart.selectAll(".bar")
+            .data(_self.model.get("yearCount"))
+            .enter().append("rect")
+            .attr("class", function(d){ return "bar bar_" + d.year; })
+            .attr("x", function(d) { return xScale(new Date(d.year, 0, 1)) + 1; })
+            .attr("y", function(d) { return (gs.f.size.upperPaneHeight - yScale_timeline(d.count)); })
+            .attr("width", cellSideLength - 1)
+            .attr("height", function(d) { return yScale_timeline(d.count); })
+            .style("fill", function(d) { return timeline_colorScale(d.count); });
+    },
+    drawPathFromSource(inEdge){
+        console.log("drawPathFromSource", inEdge);
+        // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
+        var sourceData = inEdge,
+            sourceName = inEdge.sourceName,
+            sourceYear = inEdge.sourceStateInfo.adoptedYear,
+            nodeName = inEdge.targetName,  // node is the mouseovered node, which acts as target in this context
+            nodeYear = inEdge.targetStateInfo.adoptedYear,
+            x1, y1, x2, y2, x3, y3;
+            
+
+        var line = d4.line()
+            .x( function(point) { return point.lx; })
+            .y( function(point) { return point.ly; });
+
+        x1 = xScale(new Date(sourceYear, 0, 1)) + (cellSideLength / 2);
+        y1 = yScale(sourceName);
+        x2 = x1;
+        y2 = yScale(nodeName) + cellSideLength / 2;
+        if(sourceYear <= nodeYear){ // If it is forward edge,
+            x3 = xScale(new Date(nodeYear, 0, 1)) - cellSideLength/2; 
+        }else{
+            if(sourceYear - nodeYear === 1){  // if the year difference is only 1,
+                x3 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength/2*2.5;
+            }
+            else {
+                x3 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength/2*3;
+            }
+        }
+        y3 = yScale(nodeName) + cellSideLength / 2;
+
+        var points = [
+            {lx: x1, ly: y1},
+            {lx: x2, ly: y2},
+            {lx: x3, ly: y3}
+        ];
+
+        return line(points);
+    },
+    drawPathToTargets(outEdge){  // d is an outEdge within outEdges data
+        var targetData = outEdge,
+            targetName = outEdge.targetName,
+            targetYear = outEdge.targetStateInfo.adoptedYear,
+            nodeName = outEdge.sourceName,  // node is the mouseovered node, which acts as source in this context
+            nodeYear = outEdge.sourceStateInfo.adoptedYear,
+            x1, y1, x2, y2, x3, y3; // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
+
+        var line = d4.line()
+            .x( function(point) { return point.lx; })
+            .y( function(point) { return point.ly; });
+
+        x1 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength / 2;
+        y1 = yScale(nodeName) + cellSideLength / 2;
+        x2 = x1;
+        y2 = yScale(targetName) + (cellSideLength / 2);
+
+        if(nodeYear <= targetYear){ // If it is forward edge,
+            x3 = xScale(new Date(targetYear, 0, 1)) - cellSideLength/2;
+        } else {  
+            if(nodeYear - targetYear === 1){  // if the year difference is only 1,
+                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*2.5;
+            }
+            else {
+                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*3;
+            }
+        }
+
+
+        y3 = y2;
+
+        var points = [
+            {lx: x1, ly: y1},
+            {lx: x2, ly: y2},
+            {lx: x3, ly: y3}
+        ];
+
+        return line(points);
+    },
+    // function drawPathToTargets(d){
+    //     // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
+
+    //     var outEdges = d.outEdges,
+    //         paths = [];
+
+    //     var line = d4.line()
+    //             .x( function(point) { return point.lx; })
+    //             .y( function(point) { return point.ly; });
+
+    //     // Create a path per outedge
+    //     outEdges.forEach(function(edge){
+    //         var x1, y1, x2, y2, x3, y3;
+
+    //         x1 = cellSideLength / 2;
+    //         y1 = cellSideLength / 2;
+    //         x2 = x1;
+    //         y2 = yScale(edge.targetName) - yScale(edge.sourceName) + (cellSideLength / 2);
+    //         x3 = xScale(new Date(edge.targetStateInfo.adoptedYear, 0, 1)) - xScale(new Date(edge.sourceStateInfo.adoptedYear, 0, 1)) - cellSideLength;
+    //         y3 = y2;
+
+    //         var points = [
+    //             {lx: x1, ly: y1},
+    //             {lx: x2, ly: y2},
+    //             {lx: x3, ly: y3}
+    //         ];
+
+    //         paths.push(line(points));
+    //     });
+
+    //     return paths;
+    // }
+
+    addLineFromSource(d){
+        var x1, y1, x2, y2,
+            inEdge = d.inEdges,
+            sourceYear;
+
+        var line = d4.line()
+            .x( function(point) { return point.lx; })
+            .y( function(point) { return point.ly; });
+
+        sourceYear = inEdge[0].sourceStateInfo.adoptedYear;
+        x1 = xScale(new Date(sourceYear, 0, 1)) - xScale(new Date(d.year, 0, 1)) + (cellSideLength / 2);
+        if(sourceYear > d.year){ // If it is backward edge,
+            x2 = cellSideLength * 2;
+        }else{
+            x2 = -cellSideLength;
+        }
+        y1 = y2 = cellSideLength / 2;
+
+        var points = [
+            {lx: x1, ly: y1},
+            {lx: x2, ly: y2}
+        ];
+
+        return line(points);
+    },
+    addLineToTargets(d){
+        var x1, y1, x2, y2,
+            outEdges, targetYears, minTargetYear, maxTargetYear;
+        var line = d4.line()
+            .x( function(point) { return point.lx; })
+            .y( function(point) { return point.ly; });
+
+        outEdges = d.outEdges;
+        targetYears = outEdges.map(function(d){ return d.targetStateInfo.adoptedYear; });
+        minTargetYear = d4.min(targetYears);
+        maxTargetYear = d4.min(targetYears);
+
+        if(maxTargetYear < d.year){  // If it is backward edge,
+            x1 = 0;
+            x2 = xScale(new Date(minTargetYear, 0, 1)) - xScale(new Date(d.year, 0, 1)) + (cellSideLength*2);
+        }
+        if(minTargetYear > d.year){
+            x1 = cellSideLength;
+            x2 = xScale(new Date(minTargetYear, 0, 1)) - xScale(new Date(d.year, 0, 1)) - cellSideLength;
+        }
+        
+        y1 = y2 = cellSideLength / 2;
+
+        var points = [
+            {lx: x1, ly: y1},
+            {lx: x2, ly: y2}
+        ];
+
+        return line(points);
+    },
+    updateMatrix(){
+        d4.select(".sorted_by_outdegree").each(function(d){
+            if(d4.select(this).property("checked")){
+                // selected measure: outdegree
+                var transition = svg.transition().duration(750);
+
+                yScale.domain(nodes.sort(function(a, b){ 
+                                return d4.descending(a.centralities.outdegree, b.centralities.outdegree); 
+                            }).map(function(e){ return e.stateId; }));
+                transition.select(".yAxis").call(d4.axisRight(yScale));
+
+                transition.selectAll(".gcell")
+                        .attr("transform", function(d){
+                            return "translate(" + xScale(new Date(d.year, 0, 1)) + "," + yScale(d.node) + ")";
+                        });
+            }
+        });
+    },
+    colorRectsBetween(){
+        // Color the way from source to target
+        nodes.forEach(function(d){
+            var nodeSelection = d4.select(".rect_node_" + d.stateId);
+            if(!nodeSelection.empty()){
+                var nodeData = d4.selectAll(".rect_node_" + d.stateId).datum();
+                if(nodeData.isTarget == true){
+                    var nodeName = nodeData.node,
+                        nodeYear = nodeData.year,
+                        sourceYear = nodeData.inEdges[0].sourceStateInfo.adoptedYear;
+                    // Select rects on the way from source to target
+                    if(sourceYear > nodeYear) {
+                        d4.selectAll(".rect_" + nodeName)
+                            .filter(function(e){
+                                return (sourceYear > e.year) && (nodeYear < e.year);
+                            })
+                            .style("fill", "pink")
+                            .style("opacity", 0.15);
+                    } else {
+                        d4.selectAll(".rect_" + nodeName)
+                            .filter(function(e){
+                                return (sourceYear < e.year) && (nodeYear > e.year);
+                            })
+                            .style("fill", "mediumpurple")
+                            .style("opacity", 0.15);
+                    }
+                }
+            }
+        });
+    }
+});
+
 /**
  * DiffusionView: new diffusion view
  */
@@ -84,38 +882,33 @@ let DiffusionView2 = Backbone.View.extend({
 
             //@@@@@@@@@@@@@@@@@
             // If source and target are placed at the same dimension, move the target to the next dimension
-            if (edge.sourceDimension == edge.targetDimension) {
-                edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
-            }
+            // if (edge.sourceDimension == edge.targetDimension) {
+            //     edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
+            // }
 
-            edge_obj[edge.sourceDimension] = edge.sourceName;
-            edge_obj[edge.targetDimension] = edge.targetName;
+            edge_obj = {"sourceDimension": edge.sourceDimension, "sourceName": edge.sourceName,
+                        "targetDimension": edge.targetDimension, "targetName": edge.targetName };
             curveData.push(edge_obj);
         });
 
-        _self.compute_cluster_centroids(_self._attr.c.get("centrality"));
+        console.log("pageRank");
+        _self.compute_cluster_centroids("pageRank");
         //@@@@@@@@@@@@ Suppressed backward edge
         curveData.forEach(function(d) {
-            // console.log(d);
-            //if(getDimNum(d4.keys(d)[0]) < getDimNum(d4.keys(d)[1])){
-            _self.draw_single_curve(d);
-            //}
+            console.log(d.sourceName, d.targetName, d.sourceDimension, d.targetDimension);
+            if(_self.getDimNum(d.sourceDimension) != _self.getDimNum(d.targetDimension)){
+                _self.draw_single_curve(d);
+            }
         });
 
         //********* Timeline graph
         _self._attr.timeView.xScale_timeline = d4.scaleTime().rangeRound([0, gs.f.size.width - gs.f.padding * 2]);
         _self._attr.timeView.yScale_timeline = d4.scaleLinear().rangeRound([20, 10]);
-        _self._attr.timeView.xKernelScale_timeline = d4.scaleLinear().rangeRound([0, gs.f.size.width - gs.f.padding * 2]);
-        _self._attr.timeView.yKernelScale_timeline = d4.scaleLinear().rangeRound([20, 0]);
 
         _self._attr.timeView.xScale_timeline.domain([new Date(d4.min(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }), 0, 1),
             new Date(d4.max(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }), 0, 1)
         ]).nice();
         _self._attr.timeView.yScale_timeline.domain([d4.max(_self.model.get("yearCount"), function(d) { return d.count; }), 0]);
-        _self._attr.timeView.xKernelScale_timeline.domain([d4.min(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }),
-            d4.max(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; })
-        ]);
-        _self._attr.timeView.yKernelScale_timeline.domain([0, .1]);
 
         var g_chart = svg.append("g")
             .attr("class", "bar_chart")
@@ -123,7 +916,7 @@ let DiffusionView2 = Backbone.View.extend({
             .attr("transform", "translate(" + gs.f.padding + ", 450)");
 
         g_chart.append("g")
-            .attr("class", "x-axis")
+            .attr("class", "x-axis-timeline")
             .attr("transform", "translate(0," + gs.f.size.timeLineHeight + ")")
             .call(d4.axisBottom(_self._attr.timeView.xScale_timeline).tickFormat(d4.timeFormat("%Y")).ticks(5));
 
@@ -203,7 +996,7 @@ let DiffusionView2 = Backbone.View.extend({
 
         _attr.xScale.domain(_self._attr.dims);
         _attr.yScale.domain(_self.model.get("nodes").sort(function(a, b) {
-                return b.centralities[_self._attr.c.get("centrality")] - a.centralities[_self._attr.c.get("centrality")]
+                return a.centralities["pageRank"] - b.centralities["pageRank"]
             })
             .map(function(d) { return d.stateId; }));
 
@@ -243,7 +1036,7 @@ let DiffusionView2 = Backbone.View.extend({
                         var stateName = d4.select(this).select("text").text();
                         var attr_measure = _self.model.get("nodes").filter(function(node) {
                             return node.stateId == stateName;
-                        }).map(function(d) { return d.centralities[_self._attr.c.get("centrality")]; });
+                        }).map(function(d) { return d.centralities["pageRank"]; });
                         d4.select(this).append("circle")
                             .attr("class", "attr_circle")
                             .attr("r", 100 * attr_measure)
@@ -335,10 +1128,10 @@ let DiffusionView2 = Backbone.View.extend({
             });
             // }
 
-            attrOnDim = nodesOnDim.map(function(d) { return d.centralities[_self._attr.c.get("centrality")]; });
+            attrOnDim = nodesOnDim.map(function(d) { return d.centralities["pageRank"]; });
 
             //@@@@@@@@@@@@@@@@@@@@@@
-            nodesOnDim = nodesOnDim.sort(function(a, b) { return d4.descending(a.centralities[_self._attr.c.get("centrality")], b.centralities[_self._attr.c.get("centrality")]); })
+            nodesOnDim = nodesOnDim.sort(function(a, b) { return d4.ascending(a.centralities["pageRank"], b.centralities["pageRank"]); })
 
             // Clustering based on the attribute
             // Save clustering information into "diffView._attr.dimsClusterInfo"
@@ -400,8 +1193,8 @@ let DiffusionView2 = Backbone.View.extend({
                 .append("path")
                 .attr("class", "curvePath")
                 .attr("stroke", function() {
-                    if (_self.getDimNum(Object.keys(d)[0]) > _self.getDimNum(Object.keys(d)[1])) {
-                        return "#FF0A84";
+                    if (_self.getDimNum(d.sourceDimension) > _self.getDimNum(d.targetDimension)) {
+                        return "red";
                     }
                     return "purple";
                 })
@@ -423,12 +1216,10 @@ let DiffusionView2 = Backbone.View.extend({
             sourceCX, sourceCY, targetCX, targetCY;
         var centroids = [];
 
-        console.log(edge);
-
         //// Source
         /// Get the source cluster
-        sourceDim = d4.keys(edge)[0];
-        sourceState = d4.values(edge)[0];
+        sourceDim = edge.sourceDimension;
+        sourceState = edge.sourceName;
         sourceCls = dimsClusterInfo.get(sourceDim).entries();
         sourceCls.forEach(function(cluster) {
             var nodes = cluster.value.get("nodes");
@@ -443,8 +1234,8 @@ let DiffusionView2 = Backbone.View.extend({
         nodesInSourceCluster = dimsClusterInfo.get(sourceDim).get(sourceCl).get("nodes");
 
         /// Get the target cluster
-        targetDim = d4.keys(edge)[1];
-        targetState = d4.values(edge)[1];
+        targetDim = edge.targetDimension;
+        targetState = edge.targetName;
         targetCls = dimsClusterInfo.get(targetDim).entries();
         targetCls.forEach(function(cluster) {
             var nodes = cluster.value.get("nodes");
@@ -482,43 +1273,49 @@ let DiffusionView2 = Backbone.View.extend({
         var targetClusterCentroid = d4.min(nodesInTargetCluster, function(d) { return _attr.yScale(d.name); }) +
             (targetClusterWidth / 2);
 
-        // Compare y coordinates of source and target cluster
-        if (sourceClusterCentroid >= targetClusterCentroid) {
-            sourceVirtualCentroid = sourceClusterCentroid - 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
-            targetVirtualCentroid = targetClusterCentroid + 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
-        } else {
-            sourceVirtualCentroid = sourceClusterCentroid + 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
-            targetVirtualCentroid = targetClusterCentroid - 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
-        }
+        // // Compare y coordinates of source and target cluster
+        // if (sourceClusterCentroid >= targetClusterCentroid) {
+        //     sourceVirtualCentroid = sourceClusterCentroid - 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
+        //     targetVirtualCentroid = targetClusterCentroid + 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
+        // } else {
+        //     sourceVirtualCentroid = sourceClusterCentroid + 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
+        //     targetVirtualCentroid = targetClusterCentroid - 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
+        // }
+
+        sourceVirtualCentroid = sourceClusterCentroid;
+        targetVirtualCentroid = targetClusterCentroid;
 
         // If the edge goes backward,
         if (_self.getDimNum(sourceDim) > _self.getDimNum(targetDim)) {
             sourceCX = sourceX - (1 / 7) * (sourceX - _attr.xScale("dim_" + (_self.getDimNum(sourceDim) - 1).toString()));
-            sourceCY = sourceVirtualCentroid + 1 / 20 * (sourceY - sourceClusterCentroid);
+            sourceCY = sourceVirtualCentroid;
             targetCX = targetX + (1 / 7) * (_attr.xScale("dim_" + (_self.getDimNum(targetDim) + 1).toString()) - targetX);
-            targetCY = targetVirtualCentroid + 1 / 20 * (targetY - targetClusterCentroid);
+            //targetCY = targetVirtualCentroid + 1 / 100 * (targetY - targetClusterCentroid);
+            targetCY = targetVirtualCentroid;
             //console.log(sourceX, sourceCX, targetX, targetCX);
         } else {
             sourceCX = sourceX + (1 / 7) * (_attr.xScale("dim_" + (_self.getDimNum(sourceDim) + 1).toString()) - sourceX);
-            sourceCY = sourceVirtualCentroid + 1 / 80 * (sourceY - sourceClusterCentroid);
+            //sourceCY = sourceVirtualCentroid + 1 / 100 * (sourceY - sourceClusterCentroid);
+            sourceCY = sourceVirtualCentroid;
             targetCX = targetX - (1 / 7) * (targetX - _attr.xScale("dim_" + (_self.getDimNum(targetDim) - 1).toString()));
-            targetCY = targetVirtualCentroid + 1 / 80 * (targetY - targetClusterCentroid);
+            //targetCY = targetVirtualCentroid + 1 / 100 * (targetY - targetClusterCentroid);
+            targetCY = targetVirtualCentroid;
             //console.log(sourceX, sourceCX, targetX, targetCX);
         }
 
-        _self._attr.curvePaths
-            .append("circle")
-            .attr("r", 2)
-            .attr("class", "control-point")
-            .attr("cx", sourceCX)
-            .attr("cy", sourceCY);
-
-        _self._attr.curvePaths
-            .append("circle")
-            .attr("r", 2)
-            .attr("class", "control-point")
-            .attr("cx", targetCX)
-            .attr("cy", targetCY);
+        // _self._attr.curvePaths
+        //     .append("circle")
+        //     .attr("r", 2)
+        //     .attr("class", "control-point")
+        //     .attr("cx", sourceCX)
+        //     .attr("cy", sourceCY);
+        //
+        // _self._attr.curvePaths
+        //     .append("circle")
+        //     .attr("r", 2)
+        //     .attr("class", "control-point")
+        //     .attr("cx", targetCX)
+        //     .attr("cy", targetCY);
 
 
         centroids.push(sylvester.$V([sourceX, sourceY]));
@@ -565,13 +1362,13 @@ let DiffusionView2 = Backbone.View.extend({
         cps.push(centroids[2]);
         cps.push(sylvester.$V([centroids[2].e(1) + a * 2 * (centroids[3].e(1) - centroids[2].e(1)), centroids[2].e(2)]));
 
-        this._attr.curvePaths
-            .append("circle")
-            .attr("r", 2)
-            .attr("class", "control-point")
-            .style("fill", "green")
-            .attr("cx", centroids[1].e(1) + a * 2 * (centroids[1].e(1) - centroids[0].e(1)))
-            .attr("cy", centroids[1].e(2));
+        // this._attr.curvePaths
+        //     .append("circle")
+        //     .attr("r", 2)
+        //     .attr("class", "control-point")
+        //     .style("fill", "green")
+        //     .attr("cx", centroids[1].e(1) + a * 2 * (centroids[1].e(1) - centroids[0].e(1)))
+        //     .attr("cy", centroids[1].e(2));
 
         // If the edge goes forward,
         if (centroids[3].e(1) - centroids[2].e(1) > 0) {
@@ -581,13 +1378,13 @@ let DiffusionView2 = Backbone.View.extend({
         }
         cps.push(centroids[3]);
 
-        this._attr.curvePaths
-            .append("circle")
-            .attr("r", 2)
-            .attr("class", "control-point")
-            .style("fill", "red")
-            .attr("cx", centroids[3].e(1) + a * 2 * (centroids[2].e(1) - centroids[3].e(1)))
-            .attr("cy", centroids[0].e(2));
+        // this._attr.curvePaths
+        //     .append("circle")
+        //     .attr("r", 2)
+        //     .attr("class", "control-point")
+        //     .style("fill", "red")
+        //     .attr("cx", centroids[3].e(1) + a * 2 * (centroids[2].e(1) - centroids[3].e(1)))
+        //     .attr("cy", centroids[0].e(2));
         return cps;
     },
     getDimNum: function(dim) {
@@ -2256,7 +3053,8 @@ let DiffusionView = Backbone.View.extend({
         return this;
     },
     update() {
-        // console.log("updating diffusion...");
+        console.log("updating diffusion...");
+        console.log(this.model);
         let _self = this,
             _attr = this._attr,
             cstat = this.model.get("cstat"),
@@ -3490,5 +4288,5 @@ module.exports = {
     PolicyGroupView: PolicyGroupView,
     DropdownController: DropdownController,
     BootstrapSwitchView: BootstrapSwitchView,
-    DiffusionView2: DiffusionView2
+    DiffusionView2: DiffusionView3
 };

@@ -3,8 +3,12 @@ const GraphSettings = {
     // new diffusion view settings
     f: {
         size: {
-            width: 500,
-            height: 550,
+            width: 800,
+            height: 680,
+            mainWidth: 650,
+            mainHeight: 650,
+            upperPaneHeight: 30,
+            rightPaneWidth: 50,
             timeLineHeight: 30
         },
         margin: {
