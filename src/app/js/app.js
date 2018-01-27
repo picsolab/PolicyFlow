@@ -103,7 +103,11 @@ function setupRenderingControllers() {
                 diffusionView.preRender();
                 networkModel.populate(conditions);
                 diffusionModel.populate(conditions);
+                diffusionModel2.populate(conditions);
             }
+            //diffusionModel2.populate(conditions);
+            console.log("policy hasChanged: ", conditions);
+
         } else {
             if (conditions.hasChanged('centrality')) {
                 // the inspection view is disabled when no policy has been selected, so do not update it's sub-component.
@@ -116,6 +120,7 @@ function setupRenderingControllers() {
                     }
                 }
                 networkView.update();
+                diffusionView2.doSort();
             }
             if (conditions.hasChanged('metadata')) {
                 diffusionView.doSort("metadata");
@@ -132,6 +137,7 @@ function setupRenderingControllers() {
                 (conditions.hasChanged('centrality') &&
                     conditions.get('policy') !== conf.bases.policy.default)) {
                 diffusionView.update();
+                diffusionView2.update();
             }
         }
         if (conditions.hasChanged("param")) {
@@ -197,8 +203,10 @@ function setupRenderingTriggers() {
     });
 
     dynamicNetworkModel.on("change", () => {
+        console.log("setupRenderingTriggers hasChanged: ", conditions, dynamicNetworkModel.get("edgesInIndices"));
         networkModel.populate(conditions, dynamicNetworkModel.get("edgesInStateIds"));
         diffusionModel.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
+        diffusionModel2.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
     });
 
     policyGroupModel.on("change", () => {
@@ -214,7 +222,7 @@ function initRendering() {
     policyModel.populate(conditions);
     geoModel.populate(conditions);
     dynamicNetworkModel.populate(conditions);
-    diffusionModel2.populate(conditions);
+    //diffusionModel2.populate(conditions);
 }
 
 function bindDomEvents() {

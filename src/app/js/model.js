@@ -263,6 +263,7 @@ let DiffusionModel = Backbone.Model.extend({
             edges = (arguments.length === 2 ?
                 arguments[1] :
                 this.get("edges"));
+        console.log("edges in diffmodel1:", edges);
         this.url = this.urlRoot + conditions.get("policy");
         return $.getJSON(_self.url).done((data) => {
             // console.log(_self.url);
@@ -322,15 +323,22 @@ let DiffusionModel2 = Backbone.Model.extend({
         this.url = this.urlRoot + conf.models.conditions.defaults.policy;
     },
     populate() {
-        let _self = this;
-        $.getJSON(_self.url).done(data => {
+        let _self = this,
+            centralities = conf.static.centrality.centralities,
+            centralityStat = conf.static.centrality.stat,
+            conditions = arguments[0],
+            edges = (arguments.length === 2 ?
+                arguments[1] :
+                this.get("edges"));
+        this.url = this.urlRoot + conditions.get("policy");
+
+        return $.getJSON(_self.url).done(data => {
             let nodes = data.nodes,
-                edges = data.edges,
                 edgesData = _self.setData(edges, nodes),
-                nodesWithEdge = nodes.filter(function(d) { return d.adoptedYear != 9999; });
-            // Reorganize dataset to include dimension information
-            //_self.setDimsInfoToNodes(nodes); // Add dimension info to nodes data
-            _self.setDimsInfoToData(edgesData, nodes); // Add dimension info to data
+                nodesWithEdge = nodes.filter(function(d) { return d.adoptedYear !== 9999; });
+            nodes.forEach((node, i) => {
+                nodes[i]["centralities"] = centralities[node.stateId];
+            });
 
             _self.set({
                 "rawData": data,
@@ -340,7 +348,9 @@ let DiffusionModel2 = Backbone.Model.extend({
                 "nodesWithEdge": nodesWithEdge,
                 "stateYear": _self.setStateYearData(nodes),
                 "yearCount": _self.setYearCountData(nodesWithEdge),
-                "dMatrix": _self.setMatrixData(nodes, edgesData)
+                "dMatrix": _self.setMatrixData(nodes, edgesData),
+                "stat": data.stat,
+                "cstat": centralityStat
             });
         });
     },
@@ -350,13 +360,13 @@ let DiffusionModel2 = Backbone.Model.extend({
             edge.targetStateInfo = {};
 
             nodes.forEach(function(node) {
-                if (edge.source == node.metadataOrder) {
+                if (edge.source == node.stateIndex) {
                     edge.sourceStateInfo.adoptedYear = node.adoptedYear;
                     edge.sourceStateInfo.metadata = node.metadata;
                     edge.sourceName = node.stateId;
                     edge.sourceCentralities = node.centralities;
                 }
-                if (edge.target == node.metadataOrder) {
+                if (edge.target == node.stateIndex) {
                     edge.targetStateInfo.adoptedYear = node.adoptedYear;
                     edge.targetStateInfo.metadata = node.metadata;
                     edge.targetName = node.stateId;
@@ -403,37 +413,6 @@ let DiffusionModel2 = Backbone.Model.extend({
         });
 
         return yearCount;
-    },
-    setDimsInfoToNodes: function(nodes) {
-        // Organize data to put dimension information
-        nodes.forEach(function(node, i) { // Assign dimension to nodes
-            if (conf.static.stateDims[node.stateId] != undefined) {
-                node.dimension = "dim_" + conf.static.stateDims[node.stateId].toString();
-            }
-        });
-    },
-    setDimsInfoToData: function(edgesData, nodes) {
-        edgesData.forEach(function (edge) { // and Insert dimension information into dataset(edge data)
-            nodes.forEach(function (node) {
-                if (node.dimension == undefined) {
-                    node.dimension = "dim_3";
-                }
-                if (edge.source == node.metadataOrder) {
-                    edge.sourceDimension = node.dimension;
-                }
-                //console.log(edge.target == node.metadataOrder);
-                if (edge.target == node.metadataOrder) {
-                    edge.targetDimension = node.dimension;
-                }
-            });
-        });
-
-        // //@@@@@@@
-        // edgesData.forEach(function(edge) {
-        //     if (edge.sourceDimension == edge.targetDimension) {
-        //         edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
-        //     }
-        // });
     },
     setMatrixData: function(nodes, edgesData) {
         var dMatrix = [];

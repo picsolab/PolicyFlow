@@ -12,57 +12,112 @@ let sylvester = require('../../assets/lib/sylvester');
 let colorList = [],
     colorMap = {};
 let color7 = [
-        css_variables['--color-lightgray'],
-        css_variables['--color-cb-b'],
-        css_variables['--color-cb-c'],
-        css_variables['--color-cb-d'],
-        css_variables['--color-cb-e'],
-        css_variables['--color-cb-f'],
-        css_variables['--color-cb-g']
-    ],
-    color15 = color7.concat([
-        css_variables['--color-cb-0'],
-        css_variables['--color-cb-2'],
-        css_variables['--color-cb-4'],
-        css_variables['--color-cb-6'],
-        css_variables['--color-cb-8'],
-        css_variables['--color-cb-10'],
         css_variables['--color-a'],
-        css_variables['--color-d']
-    ]),
-    color21 = color15.concat([
+        css_variables['--color-b'],
+        css_variables['--color-c'],
+        css_variables['--color-d'],
+        css_variables['--color-e'],
         css_variables['--color-f'],
+        css_variables['--color-g']
+    ],
+    color15 = [
+        css_variables['--color-a'],
+        css_variables['--color-b'],
+        css_variables['--color-c'],
+        css_variables['--color-d'],
+        css_variables['--color-e'],
+        css_variables['--color-f'],
+        css_variables['--color-g'],
+        css_variables['--color-h'],
+        css_variables['--color-i'],
         css_variables['--color-j'],
+        css_variables['--color-cb-0'],
         css_variables['--color-cb-1'],
+        css_variables['--color-cb-2'],
         css_variables['--color-cb-3'],
-        css_variables['--color-cb-5'],
-        css_variables['--color-cb-9']
-    ]);
+        css_variables['--color-cb-4']
+    ],
+    color21 = [
+        css_variables['--color-1'],
+        css_variables['--color-2'],
+        css_variables['--color-3'],
+        css_variables['--color-4'],
+        css_variables['--color-5'],
+        css_variables['--color-6'],
+        css_variables['--color-7'],
+        css_variables['--color-8'],
+        css_variables['--color-9'],
+        css_variables['--color-10'],
+        css_variables['--color-11'],
+        css_variables['--color-12'],
+        css_variables['--color-13'],
+        css_variables['--color-14'],
+        css_variables['--color-15'],
+        css_variables['--color-16'],
+        css_variables['--color-17'],
+        css_variables['--color-18'],
+        css_variables['--color-19'],
+        css_variables['--color-20'],
+        css_variables['--color-21']
+    ];
 
 let DiffusionView3 = Backbone.View.extend({
     el: "#new-diffusion-view",
     initialize() {
-
+        this._attr = {};
     },
     render(conditions){
-        let _self = this;
+        let _self = this,
+            _attr = this._attr,
+            isSnapshot = arguments.length !== 1;
+
+        // // toggle notification jumbotron and stop rendering
+        // if (conditions.get("policy") === conf.bases.policy.default) {
+        //     this.postRender(conditions);
+        //     return this;
+        // }
+
+
+        if(conditions.get("policy") === conf.bases.policy.default) return;
+
+        this.$el.empty();
+
+        // All layout specs
+        let cellSideLength,
+            matrixWidth;
+
         var plot = d4.select("#new-diffusion-view"),
             svg = plot
                 .append("svg")
                 .attr("width", gs.f.size.width)
                 .attr("height", gs.f.size.height);
+
+        // Data
         var dMatrix = _self.model.get("dMatrix"),
             nodes = _self.model.get("nodes"),
-            g_matrix = svg.append("g")
-                            .attr("class", "g_matrix")
-                            .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")")
-                            .data(dMatrix);
+            nodesWithEdge = _self.model.get("nodesWithEdge"),
+            yearCount = _self.model.get("yearCount"),
+            stat = _self.model.get("stat"),
+            cstat = _self.model.get("cstat");
+            
+        // Define scales and axes
+        let xScale = d4.scaleTime(),     // xScale.range is dynamic according to the length of yearly timeline
+            yScale = d4.scaleBand()
+                .range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]);
+            // Timeline bar
+        let yScale_timeline = d4.scaleLinear()
+                .domain([d4.max(yearCount, function(d) { return d.count; }), 0])
+                .rangeRound([gs.f.size.upperPaneHeight, 0]),
+            timeline_colorScale = d4.scaleLinear()
+                .domain(d4.extent(yearCount, function(d){ return d.count; }))
+                .range(["lavender", "mediumpurple", "indigo"]),
+            attrGraph_xScale = d4.scaleLinear(),
+            attrGraph_yScale = d4.scaleBand(),
+            attrGraph_colorScale = d4.scaleLinear();
 
-        var xScale = d4.scaleTime(),     // xScale.range is dynamic according to the length of yearly timeline
-            yScale = d4.scaleBand().range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]);
-
-        var minYear = d4.min(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }),
-            maxYear = d4.max(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }),
+        // Calculate xAxis
+        var minYear = d4.min(nodesWithEdge, function(d) { return d.adoptedYear; }),
+            maxYear = d4.max(nodesWithEdge, function(d) { return d.adoptedYear; }),
             yearRange = maxYear - minYear,
             ticks = [],
             xAxisSetting;
@@ -87,37 +142,47 @@ let DiffusionView3 = Backbone.View.extend({
 
         yScale.domain(nodes.map(function(d){ return d.stateId; }));
 
-        var cellSideLength = yScale.bandwidth();
-        var matrixWidth = cellSideLength * (xScale.domain()[1].getYear() - xScale.domain()[0].getYear() + 1);
+        cellSideLength = yScale.bandwidth();
+        matrixWidth = cellSideLength * (xScale.domain()[1].getYear() - xScale.domain()[0].getYear() + 1);
+        console.log(matrixWidth, cellSideLength);
 
         xScale.rangeRound([0, matrixWidth]);
 
-        var xAxis = g_matrix.append("g")
-                        .attr("class", "xAxis")
-                        .attr("transform", "translate(0," + (gs.f.size.height - 100) + ")")
-                        .call(xAxisSetting)
-                        .selectAll("text")
-                        .attr("class", "x-label")
-                        .style("text-anchor","middle");
-        var yAxis = g_matrix.append("g")
-                        .attr("class", "yAxis")
-                        .attr("transform", "translate(" + matrixWidth + ",0)")
-                        .call(d4.axisRight(yScale).tickSize(0))
-                        .selectAll("text")
-                        .attr("class", "y-label")
-                        .style("text-anchor","middle")
-                        .attr("dx","1em");
+        // All groups and axes
+        let g_matrix = svg.append("g")
+                .attr("class", "g_matrix")
+                .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")");
+            g_mouseover = svg.append("g")
+                .attr("class", "mouseover-group")
+                .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")"),
+            g_nodes = svg.append("g")
+                .attr("class", "g_nodes")
+                .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")")
+            g_attrGraph = svg.append("g")
+                .attr("transform", "translate(" + (matrixWidth + 40) + "," + gs.f.size.upperPaneHeight + ")")
+                .style("fill", "green"),
+            g_chart = svg.append("g")
+                .attr("class", "bar_chart")
+                .attr("transform", "translate(10, 25)");
 
-        var gcells = g_matrix.selectAll(".gcell")
-                                .data(dMatrix)
-                                .enter().append("g")
-                                .attr("class", function(d){ return "gcell " + d.node; })
-                                .attr("transform", function(d){
-                                    return "translate(" + xScale(new Date(d.year, 0, 1)) + "," + yScale(d.node) + ")";
-                                });
-        //*** Lines to source and targets
+        let xAxis = g_matrix.append("g")
+                .attr("class", "xAxis")
+                .attr("transform", "translate(0," + (gs.f.size.height - 100) + ")")
+                .call(xAxisSetting)
+                .selectAll("text")
+                .attr("class", "x-label")
+                .style("text-anchor","middle"),
+            yAxis = g_matrix.append("g")
+                .attr("class", "yAxis")
+                .attr("transform", "translate(" + matrixWidth + ",0)")
+                .call(d4.axisRight(yScale).tickSize(0))
+                .selectAll("text")
+                .attr("class", "y-label")
+                .style("text-anchor","middle")
+                .attr("dx","1em");
+
         // Define arrows
-        svg.append("defs")
+        let markerEnd = svg.append("defs")
             .append("marker")
             .attr("id", "arrow")
             .attr("refX", 3)
@@ -130,11 +195,24 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("d", "M0,6L6,3L0,0")
             .style("stroke-width", 1)
             .style("stroke", "gray")
-            .style("fill", "none");
-
-        svg.append("defs")
+            .style("fill", "none"),
+            markerEndMouseOverFromSource = svg.append("defs")
             .append("marker")
-            .attr("id", "arrow-mouseover")
+            .attr("id", "arrow-mouseover-from-source")
+            .attr("refX", 3)
+            .attr("refY", 3)
+            .attr("markerWidth", 20)
+            .attr("markerHeight", 20)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,6L6,3L0,0")
+            .style("stroke-width", 2)
+            .style("stroke", "mediumpurple")
+            .style("fill", "none"),
+            markerEndMouseOverToTarget = svg.append("defs")
+            .append("marker")
+            .attr("id", "arrow-mouseover-to-target")
             .attr("refX", 3)
             .attr("refY", 3)
             .attr("markerWidth", 20)
@@ -144,8 +222,52 @@ let DiffusionView3 = Backbone.View.extend({
             .append("path")
             .attr("d", "M0,6L6,3L0,0")
             .style("stroke-width", 1.5)
-            .style("stroke", "purple")
+            .style("stroke", "indigo")
             .style("fill", "none");
+
+        $.extend(_attr, {
+            // getPrefix: () => {
+            //     return (isSnapshot ? idPrefix : "");
+            // },
+            isSnapshot: isSnapshot,
+            svg: svg,
+            cellSideLength: cellSideLength,
+            dMatrix: dMatrix,
+            nodes: nodes,
+            nodesWithEdge: nodesWithEdge,
+            stat: stat,
+            cstat: cstat,
+            yearCount: yearCount,
+            g_matrix: g_matrix,
+            g_mouseover: g_mouseover,
+            g_nodes: g_nodes,
+            g_attrGraph: g_attrGraph,
+            g_chart: g_chart,
+            xScale: xScale,
+            yScale: yScale,
+            attrGraph_xScale: attrGraph_xScale,
+            attrGraph_yScale: attrGraph_yScale,
+            attrGraph_colorScale: attrGraph_colorScale,
+            yScale_timeline: yScale_timeline,
+            timeline_colorScale: timeline_colorScale,
+            markerEnd: markerEnd,
+            markerEndMouseOverFromSource: markerEndMouseOverFromSource,
+            markerEndMouseOverToTarget: markerEndMouseOverToTarget,
+            c: conditions
+        });
+
+        _self.update();
+
+        return this;
+    },
+    update() {
+        let _self = this,
+            _attr = this._attr,
+            cstat = this.model.get("cstat"),
+            cType = _attr.c.get("centrality"),
+            nodes = _attr.nodes;
+
+        //*** Lines to source and targets
 
         // Draw inEdges
         // Disabled at this point
@@ -176,24 +298,6 @@ let DiffusionView3 = Backbone.View.extend({
         //     .style("stroke", "mediumpurple")
         //     .style("marker-end", "url(#arrow)");
 
-        // Draw source node rectangles of the cell node
-        // Changed to arrow at this point
-        // gcells.append("circle")
-        //     .filter(function(d){
-        //         return d.isTarget == true; })
-        //     .attr("class", function(d){
-        //         return "circle_source " + "circle_source_" + d.inEdges[0].sourceName + " " + d.node;
-        //     })
-        //     .attr("cx", function(d){
-        //         var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
-        //         return xScale(new Date(sourceYear, 0, 1)) - xScale(new Date(d.year, 0, 1)) + (cellSideLength / 2);
-        //     })
-        //     .attr("cy", cellSideLength / 2)
-        //     .attr("r", cellSideLength / 3)
-        //     .style("fill", "#E3C5FC")
-        //     .attr("stroke", "black")
-        //     .attr("stroke-width", 0.5);
-
         // Draw source rect and node
         // gcells.append("rect")
         //     .filter(function(d){
@@ -209,23 +313,66 @@ let DiffusionView3 = Backbone.View.extend({
         //     .attr("width", cellSideLength)
         //     .attr("height", cellSideLength)
         //     .style("fill", "lavender");
+        _attr.g_matrix
+            .data(_attr.dMatrix);
+        _attr.g_chart
+            .data(_attr.yearCount);
 
-        gcells.append("path")
+        // Attribute bar
+        _attr.attrGraph_xScale = d4.scaleLinear()
+            .domain([0, d4.max(_attr.nodes, function(d){ return d.centralities[cType]; })])
+            .range([0, gs.f.size.rightPaneWidth]),
+        _attr.attrGraph_yScale = d4.scaleBand()
+            .domain(_attr.nodes.map(function(d){ return d.stateId; }))
+            .range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]),
+        _attr.attrGraph_colorScale = d4.scaleLinear()
+            .domain(d4.extent(_attr.nodes, function(d){ return d.centralities[cType]; }))
+            .range(["lavender", "mediumpurple", "indigo"]);
+
+        let gcells = _attr.g_matrix.selectAll(".gcell")
+                .data(_attr.dMatrix)
+                .enter().append("g")
+                .attr("class", function(d){ return "gcell " + d.node; })
+                .attr("transform", function(d){
+                    return "translate(" + _attr.xScale(new Date(d.year, 0, 1)) + "," + _attr.yScale(d.node) + ")";
+                });
+
+        // Draw source node rectangles of the cell node
+        // Changed to arrow at this point
+        gcells.append("circle")
             .filter(function(d){
                 return d.isTarget == true; })
-            .attr("class", "arrow_source")
-            .attr("d", function(d){
-                var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
-                if(d.year >= sourceYear) return "M3,9 L9,6 L3,3";   // If going forward,
-                if(d.year < sourceYear) return "M9,9 L3,6 L9,3";
+            .attr("class", function(d){
+                return "circle_source " + "circle_source_" + d.inEdges[0].sourceName + " " + d.node;
             })
-            .attr("transform", function(d){
-                        var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
-                        return "translate(" + (xScale(new Date(sourceYear, 0, 1)) - xScale(new Date(d.year, 0, 1))) + ",0)";
-                    })
-            .style("stroke", "mediumpurple")
-            .style("stroke-width", 1.5)
-            .style("fill", "none");
+            .attr("cx", function(d){
+                var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+                return _attr.xScale(new Date(sourceYear, 0, 1)) - _attr.xScale(new Date(d.year, 0, 1)) + (_attr.cellSideLength / 2);
+            })
+            .attr("cy", _attr.cellSideLength / 2)
+            .attr("r", 5)
+            .style("fill", "#E9CFEC");
+            // .style("shape-rendering", "crispEdges")
+            // .style("stroke", "black")
+            // .style("stroke-width", 0.5);
+
+        // Disabled source target for now (source circle instead)
+        // gcells.append("path")
+        //     .filter(function(d){
+        //         return d.isTarget == true; })
+        //     .attr("class", "arrow_source")
+        //     .attr("d", function(d){
+        //         var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+        //         if(d.year >= sourceYear) return "M3,9 L9,6 L3,3";   // If going forward,
+        //         if(d.year < sourceYear) return "M9,9 L3,6 L9,3";
+        //     })
+        //     .attr("transform", function(d){
+        //                 var sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+        //                 return "translate(" + (_attr.xScale(new Date(sourceYear, 0, 1)) - _attr.xScale(new Date(d.year, 0, 1))) + ",0)";
+        //             })
+        //     .style("stroke", "mediumpurple")
+        //     .style("stroke-width", 1.5)
+        //     .style("fill", "none");
 
         // Draw target node rectangles of the cell node
         gcells
@@ -234,30 +381,44 @@ let DiffusionView3 = Backbone.View.extend({
             .each(function(d){
                 var gcell = d4.select(this);
                 d.outEdges.forEach(function(outEdge){
-                    gcell.append("rect")
+                    gcell.append("circle")
                         .attr("class", function(d){
-                            return "rect_target " + "rect_target_" + outEdge.targetName + " " + + outEdge.node;
+                            return "circle_target " + "circle_target_" + outEdge.targetName + " " + + outEdge.node;
                         })
-                        .attr("x", xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - xScale(new Date(d.year, 0, 1)) + (cellSideLength / 7))
-                        .attr("y", cellSideLength / 5)
-                        .attr("width", cellSideLength / 1.5)
-                        .attr("height", cellSideLength / 1.5)
-                        // .attr("x", xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - xScale(new Date(d.year, 0, 1)))
-                        // .attr("y", cellSideLength)
-                        // .attr("width", cellSideLength)
-                        // .attr("height", cellSideLength)
-                        .style('shape-rendering','crispEdges')
+                        .attr("cx", _attr.xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - _attr.xScale(new Date(d.year, 0, 1)) + (_attr.cellSideLength / 2))
+                        .attr("cy", _attr.cellSideLength / 2)
+                        .attr("r", 5)
+                        .style("fill", "none")
+                        //.style("shape-rendering", "crispEdges")
                         .style("stroke", "indigo")
-                        .style("stroke-width", 2)
-                        .style("fill", "none");
+                        .style("stroke-width", 1);
                 });
             });
-        var g_mouseover = svg.append("g")
-                                    .attr("class", "mouseover-group")
-                                    .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")"),
-            g_nodes = svg.append("g")
-                        .attr("class", "g_nodes")
-                        .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")")
+
+        // gcells
+        //     .filter(function(d){
+        //         return d.isSource == true; })
+        //     .each(function(d){
+        //         var gcell = d4.select(this);
+        //         d.outEdges.forEach(function(outEdge){
+        //             gcell.append("rect")
+        //                 .attr("class", function(d){
+        //                     return "rect_target " + "rect_target_" + outEdge.targetName + " " + + outEdge.node;
+        //                 })
+        //                 .attr("x", _attr.xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - _attr.xScale(new Date(d.year, 0, 1)) + (_attr.cellSideLength / 7))
+        //                 .attr("y", _attr.cellSideLength / 5)
+        //                 .attr("width", _attr.cellSideLength / 1.5)
+        //                 .attr("height", _attr.cellSideLength / 1.5)
+        //                 // .attr("x", xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - xScale(new Date(d.year, 0, 1)))
+        //                 // .attr("y", cellSideLength)
+        //                 // .attr("width", cellSideLength)
+        //                 // .attr("height", cellSideLength)
+        //                 .style('shape-rendering','crispEdges')
+        //                 .style("stroke", "indigo")
+        //                 .style("stroke-width", 2)
+        //                 .style("fill", "none");
+        //         });
+        //     });
 
         // Rectangles in the background
         gcells.append("rect")
@@ -266,8 +427,8 @@ let DiffusionView3 = Backbone.View.extend({
             })
             .attr("x", 0)
             .attr("y", 0)
-            .attr("width", cellSideLength)
-            .attr("height", cellSideLength)
+            .attr("width", _attr.cellSideLength)
+            .attr("height", _attr.cellSideLength)
             .style("fill", "none")
             .style('shape-rendering','crispEdges')
             .style("stroke", "#EAECEE")
@@ -275,28 +436,62 @@ let DiffusionView3 = Backbone.View.extend({
             .style("stroke-opacity", 0.5);
 
         // Rectangles for the corresponding year
-        g_nodes.selectAll("rect")
-            .data(dMatrix.filter(function(d){
+        // _attr.g_nodes.selectAll("rect")
+        //     .data(_attr.dMatrix.filter(function(d){
+        //         return d.isSource === true || d.isTarget === true;
+        //     }))
+        //     .enter().append("rect")
+        //     .attr("class", function(d){
+        //         return "rect_node rect_node_" + d.node + " " + d.node;
+        //     })
+        //     .attr("x", function(d){ return _attr.xScale(new Date(d.year, 0, 1)); })
+        //     .attr("y", function(d){ return _attr.yScale(d.node); })
+        //     .attr("width", _attr.cellSideLength)
+        //     .attr("height", _attr.cellSideLength)
+        //     .style("fill", "mediumpurple")
+        //     .style("stroke-width", 0.3)
+        //     .style("stroke", "white");
+
+        // Draw half circle heading the arc toward what it goes
+        var arc = d4.arc()
+            .innerRadius(0)
+            .outerRadius(5)
+            .startAngle(0)
+            .endAngle(Math.PI);
+
+        _attr.g_nodes
+            .selectAll("path")
+            .data(_attr.dMatrix.filter(function(d){
                 return d.isSource === true || d.isTarget === true;
             }))
-            .enter().append("rect")
+            .enter().append("path")
             .attr("class", function(d){
                 return "rect_node rect_node_" + d.node + " " + d.node;
             })
-            .attr("x", function(d){ return xScale(new Date(d.year, 0, 1)); })
-            .attr("y", function(d){ return yScale(d.node); })
-            .attr("width", cellSideLength)
-            .attr("height", cellSideLength)
+            .attr("d", arc)
+            .attr("transform", function(d){
+                var nodeYear = d.year,
+                    sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+                var rotate = "";
+
+                // Arc heading to the right if the adoption
+                if(sourceYear <= nodeYear) {
+                    rotate = "rotate(0)";
+                    return "translate(" + (_attr.xScale(new Date(d.year, 0, 1)) + 5) + "," + (_attr.yScale(d.node) + 5.5) + ") " + rotate;
+                }else {
+                    rotate = "rotate(180)";
+                    return "translate(" + (_attr.xScale(new Date(d.year, 0, 1)) + 5) + "," + (_attr.yScale(d.node) + 5.5) + ") " + rotate;
+                }
+            })
+            //.style("stroke", "black")
             .style("fill", "mediumpurple")
-            .style("stroke-width", 0.3)
-            .style("stroke", "white");
+            //.style("stroke-width", 1);
 
         _self.colorRectsBetween();
 
         // Mouseover, Mouseout
-        svg.selectAll(".rect_node")
+        _attr.svg.selectAll(".rect_node")
             .on("mouseover", function(d){
-                console.log("mouseovered node:", d);
                 var sourceNode, targetNodes,
                     sourceCircle, targetRects,
                     gSourceNode, dataSourceNode;
@@ -305,17 +500,16 @@ let DiffusionView3 = Backbone.View.extend({
                 if(d.inEdges && d.inEdges.length){
                     sourceNode = d.inEdges;
                     dataSourceNode = d4.select(".rect_node_" + sourceNode[0].sourceName).datum();
-                    console.log("mouseover from source", d, dataSourceNode);
 
                     // Go to source node row and Highlight source node
                     // from source to target of the source node
-                    g_mouseover
+                    _attr.g_mouseover
                         .selectAll(".mouseover_path_from_source_to_targets")
                         .data(dataSourceNode.outEdges)
                         .enter().append("path")
                         .attr("class", "mouseover_path_from_source_to_targets")
-                        .attr("d", _self.drawPathToTargets)
-                        .style("shape-rendering", "crispEdges")
+                        .attr("d", drawPathToTargets)
+                        //.style("shape-rendering", "crispEdges")
                         .style("stroke", "gray")
                         .style("stroke-width", 1)
                         .style("stroke-opacity", 0.6)
@@ -324,36 +518,227 @@ let DiffusionView3 = Backbone.View.extend({
                         .attr("opacity", 1);
 
                     // from source to node
-                    g_mouseover
+                    _attr.g_mouseover
                         .selectAll(".mouseover_path_from_source")
                         .data(sourceNode)
                         .enter().append("path")
                         .attr("class", "mouseover_path_from_source")
-                        .attr("d", _self.drawPathFromSource)
-                        .style("shape-rendering", "crispEdges")
+                        .attr("d", drawPathFromSource)
+                        //.style("shape-rendering", "crispEdges")
                         .style("stroke", "mediumpurple")
-                        .style("stroke-width", 1.5)
-                        .style("marker-end", "url(#arrow-mouseover)")
+                        .style("stroke-width", 2.5)
+                        .style("marker-end", "url(#arrow-mouseover-from-source)")
                         .style("fill", "none")
                         .attr("opacity", 1);
                 }
 
                 if(d.outEdges && d.outEdges.length){
                     targetNodes = d.outEdges;
-                    console.log("mouseovered node: 1 data: target exists:", d.outEdges);
                         
-                    g_mouseover
+                    _attr.g_mouseover
                         .selectAll(".mouseover_path_from_node_to_targets")
                         .data(targetNodes)
                         .enter().append("path")
                         .attr("class", "mouseover_path_from_node_to_targets")
-                        .attr("d", _self.drawPathToTargets)
-                        .style("shape-rendering", "crispEdges")
+                        .attr("d", drawPathToTargets2)
+                        //.style("shape-rendering", "crispEdges")
                         .style("stroke", "indigo")
-                        .style("stroke-width", 1.5)
-                        .style("marker-end", "url(#arrow-mouseover)")
+                        .style("stroke-width", 2.5)
+                        .style("marker-end", "url(#arrow-mouseover-to-target)")
                         .style("fill", "none")
                         .attr("opacity", 1);
+                }
+
+                function drawPathFromSource(inEdge){
+                    // let _self = this,
+                    //     _attr = _self._attr,
+                    let xScale = _attr.xScale,
+                        yScale = _attr.yScale,
+                        cellSideLength = _attr.cellSideLength;
+
+
+                    // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
+                    var sourceData = inEdge,
+                        sourceName = inEdge.sourceName,
+                        sourceYear = inEdge.sourceStateInfo.adoptedYear,
+                        nodeName = inEdge.targetName,  // node is the mouseovered node, which acts as target in this context
+                        nodeYear = inEdge.targetStateInfo.adoptedYear,
+                        x1, y1, x2, y2, x3, y3,
+                        point = [];
+                        
+
+                    var line = d4.line()
+                        .x( function(point) { return point.lx; })
+                        .y( function(point) { return point.ly; })
+                        .curve(d4.curveBasis);
+
+                    if(sourceYear === nodeYear) {   // If they are in the same year, the arrow should shape just like vertical line
+                        x1 = xScale(new Date(sourceYear, 0, 1)) + (cellSideLength / 2);
+                        y1 = yScale(sourceName);
+                        x2 = x1;
+                        if(yScale(sourceName) < yScale(nodeName)) { // If the arrow goes down
+                            y2 = yScale(nodeName) - cellSideLength*1/2;
+                        } else {
+                            y2 = yScale(nodeName) + cellSideLength*2;
+                        }
+
+                        points = [
+                            {lx: x1, ly: y1},
+                            {lx: x2, ly: y2}
+                        ];
+                    }
+                    else {
+                        x1 = xScale(new Date(sourceYear, 0, 1)) + (cellSideLength / 2);
+                        y1 = yScale(sourceName);
+                        x2 = x1;
+                        y2 = yScale(nodeName) + cellSideLength / 2;
+                        if(sourceYear <= nodeYear){ // If it is forward edge,
+                            x3 = xScale(new Date(nodeYear, 0, 1)) - cellSideLength/2; 
+                        }else{
+                            if(sourceYear - nodeYear === 1){  // if the year difference is only 1,
+                                x3 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength/2*2.5;
+                            }
+                            else {
+                                x3 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength/2*2.5;
+                            }
+                        }
+                        y3 = yScale(nodeName) + cellSideLength / 2;
+
+                        points = [
+                            {lx: x1, ly: y1},
+                            {lx: x2, ly: y2},
+                            {lx: x3, ly: y3}
+                        ];
+                    }
+
+                    return line(points);
+                }
+                function drawPathToTargets(outEdge){  // d is an outEdge within outEdges data
+                    // let _self = this,
+                    //     _attr = _self._attr,
+                    //     xScale = _attr.xScale,
+                    //     yScale = _attr.yScale,
+                    let xScale = _attr.xScale,
+                        yScale = _attr.yScale,
+                        cellSideLength = _attr.cellSideLength;
+
+                    var targetData = outEdge,
+                        targetName = outEdge.targetName,
+                        targetYear = outEdge.targetStateInfo.adoptedYear,
+                        nodeName = outEdge.sourceName,  // node is the mouseovered node, which acts as source in this context
+                        nodeYear = outEdge.sourceStateInfo.adoptedYear,
+                        x1, y1, x2, y2, x3, y3, // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
+                        point = [];
+
+                    var line = d4.line()
+                        .x( function(point) { return point.lx; })
+                        .y( function(point) { return point.ly; });
+
+                    if(targetYear === nodeYear) {
+                        x1 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength / 2;
+                        y1 = yScale(nodeName) + cellSideLength / 2;
+                        x2 = x1;
+                        if(yScale(nodeName) < yScale(targetName)) {  // If the arrow goes down
+                            y2 = yScale(targetName) - cellSideLength / 2;
+                        } else {
+                            y2 = yScale(targetName) + cellSideLength*2.5/2;
+                        }
+
+                        points = [
+                            {lx: x1, ly: y1},
+                            {lx: x2, ly: y2}
+                        ];
+                    } else {
+
+                        x1 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength / 2;
+                        y1 = yScale(nodeName) + cellSideLength / 2;
+                        x2 = x1;
+                        y2 = yScale(targetName) + (cellSideLength / 2);
+
+                        if(nodeYear <= targetYear){ // If it is forward edge,
+                            x3 = xScale(new Date(targetYear, 0, 1)) - cellSideLength/2;
+                        } else {  
+                            if(nodeYear - targetYear === 1){  // if the year difference is only 1,
+                                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*2.5;
+                            }
+                            else {
+                                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*2.5;
+                            }
+                        }
+                        y3 = y2;
+
+                        points = [
+                            {lx: x1, ly: y1},
+                            {lx: x2, ly: y2},
+                            {lx: x3, ly: y3}
+                        ];
+                    }
+
+                    return line(points);
+                }
+                function drawPathToTargets2(outEdge){  // d is an outEdge within outEdges data
+                    // let _self = this,
+                    //     _attr = _self._attr,
+                    //     xScale = _attr.xScale,
+                    //     yScale = _attr.yScale,
+                    let xScale = _attr.xScale,
+                        yScale = _attr.yScale,
+                        cellSideLength = _attr.cellSideLength;
+
+                    var targetData = outEdge,
+                        targetName = outEdge.targetName,
+                        targetYear = outEdge.targetStateInfo.adoptedYear,
+                        nodeName = outEdge.sourceName,  // node is the mouseovered node, which acts as source in this context
+                        nodeYear = outEdge.sourceStateInfo.adoptedYear,
+                        x1, y1, x2, y2, x3, y3, // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
+                        point = [];
+
+                    var line = d4.line()
+                        .x( function(point) { return point.lx; })
+                        .y( function(point) { return point.ly; })
+                        .curve(d4.curveBasis);
+
+                    if(targetYear === nodeYear) {
+                        x1 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength / 2;
+                        y1 = yScale(nodeName) + cellSideLength / 2;
+                        x2 = x1;
+                        if(yScale(nodeName) < yScale(targetName)) {
+                            y2 = yScale(targetName) - cellSideLength / 2;
+                        } else {
+                            y2 = yScale(targetName) + cellSideLength / 2;
+                        }
+
+                        points = [
+                            {lx: x1, ly: y1},
+                            {lx: x2, ly: y2}
+                        ];
+                    } else {
+
+                        x1 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength / 2;
+                        y1 = yScale(nodeName) + cellSideLength / 2;
+                        x2 = x1;
+                        y2 = yScale(targetName) + (cellSideLength / 2);
+
+                        if(nodeYear <= targetYear){ // If it is forward edge,
+                            x3 = xScale(new Date(targetYear, 0, 1)) - cellSideLength/2;
+                        } else {  
+                            if(nodeYear - targetYear === 1){  // if the year difference is only 1,
+                                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*2.5;
+                            }
+                            else {
+                                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*2.5;
+                            }
+                        }
+                        y3 = y2;
+
+                        points = [
+                            {lx: x1, ly: y1},
+                            {lx: x2, ly: y2},
+                            {lx: x3, ly: y3}
+                        ];
+                    }
+
+                    return line(points);
                 }
 
                 // Hide all circles and rects except for once in the row of the node itself, source and target nodes
@@ -432,9 +817,9 @@ let DiffusionView3 = Backbone.View.extend({
                 }
 
                 // Highlight the row
-                g_matrix.selectAll(".rect")
+                _attr.g_matrix.selectAll(".rect")
                         .style("fill", function(e){  
-                            if(relevantNodes.node === e.node){ return "lemonchiffon"; }
+                            if(relevantNodes.node === e.node){ return "#FFE87C"; }
                             if(relevantNodes.source !== null){
                                 if(relevantNodes.source === e.node){ return "lightyellow"; }
                                 if(relevantNodes.targetsOfSource.indexOf(e.node) > -1){ return "ghostwhite"; }
@@ -452,26 +837,26 @@ let DiffusionView3 = Backbone.View.extend({
                         });
 
                 // Highlight the year column by adding rects
-                g_mouseover.selectAll(".mouseover_rect_year_highlight")
-                        .data(nodes)
+                _attr.g_mouseover.selectAll(".mouseover_rect_year_highlight")
+                        .data(_attr.nodes)
                         .enter().append("rect")
                         .attr("class", "mouseover_rect_year_highlight")
-                        .attr("x", function(e){ return xScale(new Date(d.year, 0, 1)); })
-                        .attr("y", function(e){ return yScale(e.stateId); })
-                        .attr("width", cellSideLength)
-                        .attr("height", cellSideLength)
+                        .attr("x", function(e){ return _attr.xScale(new Date(d.year, 0, 1)); })
+                        .attr("y", function(e){ return _attr.yScale(e.stateId); })
+                        .attr("width", _attr.cellSideLength)
+                        .attr("height", _attr.cellSideLength)
                         .style("fill", "lightgoldenrodyellow");
 
-                g_mouseover.selectAll(".mouseover_rect_year_highlight")
+                _attr.g_mouseover.selectAll(".mouseover_rect_year_highlight")
                             .each(function(d){ 
                                 var firstChild = this.parentNode.firstChild;
                                 this.parentNode.insertBefore(this, firstChild); });
 
                 // Highlight the year bar and the attribute bar
                 // store the previous color
-                g_chart.select("." + d.node).style("fill", "gold");
-                g_attrGraph.select("." + d.node).style("fill", "gold");
-                g_chart.select(".bar_" + d.year).style("fill", "gold");
+                _attr.g_chart.select("." + d.node).style("fill", "gold");
+                _attr.g_attrGraph.select("." + d.node).style("fill", "gold");
+                _attr.g_chart.select(".bar_" + d.year).style("fill", "gold");
 
                 // Color the node rects
                 d4.selectAll(".rect_node")
@@ -492,6 +877,30 @@ let DiffusionView3 = Backbone.View.extend({
                             if(allRelevantNodes.indexOf(e.node) > -1){ return 0.1; }
                             
                             return 1;
+                        })
+                        .style("shape-rendering", function(e){
+                            if(relevantNodes.node === e.node ||
+                                (relevantNodes.source !== null && relevantNodes.source === e.node) ||
+                                (relevantNodes.targets && relevantNodes.targets.length && relevantNodes.targets.indexOf(e.node) > -1)) {
+                                return "crispEdges";
+                            }
+                            return "none";
+                        })
+                        .style("stroke", function(e){
+                            if(relevantNodes.node === e.node ||
+                                (relevantNodes.source !== null && relevantNodes.source === e.node) ||
+                                (relevantNodes.targets && relevantNodes.targets.length && relevantNodes.targets.indexOf(e.node) > -1)) {
+                                return "black";
+                            }
+                            return "white";
+                        })
+                        .style("stroke-width", function(e){
+                            if(relevantNodes.node === e.node ||
+                                (relevantNodes.source !== null && relevantNodes.source === e.node) ||
+                                (relevantNodes.targets && relevantNodes.targets.length && relevantNodes.targets.indexOf(e.node) > -1)) {
+                                return 1;
+                            }
+                            return 0.3;
                         });
 
                 // // Put the nodes on top so that it doesn't get hidden by arrows
@@ -504,201 +913,96 @@ let DiffusionView3 = Backbone.View.extend({
                 //             if(relevantNodes.indexOf(e.node) > -1){ return 1; }
                 //             return 0; });
                 // Hide target rects
-                g_matrix.selectAll(".rect_target").style("opacity", 0);
-                g_matrix.selectAll(".path_from_source").style("opacity", 0);
-                g_matrix.selectAll(".path_to_targets").style("opacity", 0);
-                g_matrix.selectAll(".arrow_source").style("opacity", 0);
+                _attr.g_matrix.selectAll(".circle_target").style("opacity", 0);
+                _attr.g_matrix.selectAll(".path_from_source").style("opacity", 0);
+                _attr.g_matrix.selectAll(".path_to_targets").style("opacity", 0);
+                _attr.g_matrix.selectAll(".circle_source").style("opacity", 0);
 
                 // Highlight the label
-                d4.selectAll(".tick").style("font-weight", function(label){
-                    return (label == d.node)? "bold": "normal";
-                });
+                var mouseovered_tick = d4.selectAll(".y-label")
+                    .filter(function(e){ 
+                        var label = d4.select(this).text();
+                        return (label == d.node); })
+                    .style("font-weight", "bold");
+                var label_highlight = d4.select(mouseovered_tick.node().parentNode)
+                    .append("rect")
+                    .attr("class", "label_highlight_rect")
+                    .attr("x", 4)
+                    .attr("y", -5)
+                    .attr("width", _attr.cellSideLength*2)
+                    .attr("height", _attr.cellSideLength)
+                    .style("fill", "#FFE87C");
+
+                label_highlight
+                    .each(function(e){
+                        var firstChild = this.parentNode.firstChild;
+                        this.parentNode.insertBefore(this, firstChild); 
+                    });
+
             })
             //***- end of mouseover
             //***- mouseout
             .on("mouseout", function(d){
-                svg.selectAll(".mouseover_path_from_source").remove();
-                svg.selectAll(".mouseover_path_from_source_to_targets").remove();
-                svg.selectAll(".mouseover_path_from_node_to_targets").remove();
-                svg.selectAll(".mouseover_rect_year_highlight").remove();
+                _attr.svg.selectAll(".mouseover_path_from_source").remove();
+                _attr.svg.selectAll(".mouseover_path_from_source_to_targets").remove();
+                _attr.svg.selectAll(".mouseover_path_from_node_to_targets").remove();
+                _attr.svg.selectAll(".mouseover_rect_year_highlight").remove();
 
                 // Dehighlight the selected row
-                g_matrix.selectAll(".rect:not(.rect_node)").style("fill", "none");
+                _attr.g_matrix.selectAll(".rect:not(.rect_node)").style("fill", "none");
                 // Get all nodes back
-                g_matrix.selectAll(".arrow_source, .path_from_source, .path_to_targets, .rect_node, .rect_target").style("opacity", 1);
-                g_nodes.selectAll(".rect_node").style("fill", "mediumpurple");
+                _attr.g_matrix.selectAll(".circle_source, .path_from_source, .path_to_targets, .rect_node, .circle_target").style("opacity", 1);
+                _attr.g_nodes.selectAll(".rect_node")
+                    .style("fill", "mediumpurple")
+                    .style("shape-rendering", "unset")
+                    .style("stroke", "white")
+                    .style("stroke-width", 0.3);
                 // Get the between-rects back
-                colorRectsBetween();
+                _self.colorRectsBetween();
                 // Dehighlight the label
-                d3.selectAll(".y-label").style("font-weight", "normal");
+                // Remove the label highlight rect
+                d4.selectAll(".y-label").style("font-weight", "normal");
+                d4.selectAll(".label_highlight_rect").remove();
                 // Get back to the original color of attribute bar
-                g_attrGraph.select("." + d.node).style("fill", function(d){
-                    return attrGraph_colorScale(d.centralities.pageRank); });
-                g_chart.select(".bar_" + d.year).style("fill", function(d){
-                    return timeline_colorScale(d.count); });
+                _attr.g_attrGraph.select("." + d.node).style("fill", function(d){
+                    return _attr.attrGraph_colorScale(d.centralities[cType]); });
+                _attr.g_chart.select(".bar_" + d.year).style("fill", function(d){
+                    return _attr.timeline_colorScale(d.count); });
             });
             //***- end of mouseout
 
         //***** sorting
         d4.select(".sorted_by_pagerank").on("change", function(){
-            var transition = svg.transition().duration(750),
-                transition2 = g_attrGraph.transition().duration(750),
-                sortedNodes = nodes.sort(function(a, b){ 
-                            return d4.ascending(a.centralities.pageRank, b.centralities.pageRank); });
-
-            yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
-            transition.select(".yAxis").call(d4.axisRight(yScale).tickSize(0));
-
-            transition.selectAll(".gcell")
-                    .attr("transform", function(d){
-                        return "translate(" + xScale(new Date(d.year, 0, 1)) + "," + yScale(d.node) + ")";
-                    });
-            transition.selectAll(".rect_node")
-                    .attr("x", function(d){ return xScale(new Date(d.year, 0, 1)); })
-                    .attr("y", function(d){ return yScale(d.node); });
-
-            // Sort the attribute bars
-            attrGraph_yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
-            transition2.selectAll("rect")
-                       .attr("y", function(d){ return attrGraph_yScale(d.stateId); });
         });
-        // updateMatrix();
-        //d4.select(".sort_by_outdegree").property("checked", true).each(updateMatrix);
-
-        // var sortTimeout = setTimeout(function() {
-        //     d4.select("input").property("checked", true).each(updateMatrix);
-        // }, 2000);
 
         //************* Attribute graph
-        var g_attrGraph = svg.append("g")
-                            .attr("transform", "translate(" + (matrixWidth + 40) + "," + gs.f.size.upperPaneHeight + ")")
-                            .style("fill", "green");
-
-        var attrGraph_xScale = d4.scaleLinear().range([0, gs.f.size.rightPaneWidth]),
-            attrGraph_yScale = d4.scaleBand().range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]),
-            attrGraph_colorScale = d4.scaleLinear().range(["lavender", "mediumpurple", "indigo"]);
-
-        attrGraph_xScale.domain([0, d4.max(nodes, function(d){ return d.centralities.pageRank; })]);
-        attrGraph_yScale.domain(nodes.map(function(d){ return d.stateId; }));
-        attrGraph_colorScale.domain(d4.extent(nodes, function(d){ return d.centralities.pageRank }));
-
-        g_attrGraph.selectAll(".attrRect")
-            .data(nodes)
+        _attr.g_attrGraph.selectAll(".attrRect")
+            .data(_attr.nodes)
             .enter().append("rect")
             .attr("class", function(d){
                 return "attrRect " + d.stateId;
             })
             .attr("x", 0)
             .attr("y", function(d){
-                return attrGraph_yScale(d.stateId); })
-            .attr("width", function(d){ return attrGraph_xScale(d.centralities.pageRank); })
-            .attr("height", attrGraph_yScale.bandwidth())
+                return _attr.attrGraph_yScale(d.stateId); })
+            .attr("width", function(d){ return _attr.attrGraph_xScale(d.centralities[cType]); })
+            .attr("height", _attr.attrGraph_yScale.bandwidth())
             .style("fill", function(d){
-                return attrGraph_colorScale(d.centralities.pageRank);
+                return _attr.attrGraph_colorScale(d.centralities[cType]);
             })
             .style("stroke", "white")
             .style("stroke-width", 2);
 
         //************* Yearly timeline
-        var timeline_colorScale = d4.scaleLinear().range(["lavender", "mediumpurple", "indigo"]);
-        timeline_colorScale.domain(d4.extent(_self.model.get("yearCount"), function(d){ return d.count; }));
-
-        var g_chart = svg.append("g")
-            .attr("class", "bar_chart")
-            .data(_self.model.get("yearCount"))
-            .attr("transform", "translate(10, 25)");
-
-        var yScale_timeline = d4.scaleLinear().rangeRound([gs.f.size.upperPaneHeight, 0]);
-        yScale_timeline.domain([d4.max(_self.model.get("yearCount"), function(d) { return d.count; }), 0]);
-
-        var rects = g_chart.selectAll(".bar")
-            .data(_self.model.get("yearCount"))
+        var rects = _attr.g_chart.selectAll(".bar")
+            .data(_attr.yearCount)
             .enter().append("rect")
             .attr("class", function(d){ return "bar bar_" + d.year; })
-            .attr("x", function(d) { return xScale(new Date(d.year, 0, 1)) + 1; })
-            .attr("y", function(d) { return (gs.f.size.upperPaneHeight - yScale_timeline(d.count)); })
-            .attr("width", cellSideLength - 1)
-            .attr("height", function(d) { return yScale_timeline(d.count); })
-            .style("fill", function(d) { return timeline_colorScale(d.count); });
-    },
-    drawPathFromSource(inEdge){
-        console.log("drawPathFromSource", inEdge);
-        // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
-        var sourceData = inEdge,
-            sourceName = inEdge.sourceName,
-            sourceYear = inEdge.sourceStateInfo.adoptedYear,
-            nodeName = inEdge.targetName,  // node is the mouseovered node, which acts as target in this context
-            nodeYear = inEdge.targetStateInfo.adoptedYear,
-            x1, y1, x2, y2, x3, y3;
-            
-
-        var line = d4.line()
-            .x( function(point) { return point.lx; })
-            .y( function(point) { return point.ly; });
-
-        x1 = xScale(new Date(sourceYear, 0, 1)) + (cellSideLength / 2);
-        y1 = yScale(sourceName);
-        x2 = x1;
-        y2 = yScale(nodeName) + cellSideLength / 2;
-        if(sourceYear <= nodeYear){ // If it is forward edge,
-            x3 = xScale(new Date(nodeYear, 0, 1)) - cellSideLength/2; 
-        }else{
-            if(sourceYear - nodeYear === 1){  // if the year difference is only 1,
-                x3 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength/2*2.5;
-            }
-            else {
-                x3 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength/2*3;
-            }
-        }
-        y3 = yScale(nodeName) + cellSideLength / 2;
-
-        var points = [
-            {lx: x1, ly: y1},
-            {lx: x2, ly: y2},
-            {lx: x3, ly: y3}
-        ];
-
-        return line(points);
-    },
-    drawPathToTargets(outEdge){  // d is an outEdge within outEdges data
-        var targetData = outEdge,
-            targetName = outEdge.targetName,
-            targetYear = outEdge.targetStateInfo.adoptedYear,
-            nodeName = outEdge.sourceName,  // node is the mouseovered node, which acts as source in this context
-            nodeYear = outEdge.sourceStateInfo.adoptedYear,
-            x1, y1, x2, y2, x3, y3; // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
-
-        var line = d4.line()
-            .x( function(point) { return point.lx; })
-            .y( function(point) { return point.ly; });
-
-        x1 = xScale(new Date(nodeYear, 0, 1)) + cellSideLength / 2;
-        y1 = yScale(nodeName) + cellSideLength / 2;
-        x2 = x1;
-        y2 = yScale(targetName) + (cellSideLength / 2);
-
-        if(nodeYear <= targetYear){ // If it is forward edge,
-            x3 = xScale(new Date(targetYear, 0, 1)) - cellSideLength/2;
-        } else {  
-            if(nodeYear - targetYear === 1){  // if the year difference is only 1,
-                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*2.5;
-            }
-            else {
-                x3 = xScale(new Date(targetYear, 0, 1)) + cellSideLength/2*3;
-            }
-        }
-
-
-        y3 = y2;
-
-        var points = [
-            {lx: x1, ly: y1},
-            {lx: x2, ly: y2},
-            {lx: x3, ly: y3}
-        ];
-
-        return line(points);
-    },
+            .attr("x", function(d) { return _attr.xScale(new Date(d.year, 0, 1)) + 1; })
+            .attr("y", function(d) { return (gs.f.size.upperPaneHeight - _attr.yScale_timeline(d.count)); })
+            .attr("width", _attr.cellSideLength - 1)
+            .attr("height", function(d) { return _attr.yScale_timeline(d.count); })
+            .style("fill", function(d) { return _attr.timeline_colorScale(d.count); });
     // function drawPathToTargets(d){
     //     // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
 
@@ -731,8 +1035,13 @@ let DiffusionView3 = Backbone.View.extend({
 
     //     return paths;
     // }
-
+    },
     addLineFromSource(d){
+        let _self = this,
+            _attr = _self._attr,
+            xScale = _attr.xScale,
+            yScale = _attr.yScale;
+
         var x1, y1, x2, y2,
             inEdge = d.inEdges,
             sourceYear;
@@ -758,6 +1067,11 @@ let DiffusionView3 = Backbone.View.extend({
         return line(points);
     },
     addLineToTargets(d){
+        let _self = this,
+            _attr = _self._attr,
+            xScale = _attr.xScale,
+            yScale = _attr.yScale;
+
         var x1, y1, x2, y2,
             outEdges, targetYears, minTargetYear, maxTargetYear;
         var line = d4.line()
@@ -787,25 +1101,58 @@ let DiffusionView3 = Backbone.View.extend({
 
         return line(points);
     },
-    updateMatrix(){
-        d4.select(".sorted_by_outdegree").each(function(d){
-            if(d4.select(this).property("checked")){
-                // selected measure: outdegree
-                var transition = svg.transition().duration(750);
+    doSort() {
+        let _self = this,
+            _attr = _self._attr,
+            c = _attr.c,
+            selectedAttr = c.get("centrality");
 
-                yScale.domain(nodes.sort(function(a, b){ 
-                                return d4.descending(a.centralities.outdegree, b.centralities.outdegree); 
-                            }).map(function(e){ return e.stateId; }));
-                transition.select(".yAxis").call(d4.axisRight(yScale));
+        var transition = _attr.svg.transition().duration(750),
+            transition2 = _attr.g_attrGraph.transition().duration(750),
+            sortedNodes = _attr.nodes.sort(function(a, b){ 
+                        return d4.ascending(a.centralities[selectedAttr], b.centralities[selectedAttr]); });
 
-                transition.selectAll(".gcell")
-                        .attr("transform", function(d){
-                            return "translate(" + xScale(new Date(d.year, 0, 1)) + "," + yScale(d.node) + ")";
-                        });
-            }
-        });
+        _attr.yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
+        transition.select(".yAxis").call(d4.axisRight(_attr.yScale).tickSize(0));
+
+        transition.selectAll(".gcell")
+                .attr("transform", function(d){
+                    return "translate(" + _attr.xScale(new Date(d.year, 0, 1)) + "," + _attr.yScale(d.node) + ")";
+                });
+        transition.selectAll(".rect_node")
+                .attr("x", function(d){ return _attr.xScale(new Date(d.year, 0, 1)); })
+                .attr("y", function(d){ return _attr.yScale(d.node); });
+
+        // Sort the attribute bars
+        _attr.attrGraph_xScale.domain([0, d4.max(sortedNodes, function(d){ return d.centralities[selectedAttr]; })])
+        _attr.attrGraph_yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
+        _attr.attrGraph_colorScale.domain(d4.extent(sortedNodes, function(d){ return d.centralities[selectedAttr]; }))
+        transition2.selectAll("rect")
+                   .attr("y", function(d){ return _attr.attrGraph_yScale(d.stateId); })
+                   .attr("width", function(d){ return _attr.attrGraph_xScale(d.centralities[selectedAttr]); })
+                   .style("fill", function(d){ return _attr.attrGraph_colorScale(d.centralities[selectedAttr]); });
+
+        // _attr.g_attrGraph.selectAll(".attrRect")
+        //     .data(_attr.nodes)
+        //     .enter().append("rect")
+        //     .attr("class", function(d){
+        //         return "attrRect " + d.stateId;
+        //     })
+        //     .attr("x", 0)
+        //     .attr("y", function(d){
+        //         return _attr.attrGraph_yScale(d.stateId); })
+        //     .attr("width", function(d){ return _attr.attrGraph_xScale(d.centralities[cType]); })
+        //     .attr("height", _attr.attrGraph_yScale.bandwidth())
+        //     .style("fill", function(d){
+        //         return _attr.attrGraph_colorScale(d.centralities[cType]);
+        //     })
+        //     .style("stroke", "white")
+        //     .style("stroke-width", 2);
     },
-    colorRectsBetween(){
+    colorRectsBetween() {
+        let _self = this,
+            nodes = _self.model.get("nodes");
+
         // Color the way from source to target
         nodes.forEach(function(d){
             var nodeSelection = d4.select(".rect_node_" + d.stateId);
@@ -1036,7 +1383,7 @@ let DiffusionView2 = Backbone.View.extend({
                         var stateName = d4.select(this).select("text").text();
                         var attr_measure = _self.model.get("nodes").filter(function(node) {
                             return node.stateId == stateName;
-                        }).map(function(d) { return d.centralities["pageRank"]; });
+                        }).map(function(d) { return d.centralities[selectedAttr]; });
                         d4.select(this).append("circle")
                             .attr("class", "attr_circle")
                             .attr("r", 100 * attr_measure)
@@ -1128,7 +1475,7 @@ let DiffusionView2 = Backbone.View.extend({
             });
             // }
 
-            attrOnDim = nodesOnDim.map(function(d) { return d.centralities["pageRank"]; });
+            attrOnDim = nodesOnDim.map(function(d) { return d.centralities[selectedAttr]; });
 
             //@@@@@@@@@@@@@@@@@@@@@@
             nodesOnDim = nodesOnDim.sort(function(a, b) { return d4.ascending(a.centralities["pageRank"], b.centralities["pageRank"]); })
@@ -3054,7 +3401,8 @@ let DiffusionView = Backbone.View.extend({
     },
     update() {
         console.log("updating diffusion...");
-        console.log(this.model);
+        console.log("in DiffusionView, ", this.model);
+        console.log(this._attr.links);
         let _self = this,
             _attr = this._attr,
             cstat = this.model.get("cstat"),
@@ -3842,7 +4190,7 @@ let DiffusionView = Backbone.View.extend({
 
         if (axis === "metadata") {
             let selectedAttrId = (isSortingByCentrality ?
-                c.get("centrality") :
+                c.get("centrality") : 
                 conf.pipe.metaToId[c.get("metadata")]);
             if (isSortingByCentrality) {
                 nodeMap.sort((a, b) => b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId]);

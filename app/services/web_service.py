@@ -348,67 +348,10 @@ class NetworkService(BaseService):
     def get_specified_diffusion2_by(policy_id):
         """get_specified_diffusion2_by policy_id"""
         # return a sample json file
-        sample_file_path = rel_path("../resource/ex-policy-diffusion.json")
-        json_file = {}
-        year_list = []
-        state_list = []
-        state_cl_dict = {}
-        cl_yearAvg_dict = {}
-        ordered_cl_dict = {}
+        data_list, stat = NetworkService.get_policy_detail(policy_id)
+        #sample_file_path = rel_path("../resource/ex-policy-diffusion.json")
 
-        with open(sample_file_path, "r") as sample:
-            json_file = json.load(sample)
-        for node in json_file["nodes"]:
-            if node["adoptedYear"] != 9999:
-                year_list.append(node["adoptedYear"])
-                state_list.append(node["stateId"])
-
-        # Clustering by year
-        year_np = np.array(year_list)
-        year_np = year_np.reshape(-1, 1)
-
-        bandwidth = estimate_bandwidth(year_np, quantile=0.3)
-        ms = MeanShift(bandwidth=bandwidth, bin_seeding=False)
-        ms.fit(year_np)
-        labels = ms.predict(year_np)
-
-        print(labels)
-
-        # Get the average of years in cluster
-        state_cl_dict = dict(zip(state_list, labels))
-        year_cl_dict = dict(zip(year_list, labels))
-        for cl in set(labels):
-            years = [year for year, cluster in year_cl_dict.items() if cluster == cl]
-            cl_yearAvg_dict[cl] = sum(years) / len(years)
-
-        # Assign the rank to the cluster number
-        # {0:3, 1:2, 2:0, 3:1  ...}
-        for ordered_cl, cluster in enumerate(sorted(cl_yearAvg_dict.items(), key=itemgetter(1))):
-            ordered_cl_dict[cluster[0]] = ordered_cl
-
-        print(ordered_cl_dict)
-
-        # And then reassign the cluster based on time order
-        for state, cl in state_cl_dict.items():
-            state_cl_dict[state] = ordered_cl_dict[cl]
-
-        print("d", state_cl_dict['NC'])
-
-        # Insert clustering and dimension info into json data
-        for node in json_file["nodes"]:
-            stateId = node["stateId"]
-            if stateId not in state_cl_dict.keys():  # If a state is not part of any cluster
-                node["dimension"] = "dim_0"
-            else:
-                print(state_cl_dict[stateId])
-                node["dimension"] = "dim_" + str(state_cl_dict[stateId])
-            print(node["stateId"], node["dimension"])
-
-
-        # Determine cluster by attribute
-
-
-        return json.dumps(json_file, cls=DecimalEncoder)
+        return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
 
     @staticmethod
     @app.route("/api/geo/<policy_id>")
