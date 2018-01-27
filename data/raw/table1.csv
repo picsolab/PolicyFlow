@@ -1,0 +1,190 @@
+policy_id,policy_start,policy_end,policy_adopted_count,policy_name
+aboldeapen,1846,1969,13,Death Penalty Reform
+aborparc,1981,1999,15,1-parent Consent for Abortion by a Minor 
+aborparn,1981,2000,17,1-parent Notification for Abortion by a Minor 
+aborpreroe,1966,1972,18,Abortion pre-Roe
+absvot,1960,2003,26,Unrestricted Absentee Voting
+acctlic,1896,1973,50,Accountants Licensing
+adc,1936,1955,48,Aid to Dependent Children (Social Sec.)
+adcom,1925,1939,41,Advertising Commissions
+aging,1974,1991,19,Strategic Planning for Aging
+aidperm,1950,1969,45,Aid to Permanently/Totally Disabled
+airpol,1907,1993,50,Air Pollution Control
+alcbevcon,1926,1980,40,Alcoholic Beverage Control
+alctreat,1943,2002,40,Alcoholic Treatment Agency
+animcruel,1804,2003,40,Animal Cruelty Felony Laws
+antiage,1903,1975,23,Anti-Age Discrimination
+antiinj,1913,1939,24,Anti-Injunction Laws
+antimis,1691,1913,38,Antimiscegenation law
+archlic,1897,1978,48,Architects Licensing
+arts,1936,1980,29,Council on the Arts
+ausbalsys,1878,1970,45,Australian Ballot System
+autoreg,1901,1977,49,Automobile Registration
+autosaf,1959,1971,45,Automobile Safety Compact
+banfaninc,1996,2001,29,Ban on Financial Incentives for Doctors to Perform Less Costly Procedures/Prescribe Less Costly Drugs
+bangag,1975,1999,46,Prohibits Agreements that Limits a Doctor’s Ability to Inform Patients of All Treatment Options
+beaulic,1914,1980,46,Beauticians Licensing
+blind,1936,1982,49,Aid to the Blind (Social Security)
+boh,1869,1959,47,Board of Health
+bottle,1971,2002,11,Bottle Deposit Law
+bradycamp,1989,2000,17,Child Access to Guns Protection Law
+broadcom,1990,1997,18,State Law Requiring Broad Community Notification of Sex Offenders 
+budgstd,1859,1926,48,Budgeting Standards
+cappun,1972,1982,39,Capital Punishment
+ccreceipt,1999,2008,31,Restrictions on Displaying Credit Card Numbers on Sales Receipts 
+chartersch,1991,1996,25,Charter Schools
+childabu,1963,1967,48,Child Abuse Reporting Legislation
+childlab,1901,1969,47,Child Labor Standards
+childseat,1981,1984,49,Child Seatbelt Requirement
+chirolic,1899,1949,44,Chiropractors Licensing
+cigtax,1921,1964,47,Cigarette Tax
+citzon,1913,1957,47,Zoning in Cities - Enabling Legislation
+civinjaut,1998,2001,15,Civil Injunction Authority
+cogrowman,1961,1998,10,Planning Laws Requiring Loc/Reg Planners to Coordinate Growth Management Plan Developments
+colcanscr,1991,2007,27,Colorectal Cancer Screening
+comage,1945,2003,23,Committee on the Aged
+compsch,1852,1996,40,Compulsory School Attendance
+conacchwy,1937,1960,43,Controlled Access Highways
+consgsoil,1892,1948,31,Conservation of Gas and Oil
+contrains,1996,2007,27,Insurers That Cover Prescription Drugs Cannot Exclude FDA-Approved Contraceptives 
+correct,1970,1991,18,Strategic Planning for Corrections 
+credfreez,2001,2006,25,Limits Credit Agencies from Issuing a Credit Report without Consumer Consent
+crtadm,1937,1965,26,Court Administrators
+cyberstalk,1998,2001,21,Cyberstalking Definition and Penalty
+deaf,1822,1921,28,School for the Deaf
+debtlim,1842,1936,31,Debt Limitation
+denlic,1868,1980,45,Dentists Licensing
+dirdem,1898,1972,24,Initiative/Referendum 
+dirprim,1901,1970,49,Direct Primary
+dui08,1983,2001,25,08 per se penalty for DUI
+earlvot,1970,2002,15,In-Person Early Voting
+econdev,1981,1992,24,Strategic Planning for Economic Development
+education,1970,1991,14,Strategic Planning for Education 
+edutv,1951,1966,34,Educational Television
+elecdayreg,1974,1994,7,Election Day Registration 
+elecdereg,1996,1999,24,Electricity Deregulation 
+englic,1908,1972,49,Engineers Licensing
+engonly,1811,2007,29,English Only Law
+enterzone,1981,1992,38,State Enterprise Zones
+environ,1978,1991,14,Strategic Planning for Environmental Protection
+equalpay,1919,1966,27,Equal Pay For Females
+expsta,1887,1901,43,Agricultural Experiment Stations
+fairemp,1945,1964,25,Fair Employment Laws
+fairtrade,1931,1969,45,Fair Trade Laws
+famcap,1992,1998,21,Family Cap Exemptions
+fhpriv,1959,1965,12,Fair Housing - Private Housing
+fhpub,1937,1961,15,Fair Housing - Public Housing
+fhurb,1945,1963,15,Fair Housing - Urban Renewal Areas
+fish,1864,1985,35,Fish Agency
+foia,1851,2003,38,Open Records/Freedom of Information Acts 
+forest,1885,1978,45,Forest Agency
+gastax,1919,1929,48,State Gas Tax
+gaymarban,1994,2008,33,Constitutional Amendment Banning Gay Marriage
+gdl,1996,2009,49,State Graduated Driver’s Licensing Program 
+grandvist,1964,1987,50,Grandparents’ Visitation Rights
+harass,1998,2001,11,Harassment Crime
+hatecrime,1978,1994,33,State Hate Crime Laws
+health,1985,1991,23,Strategic Planning for Health Services
+higissue,1990,1994,36,Guranteed Issue of Health Insurance
+higrenew,1990,1995,45,Guranteed Renewal of Health Insurance
+hiport,1990,1995,43,Health Insurance Portability
+hiprecon,1990,1994,39,Health Insurance Preexisting Conditions Limits
+hmomod1,1973,1988,23,Health Maintenance Organization Model Act (First)
+hmomod2,1989,1995,22,Health Maintenance Organization Model Act (Second)
+homerul,1875,1985,31,Municipal Home Rule
+hsexit,1976,1999,26,High School Exit Exams
+humrel,1945,1993,24,Human Relations Commission
+hwyagen,1893,1963,47,Highway Agency
+idas,1993,2001,35,Individual Development Accounts
+idtheft,1996,2001,44,ID Theft Protection
+inctax,1916,1937,28,State Income Tax
+indgaming,1990,1995,24,State allows Tribal Gaming
+indorgris,1994,1997,14,State Law Requiring Notification to Individuals/Organizations at Risk (Sex Offender Policy)
+infanthear,1990,2008,43,Newborn Hearing Screening
+intbar,1921,1956,26,Integrated Bar
+jucoen,1907,1962,32,Junior College - Enabling Leg.
+juvct,1899,1959,48,Establishment of Juvenile Courts
+juvisup,1951,1966,41,Juveniles Supervision Compact
+kegreg,1978,1999,12,Beer Keg Registration Requirement
+kidhelmet,1992,2007,21,Mandatory Bycicle Helmets for Minors 
+kinship,1998,2006,26,Kinship Care Program
+laborag,1869,1959,41,Labor Agency
+legpre,1933,1972,31,Legislative Pre-Planning Agency
+legresea,1901,1972,50,Legislative Research Agency
+lemon,1982,1984,29,Lemon Laws
+libext,1890,1949,48,Library Extension System
+lien,1995,1999,27,Lien Statutes
+livingwill,1976,1986,38,Living Wills
+lott,1964,1993,36,Lottery
+mailreg,1972,1995,49,Malpractice Reforms
+manclin,1994,2008,23,Mandated Coverage of Clinical Trials
+medmar,1978,2008,31,Symbolic Medical Marijuana Policy
+merit,1883,1953,48,Merit System
+methpre,1996,2005,25,Restrictions on OTC Medications with Methamphetamine Precursors
+miglab,1943,1960,28,Migratory Labor Committee
+minwage,1915,1965,35,Minimum Wage Law
+missplan,1940,1976,20,Missouri Plan
+mlda21,1933,1988,50,Minimum Legal Drinking Age 21
+mntlhlth,1955,1987,32,Mental Health Standards Committee
+mothpen,1911,1931,46,Mothers’ Pensions
+motorhelm,1967,1985,50,Motorcycle Helmet Requirement
+motorvoter,1976,1995,49,Voter Registration with Driver’s License Renewal
+msas,1993,1997,28,Medical Savings Accounts
+natreso,1975,1991,16,Strategic Planning for Natural Resources
+norealid,2007,2009,18,State Policy to Refuse to Comply with 2005 Federal Real ID Act
+nrmlsch,1839,1910,41,Normal Schools
+nrslic,1903,1970,49,Nurses Licensing
+offwmh,1993,2009,19,Special Agent/Office for Women’s Health 
+oldagea,1936,1938,48,Old Age Assistance (Social Security)
+parksys,1885,1978,48,Park System
+parolesup,1931,1985,49,Parolees/Probationers Supervision
+pdrugmon,1940,1999,14,Prescription Drug Monitoring
+pestcomp,1968,2009,36,Interstate Pest Control Compact
+pharmlic,1874,1955,42,Pharmacists Licensing
+pldvpag,1935,1978,44,Planning/Development Agency
+postdna,1997,2005,35,Post-Conviction DNA Motions
+primseat,1984,2004,21,Primary Seat Belt Laws
+prkagcit,1919,1970,22,Parking Agency - Enabling Act for Cities
+prob,1878,2005,47,Probation Law
+pubbrefeed,1993,2008,46,Allowance of Breastfeeding in Public
+pubcamfun,1973,1987,23,Public Campaign Funding
+pubhouen,1933,1950,43,Public Housing - Enabling
+realest,1917,1964,41,Real Estate Brokers Licensing
+recipsup,1934,1959,40,Reciprocal Support Law
+renewport,1991,2004,19,State Renewable Portfolio Standards
+retainag,1957,1965,14,Retainers Agreement
+retstate,1911,2005,49,Retirement System for State Employees
+revenue,1981,1991,18,Strategic Planning for Revenue
+right2work,1911,2001,22,Protects Employees from Termination for Not Joining Unions/Paying Dues 
+rightdie,1976,1988,15,Right to Die
+roadshwy,1891,1957,46,Aid for Roads and Highways
+sals,1945,1965,25,Seasonal Agricultural Labor Standards
+schoolchoi,1987,1992,16,School Choice
+sdce,1994,2008,25,Dependent Coverage Expansion Insurance for Young Adults
+segoss,1927,1943,10,Provisions by the States Maintaining Segregated Educational Systems for Out-Of-State Study by African-Americans
+sexreginfo,1991,1997,15,Access to Sex Offender Registries
+shield,1935,2009,34,Protections Against Compelling Reporters to Disclose Sources in Court
+slains,1894,1969,28,Slaughterhouse Inspection
+smokeban,1995,2009,25,Statewide Smoking Ban
+snrpresc,1975,2001,27,Senior Prescription Drugs
+soil,1937,1974,49,Soil Conservation Districts
+sprinsch,1813,1966,35,Superintendent of Public Instruction
+stalkdef,1998,2001,24,Stalking Definition and Penalty
+stateptr,1903,1953,48,Establishment of State Patrol/Highway Police
+statrapage,1950,1998,43,Age Span Provisions for Statutory Rape 
+stplnb,1933,1959,46,State Planning Board
+strikes,1993,1995,24,Felony Sentencing Guidelines for Three Strikes
+taxcom,1864,1959,49,Tax Commission
+teacelm,1930,1957,34,Teacher Certification - Elementary
+teacsec,1896,1956,41,Teacher Certification - Secondary
+tels,1976,1994,26,Tax and Expenditure Limits
+termlim,1990,2000,15,Legislative Term Limits
+timelim,1993,1996,18,Time Limits on Welfare Benefits
+transport,1974,1991,20,Strategic Planning for Transportation
+urbrenen,1941,1952,34,Urban Renewal - Enabling
+utreg,1839,1977,44,Utility Regulation Commission
+viccomp,1965,1988,42,Victims’ Compensation
+vicrtsamd,1982,1999,32,Victims’ Rights Constitutional Amendment 
+welfagy,1863,1975,49,Welfare Agency
+workcom,1911,1948,48,Workmens’ Compensation
+zerotol,1983,1998,50,Zero Tolerance (<.02 BAC) for Underage Drinking

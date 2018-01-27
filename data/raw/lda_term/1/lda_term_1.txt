@@ -1,0 +1,6 @@
+0:renew,fair,fire,energi,orient,river,liabil,compens,real,colorado
+1:seat,belt,helmet,notif,abort,energi,gun,disabl,electron,fair
+2:abort,marriag,notif,vote,minimum,wage,helmet,prison,debt,registri
+3:registr,vote,tuition,nonprofit,immigr,emerg,dna,beneficiari,card,keg
+4:abort,smoke,hate,wast,id,energi,firearm,check,low,background
+5:abort,probat,wage,princip,roe,pre,languag,real,campaign,birth

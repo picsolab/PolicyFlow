@@ -1,0 +1,94 @@
+# History files
+.Rhistory
+.Rapp.history
+
+# Session Data files
+.RData
+
+# Example code in package build process
+*-Ex.R
+
+# Output files from R CMD build
+/*.tar.gz
+
+# Output files from R CMD check
+/*.Rcheck/
+
+# RStudio files
+.Rproj.user/
+
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# compiled output
+app/static
+app/templates/
+
+# server
+app/env
+app/*.pyc
+app/db_repository
+app/libs/*
+!/app/libs/netinf
+/app/libs/netinf/netinf
+
+# credentials
+app/_config.py
+
+# dependencies
+/node_modules
+
+# data files
+data/external
+data/out/*
+data/replication
+
+# database backup
+data/backup
+
+# byte codes
+*.pyc
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage/*
+/libpeerconnection.log
+npm-debug.log
+testem.log
+/typings
+
+# e2e
+/e2e/*.js
+/e2e/*.map
+
+#System Files
+.DS_Store
+Thumbs.db
+
+# npm log
+npm-debug.log
+
+# nohup log
+nohup.out
+
+# shell script
+deploy
+
+# exclude
+!**/README.md

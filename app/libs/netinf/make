@@ -1,0 +1,1 @@
+g++ -std=c++98 -Wall -Wno-unknown-pragmas -O3 -DNDEBUG -DNOMP -o netinf netinf.cpp cascnetinf.cpp ../snap/snap-core/Snap.o -I../snap/snap-core -I../snap/snap-adv -I../snap/glib-core -I../../snap-exp

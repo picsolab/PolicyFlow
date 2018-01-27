@@ -1,0 +1,92 @@
+<h4><span class="label label-default"><%= subject %></span></h4>
+<div class="media">
+    <div class="media-body">
+        <h3 class="media-heading">
+            <%= policy_name %>
+        </h3>
+    </div>
+    <!-- <div class="media-right">
+        <a href="#"> <img alt="64x64" class="media-object" data-src="holder.js/64x64" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyI/PjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+PCEtLQpTb3VyY2UgVVJMOiBob2xkZXIuanMvNjR4NjQKQ3JlYXRlZCB3aXRoIEhvbGRlci5qcyAyLjYuMC4KTGVhcm4gbW9yZSBhdCBodHRwOi8vaG9sZGVyanMuY29tCihjKSAyMDEyLTIwMTUgSXZhbiBNYWxvcGluc2t5IC0gaHR0cDovL2ltc2t5LmNvCi0tPjxkZWZzPjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+PCFbQ0RBVEFbI2hvbGRlcl8xNWUyNzMwOTJhYyB0ZXh0IHsgZmlsbDojQUFBQUFBO2ZvbnQtd2VpZ2h0OmJvbGQ7Zm9udC1mYW1pbHk6QXJpYWwsIEhlbHZldGljYSwgT3BlbiBTYW5zLCBzYW5zLXNlcmlmLCBtb25vc3BhY2U7Zm9udC1zaXplOjEwcHQgfSBdXT48L3N0eWxlPjwvZGVmcz48ZyBpZD0iaG9sZGVyXzE1ZTI3MzA5MmFjIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9IiNFRUVFRUUiLz48Zz48dGV4dCB4PSIxMy40Njg3NSIgeT0iMzYuNSI+NjR4NjQ8L3RleHQ+PC9nPjwvZz48L3N2Zz4="
+                data-holder-rendered="true" style="width: 64px; height: 64px;">
+        </a>
+    </div> -->
+</div>
+<h4>Policy Snippets</h4>
+<div id="policy-snippet-wrapper">
+    <table id="policy-snippet-table" class="table table-hover table-condensed">
+        <tbody>
+            <% _.each(snippets, function(snippet, index, list) { %>
+                <tr>
+                    <th scope="row">
+                        <a href="<%= snippet.url %>">
+                            <%= (index + 1) %>
+                        </a>
+                    </th>
+                    <td>
+                        <%= snippet.text %>
+                    </td>
+                </tr>
+                <% }); %>
+        </tbody>
+    </table>
+</div>
+<div id="similarity-table-wrapper" class="">
+    <h4>Similar Policies</h4>
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#similarity-by-text" aria-controls="similarity-by-text" role="tab" data-toggle="tab">By Text</a></li>
+        <li role="presentation"><a href="#similarity-by-cascade" aria-controls="similarity-by-cascade" role="tab" data-toggle="tab">By Cascade</a></li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content">
+        <div id="similarity-by-text" role="tabpanel" class="tab-pane fade in active">
+            <div id="similarity-by-text-wrapper">
+                <table id="similarity-by-text-table" class="table table-hover table-condensed">
+                    <tbody>
+                        <thead>
+                            <tr>
+                                <th>Policy Title</th>
+                                <th>Similarity</th>
+                            </tr>
+                        </thead>
+                        <% _.each(text_similarities, function(policy, index, list) { %>
+                            <tr pid="<%= policy.policy_id %>">
+                                <td>
+                                    <%= policy.policy_name %>
+                                </td>
+                                <td>
+                                    <%= policy.policy_text_similarity.toFixed(2) %>
+                                </td>
+                            </tr>
+                            <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div id="similarity-by-cascade" role="tabpanel" class="tab-pane fade">
+            <div id="similarity-by-cascade-wrapper">
+                <table id="similarity-by-cascade-table" class="table table-hover table-condensed">
+                    <tbody>
+                        <thead>
+                            <tr>
+                                <th>Policy Title</th>
+                                <th>Similarity</th>
+                            </tr>
+                        </thead>
+                        <% _.each(cascade_similarities, function(policy, index, list) { %>
+                            <tr>
+                                <td>
+                                    <%= policy.policy_name %>
+                                </td>
+                                <td>
+                                    <%= policy.policy_cascade_similarity %>
+                                </td>
+                            </tr>
+                            <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
