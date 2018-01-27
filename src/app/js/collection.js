@@ -15,11 +15,14 @@ let ConditionsCollection = Backbone.Collection.extend({
     }
 });
 
-let SnapshotCollection = {
-    conditionList: [],
-    viewList: [],
-    size: 0,
-    container: "#snapshot-wrapper",
+let SnapshotCollection = function() {
+    this.conditionList = [];
+    this.viewList = [];
+    this.size = 0;
+    this.container = "#snapshot-wrapper";
+}
+
+SnapshotCollection.prototype = Object.create({
     initialize(diffusionView) {
         let _self = this,
             el = "#snapshot-view-0";
@@ -77,7 +80,7 @@ let SnapshotCollection = {
         })
         console.groupEnd();
     }
-}
+});
 
 module.exports = {
     ConditionsCollection: ConditionsCollection,

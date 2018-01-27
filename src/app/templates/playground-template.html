@@ -1,0 +1,16 @@
+<div id="playground-progress"></div>
+<div class="pull-left">
+    <ul>
+        <% _.each(views, function(view,viewName) { %>
+            <li>
+                <a href="#playground/<%= viewName %>">
+                    <%= viewName %>
+                </a>
+            </li>
+            <% }); %>
+    </ul>
+</div>
+<div class="pull-right">
+    <span id="playground-notification-badge" class="label label-default" style="display:none;"></span>
+</div>
+<div id="playground-view"></div>

@@ -31,17 +31,24 @@ module.exports = {
             },
             {
                 test: /\.html$/,
-                include: helpers.root('src', 'app', 'templates'),
+                include: helpers.root('src', 'app/templates'),
                 loader: "underscore-template-loader",
                 query: {
                     engine: 'lodash',
                 }
+            },
+            {
+                test: /\.worker\.js$/,
+                include: helpers.root('src', 'app'),
+                loader: "worker-loader"
             }
         ]
     },
 
     plugins: [
-
+        new webpack.DefinePlugin({
+            'process.env.STATIC_PATH': '/static/'
+        }),
         new webpack.optimize.CommonsChunkPlugin({
             name: ['app', 'vendor'],
             minChunks: Infinity
@@ -59,7 +66,9 @@ module.exports = {
             crossfilter: 'crossfilter',
             Backbone: 'backbone',
             d3tip: 'd3-tip',
-            topojson: 'topojson'
+            topojson: 'topojson',
+            tsnejs: 'tsne',
+            d4: "d3v4"
         }),
         new CopyWebpackPlugin([{
             from: helpers.root('src', 'data'),

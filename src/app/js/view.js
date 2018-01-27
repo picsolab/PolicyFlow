@@ -2,40 +2,91 @@ let conf = require('../config.js');
 let css_variables = require('!css-variables-loader!../css/variables.css');
 let gs = require('./graphSettings.js');
 let utils = require('./utils.js');
+let GRank = require('./grank.js');
+let _graph = new GRank.Graph();
+let GRankWorker = require("./workers/grank.worker.js");
+let tSNEWorker = require("./workers/tsne.worker.js");
 const printDiagnoseInfo = false;
 
 let colorList = [],
     colorMap = {};
-const color15 = [
-        css_variables['--color-cb-9'],
-        css_variables['--color-cb-a'],
-        css_variables['--color-i'],
-        css_variables['--color-cb-10'],
-        css_variables['--color-cb-8'],
-        css_variables['--color-cb-7'],
-        css_variables['--color-cb-6'],
-        css_variables['--color-cb-5'],
-        css_variables['--color-cb-4'],
-        css_variables['--color-cb-3'],
-        css_variables['--color-cb-2'],
-        css_variables['--color-cb-1'],
-        css_variables['--color-cb-0'],
-        css_variables['--color-c'],
-        css_variables['--color-j']
+let color7 = [
+        css_variables['--color-lightgray'],
+        css_variables['--color-cb-b'],
+        css_variables['--color-cb-c'],
+        css_variables['--color-cb-d'],
+        css_variables['--color-cb-e'],
+        css_variables['--color-cb-f'],
+        css_variables['--color-cb-g']
     ],
-    color7 = [
-        css_variables['--color-cb-9'],
-        css_variables['--color-cb-a'],
+    color15 = color7.concat([
         css_variables['--color-cb-0'],
+        css_variables['--color-cb-2'],
+        css_variables['--color-cb-4'],
+        css_variables['--color-cb-6'],
+        css_variables['--color-cb-8'],
+        css_variables['--color-cb-10'],
+        css_variables['--color-a'],
+        css_variables['--color-d']
+    ]),
+    color21 = color15.concat([
+        css_variables['--color-f'],
+        css_variables['--color-j'],
         css_variables['--color-cb-1'],
         css_variables['--color-cb-3'],
-        css_variables['--color-cb-4'],
-        css_variables['--color-cb-7']
-    ];
+        css_variables['--color-cb-5'],
+        css_variables['--color-cb-9']
+    ]);
 
+/**
+ * Primary view that holds experimental views.
+ */
+let PlaygroundView = Backbone.View.extend({
+    el: "#playground",
+    initialize() {
+        this._views = {};
+    },
+    template: require('../templates/playground-template.html'),
+    put(viewName, viewObject) {
+        this._views[viewName] = viewObject;
+    },
+    get(viewName) {
+        return this._views[viewName];
+    },
+    renderView(aView) {
+        let __containter = this.$("#playground-view"),
+            __loading = this.$("#playground-notification-badge");
+        aView.listenTo(aView.model, "change", () => {
+            __containter.empty();
+            __loading.html("computing...").show();
+            __containter.html(aView.render().el);
+            __loading.hide();
+        });
+        __loading.html("data loading...").show();
+        aView.model.populate();
+    },
+    render() {
+        this.$el.empty();
+        if (Object.keys(this._views) !== 0) {
+            this.$el.html(this.template({ views: this._views }));
+        }
+        return this;
+    }
+});
+
+/**
+ * PolicyView: adoption sequence
+ * - to display states in the order of the year that they adopt one specific policy.
+ */
 let PolicyView = Backbone.View.extend({
     el: '#svg-cascade-view',
+    initialize() {
+        this._attr = {
+            tickList: []
+        };
+    },
     render() {
+        // prevent rendering and show notification panel when no policy has been selected
         if (this.model.get("message") !== "success") {
             $("#policy-unselected-notitication").show();
             this.$el.hide();
@@ -47,7 +98,6 @@ let PolicyView = Backbone.View.extend({
         return this;
     },
     paint() {
-        // prepare params
         // - use Jan 1st to represent the year.
         let _self = this,
             yearOffset = Math.ceil((+_self.model.get('policyEnd') - +_self.model.get('policyStart')) * 0.1),
@@ -63,8 +113,6 @@ let PolicyView = Backbone.View.extend({
         yearList.forEach((year, index) => {
             colorMap[year] = colorList[index];
         });
-
-        // this.initParams();
 
         // clear the canvas
         d3.select(_self.el).selectAll('g').remove();
@@ -125,23 +173,42 @@ let PolicyView = Backbone.View.extend({
 
         // create palette group
         let paletteG = svg.append('g')
-            .attr('class', "palette");
+            .attr({
+                'class': "palette",
+                'id': 'policy-palette'
+            });
 
-        _self.renderPalette(paletteG, yearList, xScale, yScale);
-        _self.bindTriggers(yScale);
+        $.extend(_self._attr, {
+            axesG: axesG,
+            paletteG: paletteG,
+            xScale: xScale,
+            yScale: yScale,
+            yearList: yearList
+        });
 
-        zoom.on('zoom', (e) => {
+        _self.renderPalette();
+        _self.bindTriggers();
+
+        // bind zooming fuction
+        zoom.on('zoom', () => {
             $(".temp-tick").remove();
             d3.select(_self.el).select(".y-axis").call(yAxis);
-            _self.renderPalette(paletteG, yearList, xScale, yScale);
-            _self.bindTriggers(yScale);
+            _self.renderPalette();
+            _self.bindTriggers();
         });
     },
-    renderPalette(paletteG, yearList, xScale, yScale) {
-        let _self = this;
+    /**
+     * do the major rendering work.
+     */
+    renderPalette() {
+        let _self = this,
+            _attr = this._attr,
+            paletteG = _attr.paletteG,
+            xScale = _attr.xScale,
+            yScale = _attr.yScale;
         paletteG.selectAll('g').remove();
 
-        yearList.forEach((year, index) => {
+        _attr.yearList.forEach((year, index) => {
             // prepare data and params
             let forTheYear = _self.model.get("detail")[year].sort(),
                 numberOfLines = Math.ceil(forTheYear.length / gs.p.config.xMaxTick),
@@ -167,7 +234,7 @@ let PolicyView = Backbone.View.extend({
                     width: xScale.rangeBand() - gs.p.margin.xPadding,
                     height: xScale.rangeBand() - gs.p.margin.xPadding,
                     x: (d, i) => xScale(i % gs.p.config.xMaxTick),
-                    y: (d, i) => yScale(new Date(+year, 0, 1)),
+                    y: () => yScale(new Date(+year, 0, 1)),
                     rx: 2,
                     ry: 2,
                     transform: (d, i) => "translate(0," + Math.floor(i / gs.p.config.xMaxTick) * (xScale.rangeBand() + gs.p.margin.yPadding) + ")"
@@ -182,66 +249,73 @@ let PolicyView = Backbone.View.extend({
                 .attr({
                     class: (d) => "text-tip " + year + " " + d,
                     x: (d, i) => xScale(i % gs.p.config.xMaxTick),
-                    y: (d, i) => yScale(new Date(+year, 0, 1)),
+                    y: () => yScale(new Date(+year, 0, 1)),
                     transform: (d, i) => "translate(" + (xScale.rangeBand() + gs.p.margin.textXShift) + "," + (Math.floor(i / gs.p.config.xMaxTick) * (xScale.rangeBand() + gs.p.margin.yPadding) + gs.p.margin.textYShift) + ")"
                 });
         });
     },
-    bindTriggers(yScale) {
-        let element, year, tickList = [];
+    getRect(stateId) {
+        let _self = this;
+        return $("#" + _self._attr.paletteG.attr('id')).find("rect[value=" + stateId + "]");
+    },
+    lightUp(__target) {
+        __target.addClass("hovered-item");
+        let _self = this,
+            year = __target.attr("class").split(" ")[2],
+            tickList = this._attr.tickList;
+
+        d3.select("#svg-cascade-view .y-axis").selectAll("tempTick")
+            .data([year])
+            .enter()
+            .append('text')
+            .text(tickList.indexOf("" + year) === -1 ? (year + " ►") : " ►")
+            .attr({
+                class: "temp-tick",
+                y: _self._attr.yScale(new Date(+year, 0, 1)),
+                transform: () => tickList.indexOf("" + year) === -1 ? "translate(-37,4)" : "translate(-8,4)"
+            });
+    },
+    turnOff(__target) {
+        __target.removeClass("hovered-item");
+        $(".temp-tick").remove();
+    },
+    bindTriggers() {
+        let tickList = [],
+            yScale = this._attr.yScale,
+            _self = this;
+        _self._attr.tickList = tickList;
         this.$el.find(".y-axis .tick text").map((index, element) => tickList.push(element.textContent));
 
+        // color the hovered square, and
+        // show "year ►" next to the y-axis to indicate the adoption year when mouseover a state
         $(".partial").on('mouseover', (e) => {
+            let __target = (void 0);
             if (e.target.nodeName === 'rect') {
-                element = $(e.target);
-                year = e.target.classList[2];
+                __target = $(e.target);
             } else {
-                element = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
-                year = e.target.classList[1];
+                __target = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
             }
-            element.addClass("hovered-item");
-
-            d3.select("#svg-cascade-view .y-axis").selectAll("tempTick")
-                .data([year])
-                .enter()
-                .append('text')
-                .text(tickList.indexOf("" + year) === -1 ? (year + " ►") : " ►")
-                .attr({
-                    class: "temp-tick",
-                    y: yScale(new Date(+year, 0, 1)),
-                    transform: () => tickList.indexOf("" + year) === -1 ? "translate(-37,4)" : "translate(-8,4)"
-                });
+            _self.lightUp(__target);
         });
 
+        // reverse changes made by mouseover event
         $(".partial").on('mouseout', (e) => {
-            let index = e.target.parentElement.classList[1].split("-")[2];
+            let __target = (void 0);
             if (e.target.nodeName === "rect") {
-                element = $(e.target);
-                year = e.target.classList[2];
+                __target = $(e.target);
             } else {
-                element = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
-                year = e.target.classList[1];
+                __target = $(e.target.parentElement).find("rect[value=" + e.target.classList[2] + "]");
             }
-            element.removeClass("hovered-item");
-            $(".temp-tick").remove();
-        });
-    },
-    initParams() {
-        let detail = this.model.get("detail"),
-            maxTickCount = 0,
-            totalCount = 0;
-
-        // compute total number of states and the maximum number of state across all those years
-        _.each(detail, (year, stateList) => {
-            let count = stateList.length;
-            totalCount += count;
-            if (count > maxTickCount) {
-                maxTickCount = count;
-            }
+            this.turnOff(__target);
         });
     }
 });
 
+/**
+ * PolicyDetailView:
+ * - to display detail information for a selected policy, including:
+ *  + please refer to the template file.
+ */
 let PolicyDetailView = Backbone.View.extend({
     el: "#policy-detail-wrapper",
     template: require('../templates/policy-detail-template.html'),
@@ -255,6 +329,11 @@ let PolicyDetailView = Backbone.View.extend({
     }
 });
 
+/**
+ * PolicyTrendView: time filter
+ * - to display the aggreated policy adoption occurrence by year as a bar-chart, which also
+ * - used as a filter to create time window 
+ */
 let PolicyTrendView = Backbone.View.extend({
     el: "#policy-trend-wrapper",
     initialize() {
@@ -286,10 +365,12 @@ let PolicyTrendView = Backbone.View.extend({
             .orient("left")
             .ticks(gs.t.config.yTickNumber);
 
+        // create crossfilter
         let ndx = crossfilter(adoptionList),
             dimension = ndx.dimension(d => d.year),
             group = dimension.group().reduceSum(d => d.count);
 
+        // setup the bar-chart with dc.js
         let chart = dc.barChart(_self.el)
             .width(_width)
             .height(_height)
@@ -318,14 +399,13 @@ let PolicyTrendView = Backbone.View.extend({
             chart = _attr.chart,
             __target = $(_self.el);
         __target.off();
+
+        // set time window information to `conditions` model, which triggers relevant data fetching and rendering events
         __target.on('mouseup', () => {
             let startYearDate = chart.dimension().bottom(1)[0].year,
                 startYear = startYearDate.getFullYear(),
                 endYearDate = chart.dimension().top(1)[0].year,
-                endYear = endYearDate.getFullYear(),
-                dataList = chart.group().all(),
-                length = dataList.length,
-                totalCount = 0;
+                endYear = endYearDate.getFullYear();
 
             _attr.c.set({
                 "startYear": startYear,
@@ -336,11 +416,27 @@ let PolicyTrendView = Backbone.View.extend({
     }
 });
 
+/**
+ * GeoView:
+ * - with multiple functionalities (you know it).
+ */
 let GeoView = Backbone.View.extend({
     el: '#svg-geo-view',
     initialize() {
         this._attr = {};
+        $.extend(this._attr, {
+            _graph: _graph
+        });
+        this.bindTriggers();
     },
+    /**
+     * render and prepare static elements that do not change according to different `conditions`, including
+     * - svg groups
+     * - some of scales
+     * - labels
+     * - and so on.
+     * @param {object} conditions Backbone.Model 
+     */
     render(conditions) {
         let _self = this,
             _attr = this._attr,
@@ -365,6 +461,7 @@ let GeoView = Backbone.View.extend({
         //     feature.properties.id === "UT" && console.log(i);
         // });
 
+        // generate regional border data
         _.forEach(regionDef, (theRegion, key) => {
             let theGeo = topojson.merge(stateTopo, stateTopo.objects.states.geometries.filter((d) => d3.set(theRegion).has(d.properties.id)));
             regionGeos.push(theGeo);
@@ -378,7 +475,10 @@ let GeoView = Backbone.View.extend({
         regionBorder = topojson.mesh(regionTopo);
 
         $(_self.el).empty();
+        // mute utill network rendered 
+        this.$el.css("pointer-events", "none");
 
+        // compute actual full canvas size
         let _width = gs.g.margin.left + gs.g.margin.right + gs.g.size.mapWidth,
             _height = gs.g.margin.top + gs.g.margin.bottom + gs.g.size.mapHeight;
 
@@ -426,6 +526,7 @@ let GeoView = Backbone.View.extend({
             }),
             defs = svg.append('defs');
 
+        // expose variables for modular access
         $.extend(_attr, {
             legendG: legendG,
             stateTractG: stateTractG,
@@ -441,11 +542,13 @@ let GeoView = Backbone.View.extend({
             stat: stat
         });
 
+        // data binding
         let states = _attr.stateTractG.selectAll("path")
             .data(stateFeatures),
             regions = regionTractG.selectAll("path")
             .data(regionFeatures);
 
+        // create state tracts
         states.enter()
             .append("path")
             .attr({
@@ -458,16 +561,19 @@ let GeoView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         return d3.rgb(css_variables["--color-unadopted"]);
                     }
                 },
                 opacity: css_variables["--opacity-state"]
             })
+            .on("mouseover", d => _self.lightUp(d.stateId))
+            .on("mouseleave", d => _self.turnOff(d.stateId))
             .append("title")
             .text((d) => d.properties.id);
 
+        // add labels to state tracts
         stateLabelG.selectAll("text")
             .data(stateFeatures).enter()
             .append("text")
@@ -481,6 +587,7 @@ let GeoView = Backbone.View.extend({
                 y: d => d.centroid[1]
             })
 
+        // add state border to the map
         stateBorderG.append("path")
             .datum(stateBorder)
             .attr({
@@ -489,6 +596,7 @@ let GeoView = Backbone.View.extend({
                 d: pathBuilder
             });
 
+        // create regional tract
         regions.enter()
             .append("path")
             .attr({
@@ -503,6 +611,7 @@ let GeoView = Backbone.View.extend({
             .append("title")
             .text((d) => d.id);
 
+        // add regional border to the map 
         regionBorderG.append("path")
             .datum(regionBorder)
             .attr({
@@ -511,6 +620,7 @@ let GeoView = Backbone.View.extend({
                 d: pathBuilder
             });
 
+        // add labels to region tracts
         regionLabelG.selectAll("text")
             .data(regionFeatures).enter()
             .append("text")
@@ -526,26 +636,39 @@ let GeoView = Backbone.View.extend({
                 y: d => d.centroid[1]
             });
 
+        // create color gradient that'll be applied to the legend
         this.createLegendGradient();
 
+        // to render the rest elements
         this.update();
-        this.bindTriggers();
+
+        // toggle state-wise/regional layer according to user's interaction
         this.toggleTract({ silent: true });
         return this;
     },
+    /**
+     * update color on tracts according to metadata selected.
+     */
     update() {
         let _self = this,
             _attr = _self._attr,
-            meta = 'centrality',
-            colorNeeded = (_attr.c.get("metadata") !== 'centrality') && (_attr.c.get("policy") !== 'unselected'),
+            meta = conf.bases.yAttributeList[0].id,
+            // to color tract iff:
+            // - one of six `metadata` options is chosen, and 
+            // - a policy is specified
+            isColorNeeded = (_attr.c.get("metadata") !== conf.bases.yAttributeList[0].id) && (_attr.c.get("policy") !== conf.bases.policy.default),
             colorScale;
 
+        // clear previous legend
         $(this.el).find("#geo-legend-group").empty();
 
-        if (colorNeeded) {
+        // apply gradient color to tracts and render the legend 
+        if (isColorNeeded) {
             meta = conf.pipe.metaToId[_attr.c.get("metadata")];
             let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
                 colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]]
+
+            // bind color scale to domain of `metadata` selected
             colorScale = d3.scale.linear()
                 .domain(valueDomain)
                 .interpolate(d3.interpolateRgb)
@@ -576,55 +699,139 @@ let GeoView = Backbone.View.extend({
             _attr.legendG.call(legendAxis).select(".domain").remove();
         }
 
-        let stateTracts = $("#state-tract-group path");
-        stateTracts.each(i => {
-            let __tract = $(stateTracts[i]),
+        // color each state tract
+        let __stateTracts = $("#state-tract-group path");
+        __stateTracts.each(i => {
+            let __tract = $(__stateTracts[i]),
                 title = __tract.attr("title");
             __tract.css("fill", () => {
-                if (title === "NE") {
-                    return d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                } else if (colorNeeded) {
-                    let node = _attr.nodes[title];
-                    if (!d3.set(conf.static.states).has(title) || _self.isNodeDefault(node)) {
-                        return css_variables["--color-unadopted"];
+                // to proceed only when the title string is from one of 50 states,
+                // this validation is due to mismatch between state set from geo shape file and our database
+                if (d3.set(conf.static.states).has(title)) {
+                    if (title === "NE") {
+                        // special case: no data for NE 
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
-                        return node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
+                        let node = _attr.nodes[title];
+                        if (isColorNeeded && node.valid) {
+                            // return corresponding color for one states that adopted current policy
+                            return colorScale(node["metadata"][meta]);
+                        } else {
+                            // return default color otherwise
+                            return d3.rgb(css_variables["--color-unadopted"]);
+                        }
                     }
-                } else if (meta === 'centrality') {
-                    return d3.rgb(css_variables["--color-unadopted"]);
                 }
             });
         });
         return this;
     },
+    /**
+     * @deprecated
+     * given a node, check whether its a default network or not.
+     * "default network" is an equivalence to situation that no policy has been selected. 
+     * @param {object} node 
+     */
     isNodeDefault(node) {
         return node.valid && node.adoptedYear === 9999;
     },
     bindTriggers() {
         let _self = this,
-            _attr = this._attr,
-            __svg = $(this.el);
+            _attr = this._attr;
 
+        // to modify the list of selected states according to use's interaction.
         let regionTractClickHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target);
-                if (_curr.hasClass("region-tract")) {
-                    _attr.c.toggleTractList(_curr.attr("title"));
+                let __curr = $(e.target);
+                if (__curr.hasClass("region-tract")) {
+                    _attr.c.toggleTractList(__curr.attr("title"));
                 }
             },
             stateTractClickHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target);
-                if (_curr.hasClass("state-tract")) {
-                    _attr.c.toggleTractList(_curr.attr("title"));
+                let __curr = $(e.target);
+                if (__curr.hasClass("state-tract")) {
+                    let stateId = __curr.attr("title");
+                    _self.turnOff(stateId);
+                    _attr.c.toggleTractList(stateId);
                 }
             };
 
-        __svg.off();
-
-        __svg.on('click', regionTractClickHandler);
-        __svg.on('click', stateTractClickHandler);
+        this.$el.on('click', regionTractClickHandler);
+        this.$el.on('click', stateTractClickHandler);
     },
+    /**
+     * light up relevant tracts.
+     * @param {string} stateId stateId of the target tract
+     */
+    lightUp(stateId) {
+        try {
+            this.findTractById(stateId).addClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.lightUpTracts(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.lightUpTracts(inNodeList, "in-nodes");
+                    this.lightUpTracts(outNodeList, "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
+        }
+    },
+    /**
+     * turn off relevant tracts.
+     * @param {string} stateId stateId of the target tract
+     */
+    turnOff(stateId) {
+        try {
+            this.findTractById(stateId).removeClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.turnOffTracts(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.turnOffTracts(inNodeList, "in-nodes");
+                    this.turnOffTracts(outNodeList, "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
+        }
+    },
+    /**
+     * apply colorClass to tracts with ids in tractList.
+     * @param {Array} tractList array of object <name, value>
+     * @param {string} colorClass class name that is going to apply
+     */
+    lightUpTracts(tractList, colorClass) {
+        let _self = this;
+        tractList.length !== 0 && tractList.forEach(tract => _self.findTractById(tract.name).addClass(colorClass));
+    },
+    /**
+     * remove colorClass from tract with ids in tractList.
+     * @param {Array} tractList tractList: array of object <name, value>
+     * @param {string} colorClass class name that is going to remove
+     */
+    turnOffTracts(tractList, colorClass) {
+        let _self = this;
+        tractList.length !== 0 && tractList.forEach(tract => _self.findTractById(tract.name).removeClass(colorClass));
+    },
+    findTractById(stateId) {
+        return $("#state-tract-group").find("path[title=" + stateId + "]");
+    },
+    /**
+     * toggle state-wise/regional layer according to user's interaction
+     */
     toggleTract() {
         let c = this._attr.c;
         switch (c.get("geoBase")) {
@@ -664,10 +871,12 @@ let GeoView = Backbone.View.extend({
                 console.log("[invalid geoBase] - Congratulations on toggling a bug!");
         }
     },
+    /**
+     * update UI according to the list of selected states.
+     */
     updateSelection() {
         let c = this._attr.c,
             theListName = c.getTractListName(),
-            theList = c.getTractList(),
             geoBase = c.get("geoBase"),
             previousList = c.previousAttributes()[theListName],
             currentList = c.get(theListName),
@@ -684,6 +893,9 @@ let GeoView = Backbone.View.extend({
             __domElement.removeClass("hovered-item");
         }
     },
+    /**
+     * create gradient color settings that'll be used to render legend
+     */
     createLegendGradient() {
         let grad = this._attr.defs.append("linearGradient")
             .attr({
@@ -707,11 +919,26 @@ let GeoView = Backbone.View.extend({
     }
 });
 
+/**
+ * NetworkView:
+ * - with multiple functionalities (you know it).
+ */
 let NetworkView = Backbone.View.extend({
     el: "#svg-network-view",
     initialize() {
         this._attr = {};
+        $.extend(this._attr, {
+            _graph: _graph
+        });
     },
+    /**
+     * render and prepare static elements that do not change according to different `conditions`, including
+     * - svg groups
+     * - some of scales
+     * - labels
+     * - and so on.
+     * @param {object} conditions Backbone.Model 
+     */
     render(conditions) {
         let _self = this,
             _attr = this._attr,
@@ -725,39 +952,33 @@ let NetworkView = Backbone.View.extend({
 
         // compute actual full canvas size
         let _width = gs.n.margin.left + gs.n.margin.right + gs.n.size.width,
-            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height;
+            _height = gs.n.margin.top + gs.n.margin.bottom + gs.n.size.height,
+            _legendXOffset = gs.n.margin.left + gs.n.size.width - gs.n.size.legendWidth;
 
         // dom element and groups
-        let svg = _attr.svg = d3.select(_self.el)
-            .attr({
-                'preserveAspectRatio': 'xMidYMid meet',
-                'viewBox': ("0 0 " + _width + " " + _height + ""),
-                'class': 'svg-content-responsive'
-            }),
-            edgeG = svg.append('g').attr({
-                'id': 'network-edge-group',
-                'class': 'edge-group',
-                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
-            }),
-            nodeG = svg.append('g').attr({
-                'id': 'network-node-group',
-                'class': 'node-group',
-                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
-            }),
-            labelG = svg.append('g').attr({
-                'id': 'network-label-group',
-                'class': 'label-group',
-                'transform': "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"
-            }),
+        // sorry i really cannot see the point in removing the feature in d3v4 that set multiple attributes 
+        // with hash for a selection.
+        let svg = d4.select(_self.el)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
+            .attr('class', 'svg-content-responsive'),
+            edgeG = svg.append('g')
+            .attr('id', 'network-edge-group')
+            .attr('class', 'edge-group')
+            .attr('transform', "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"),
+            nodeG = svg.append('g')
+            .attr('id', 'network-node-group')
+            .attr('class', 'node-group')
+            .attr('transform', "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"),
+            labelG = svg.append('g')
+            .attr('id', 'network-label-group')
+            .attr('class', 'label-group')
+            .attr('transform', "translate(" + gs.n.margin.left + "," + gs.n.margin.top + ")"),
+            legendG = svg.append('g')
+            .attr('id', 'network-legend-group')
+            .attr('class', 'label-group')
+            .attr('transform', "translate(" + _legendXOffset + "," + gs.n.margin.top + ")"),
             defs = svg.append('defs');
-
-        // create force layout 
-        let force = d3.layout.force()
-            .size([_width, _height])
-            .linkDistance(100)
-            .charge(-500)
-            .gravity(0.4)
-            .friction(0.9);
 
         // expose variables to the view class
         $.extend(_attr, {
@@ -765,14 +986,19 @@ let NetworkView = Backbone.View.extend({
             edgeG: edgeG,
             nodeG: nodeG,
             labelG: labelG,
+            legendG: legendG,
             defs: defs,
             c: conditions,
             nodes: nodes,
             edges: edges,
             stat: stat,
-            cstat: cstat,
-            force: force
+            cstat: cstat
         });
+
+        // create the triangle symbol applied to arrows
+        this.prepareMarker();
+
+        this.drawLegend();
 
         return this.update();
     },
@@ -781,31 +1007,37 @@ let NetworkView = Backbone.View.extend({
             _attr = this._attr,
             nodes = _attr.nodes,
             edges = _attr.edges,
-            stat = _attr.stat,
             cstat = _attr.cstat,
             geoBase = _attr.c.get("geoBase"), // {"state", "region"}
             metaType = _attr.c.get("metadata"), // {conf.bases.yAttributeList[i].id} "centrality" or other attributes
             cType = _attr.c.get("centrality"), // {conf.bases.centralityList[i].id} centrality type
-            selectedIdList = d3.set(_self.getSelectedIds(_attr.c)), // selected states
-            filteredNodes = {},
-            filteredEdges = [],
-            colorNeeded = (geoBase === "state" ?
-                (metaType !== 'centrality') && (_attr.c.get("policy") !== conf.bases.policy.default) :
-                true),
-            opacity = css_variables["--opacity-state"],
-            meta = 'centrality',
-            colorScale;
+            meta = conf.bases.yAttributeList[0].id,
+            opacity = css_variables["--opacity-state"];
+
+        let colorScale = (void 0),
+            sizeScale = d4.scaleLinear()
+            .domain([cstat.min[cType], cstat.max[cType]])
+            .range(gs.n.config.circleSizeRange),
+            xScale = d3.scale.linear()
+            .range([gs.n.margin.left, gs.n.margin.left + gs.n.size.width]),
+            yScale = d3.scale.linear()
+            .range([gs.n.margin.top, gs.n.margin.top + gs.n.size.height]);
+
+        let isSpecificNetwork = _attr.c.get("policy") !== conf.bases.policy.default,
+            isColorNeeded = (geoBase === "state" ?
+                (metaType !== conf.bases.yAttributeList[0].id) && isSpecificNetwork :
+                true);
 
         // config `colorScale` and default `opacity` that'd be applied to render the map according to `geoBase`
-        if (colorNeeded) {
+        if (isColorNeeded) {
             meta = conf.pipe.metaToId[_attr.c.get("metadata")];
             switch (geoBase) {
                 case "state":
                     let valueDomain = [_attr.stat.min[meta], _attr.stat.max[meta]],
                         colorRange = [css_variables["--color-value-out"], css_variables["--color-value-in"]];
-                    colorScale = d3.scale.linear()
+                    colorScale = d4.scaleLinear()
                         .domain(valueDomain)
-                        .interpolate(d3.interpolateRgb)
+                        .interpolate(d4.interpolateRgb)
                         .range(colorRange);
                     break;
                 case "region":
@@ -816,206 +1048,415 @@ let NetworkView = Backbone.View.extend({
                     // won't happen
             }
         }
-        // expose filtered edges and nodes to the view class
-        $.extend(_attr, {
-            filteredEdges: filteredEdges,
-            filteredNodes: filteredNodes
-        });
 
-        let sizeScale = d3.scale.linear()
-            .domain([cstat.min[cType], cstat.max[cType]])
-            .range(gs.n.config.circleSizeRange),
-            force = _attr.force.on("tick", tick),
-            drag = force.drag()
-            .on("dragstart", dragstart);
+        let filteredNodes = {},
+            filteredEdges = [];
 
         // iterate `edges` with `nodes` to filter and generate nodes and edges that are actually need to be rendered
         edges.forEach(edge => {
-            if (isAValidEdge(edge)) {
+            if (_self.isAValidEdge(edge)) {
                 let newEdge = {
                     source: filteredNodes[edge.source] || (filteredNodes[edge.source] = nodes[edge.source]),
                     target: filteredNodes[edge.target] || (filteredNodes[edge.target] = nodes[edge.target])
                 }
+                let validity = _self.isFollowingNetworkRule(newEdge);
                 $.extend(newEdge, {
-                    validity: _self.isFollowingNetworkRule(newEdge),
-                    name: newEdge.source.stateId + "-" + newEdge.target.stateId
-                })
+                    validity: validity,
+                    name: (validity ?
+                        newEdge.source.stateId + "-" + newEdge.target.stateId :
+                        newEdge.target.stateId + "-" + newEdge.source.stateId)
+                });
                 filteredEdges.push(newEdge);
             }
         });
 
-        // config force layout with filtered nodes and edges
-        force.nodes(d3.values(filteredNodes))
-            .links(filteredEdges)
-            .start();
+        // terminate rendering for empty network
+        // could caused by either of following three
+        // - too few policies to generate general network
+        // - current selected policy does not match the general network
+        // - selected states from geo view does not involved in current policy
+        if (filteredEdges.length === 0) {
+            $("#unable-to-process-network-notitication").show();
+            $("#policy-network-wrapper .loader-img").hide();
+            this.$el.hide();
+            return;
+        } else {
+            $("#unable-to-process-network-notitication").hide();
+        }
+
+        let filteredNodeList = _.values(filteredNodes);
 
         // create element groups with filtered nodes and edges
         let links = _attr.edgeG.selectAll("path")
-            .data(force.links(), (d) => d.name),
+            .data(filteredEdges, d => d.name),
             circles = _attr.nodeG.selectAll(".network-node")
-            .data(force.nodes(), (d) => d.stateId),
+            .data(filteredNodeList, d => d.stateId),
             texts = _attr.labelG.selectAll("text")
-            .data(force.nodes(), (d) => d.stateId);
-
-        // Per-type markers, as they don't inherit styles.
-        _attr.defs.selectAll("marker")
-            .data(["follow-the-rule", "violate-the-rule"])
-            .enter().append("marker")
-            .attr({
-                "id": d => d,
-                "viewBox": "0 -5 10 10",
-                "refX": 15,
-                "refY": -1.5,
-                "markerWidth": 6,
-                "markerHeight": 6,
-                "orient": "auto"
-            })
-            .append("path")
-            .attr("d", "M0,-5L10,0L0,5");
+            .data(filteredNodeList, d => d.stateId);
 
         // remove elements that are no longer need to display at current update
-        links.exit().remove();
-        circles.exit().transition()
-            .attr("r", 0).remove();
-        texts.exit().remove();
+        // and keep the exiting links connected to the moving remaining nodes.
+        links.exit()
+            .transition()
+            .attr("stroke-opacity", 0)
+            .attrTween("d", d => {
+                let dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+                return () => "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.source.x + "," + d.source.y;
+            })
+            .attrTween("x1", d => () => d.source.x)
+            .attrTween("y1", d => () => d.source.y)
+            .attrTween("x2", d => () => d.source.x)
+            .attrTween("y2", d => () => d.source.y)
+            .remove();
+
+        circles.exit()
+            .transition().attr("r", 0)
+            .remove();
+
+        texts.exit().transition().remove();
 
         // add and render elements within current selection
-        links.enter().append("path")
-            .attr({
-                "class": d => "network-link " + _self.getLinkValidityClass(d),
-                "marker-end": d => "url(#" + _self.getLinkValidityClass(d) + ")"
-            });
+        links = links.enter().append("path")
+            .call(links => links.transition().attr("stroke-opacity", 1))
+            .attr("class", d => "network-link " + _self.getLinkValidityClass(d))
+            .attr("marker-end", "url(#edge-marker)")
+            .attr("edge-name", d => d.name)
+            .merge(links);
 
-        circles.enter().append("circle")
-            .attr({
-                class: "network-node",
-                title: (d) => d.stateId
+        circles = circles.enter().append("circle")
+            .attr("class", "network-node")
+            .attr("title", d => d.stateId)
+            .style("opacity", opacity)
+            .on("mouseover", d => _self.lightUp(d.stateId))
+            .on("mouseleave", d => _self.turnOff(d.stateId))
+            .merge(circles)
+            .call(d4.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended))
+            .call(circles => circles.transition().attr("r", d => sizeScale(nodes[d.stateId].centralities[cType])))
+            .style("fill", d => {
+                return d.fill = getColor(d);
             })
-            .on("dblclick", dblclick)
-            .call(drag);
+            .style("stroke", d => d4.rgb(d.fill).darker(1));
 
-        circles.attr({
-                r: d => sizeScale(nodes[d.stateId].centralities[cType])
-            })
-            .style({
-                fill: (d) => {
-                    switch (geoBase) {
-                        case "state":
-                            if (d.stateId === "NE") {
-                                d.fill = d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                            } else if (colorNeeded) {
-                                let node = _attr.nodes[d.stateId];
-                                if (!d3.set(conf.static.states).has(d.stateId) || _self.isNodeDefault(node)) {
-                                    d.fill = css_variables["--color-unadopted"];
-                                } else {
-                                    d.fill = node.valid ? colorScale(node["metadata"][meta]) : css_variables["--color-unadopted"];
-                                }
-                            } else if (meta === 'centrality') {
-                                d.fill = d3.rgb(css_variables["--color-unadopted"]);
-                            }
-                            break;
-                        case "region":
-                            d.fill = colorScale[conf.pipe.regionOf[d.stateId]];
-                            break;
-                        default:
-                            // won't ever happen
-                    }
-                    return d.fill;
-                },
-                stroke: (d) => d3.rgb(d.fill).darker(1),
-                opacity: opacity
-            });
-
-        texts.enter().append("text")
-            .attr({
-                "y": ".31em"
-            })
-            .text(d => d.stateId);
-
-        texts.attr({
-            "x": d => {
+        texts = texts.enter().append("text")
+            .attr("y", ".31em")
+            .merge(texts)
+            .attr("x", d => {
                 let r = sizeScale(nodes[d.stateId].centralities[cType]);
                 if (r > 10) {
                     return -5;
                 } else {
                     return gs.n.margin.labelXShift + r;
                 }
+            })
+            .text(d => d.stateId);
+
+        // apply simulations
+        let centerX = gs.n.margin.left + gs.n.size.width / 2,
+            centerY = gs.n.margin.top + gs.n.size.height / 2,
+            forceLink = d4.forceLink().distance(100),
+            forceCenter = d4.forceCenter(centerX, centerY),
+            forceCollide = d4.forceCollide()
+            .radius(d => gs.n.margin.collisionMargin + sizeScale(nodes[d.stateId].centralities[cType]));
+
+        let simulation = d4.forceSimulation()
+            .force('link', forceLink)
+            .force('center', forceCenter)
+            .force('collide', forceCollide);
+
+        // toggle legend and setup force
+        if (isSpecificNetwork) {
+            $("#network-legend-group").show();
+
+            let dists = filteredNodeList.map(d => filteredNodeList.map(e => Math.abs(d.adoptedYear - e.adoptedYear))),
+                tsne = new tsnejs.tSNE({
+                    dim: 2,
+                    perplexity: 10
+                });
+
+            tsne.initDataDist(dists);
+            let forceTsne = function(alpha) {
+                tsne.step();
+                let pos = tsne.getSolution();
+
+                xScale.domain(d4.extent(pos, d => d[0]));
+                yScale.domain(d4.extent(pos, d => d[1]));
+
+                filteredNodeList.forEach((d, i) => {
+                    d.vx += alpha * (xScale(pos[i][0]) - d.x);
+                    d.vy += alpha * (yScale(pos[i][1]) - d.y);
+                });
             }
-        });
 
-        // this is MAGIC
-        while (!gs.n.config.animationSwitch && force.alpha() > 1e-5) { force.tick(); }
+            // create tsne layout for specific network
+            simulation.force('tsne', forceTsne);
+        } else {
+            $("#network-legend-group").hide();
 
-        /**
-         * An edge is valid iff:
-         *  both source and target nodes have adopted current policy, and 
-         *  at lease one of two nodes are selected to show when render state-wise map, or
-         *  both source and target nodes are selected to show when render regional map.
-         */
-        function isAValidEdge(edge) {
-            return (nodes[edge.source].valid && nodes[edge.target].valid) &&
-                (geoBase === "state" ?
-                    selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :
-                    selectedIdList.has(edge.source) && selectedIdList.has(edge.target));
+            // create manyBody force layout for general network
+            let forceCharge = d4.forceManyBody()
+                .strength(-30)
+                .distanceMin(gs.n.config.circleSizeRange[1])
+                .distanceMax(gs.n.size.width / 4);
+
+            simulation.force('charge', forceCharge);
+        }
+
+        // update and restart the simulation.
+        simulation.nodes(filteredNodeList);
+        simulation.force("link").links(filteredEdges);
+        simulation.on("tick", ticked);
+        simulation.on("end", _self.postRender.bind(_self));
+        simulation.alpha(0.2).restart();
+
+        // compute node similarity
+        let graph = _attr._graph,
+            nodeList = _.map(filteredNodes, node => node.stateId),
+            edgeList = _.map(filteredEdges, edge => {
+                return (edge.validity ? {
+                    source: edge.source.stateId,
+                    target: edge.target.stateId
+                } : {
+                    source: edge.target.stateId,
+                    target: edge.source.stateId
+                });
+            });
+
+        // setup grank graph
+        graph.nodes(nodeList)
+            .edges(edgeList)
+            .init();
+
+        // update graph according to filteredNodes and filteredEdges
+        // and compute similarities for mouse event
+        if (true && conf.enableWebWorker && window.Worker) {
+            // if Web Worker supported
+            // show info span and mute pointer event
+            $("#computing-node-similarity-span").show();
+            this.$el.css("pointer-events", "none");
+            let grankWorker = new GRankWorker();
+            grankWorker.postMessage({ nodes: nodeList, edges: edgeList });
+            grankWorker.onmessage = function(e) {
+                graph.setPrank(e.data.prank);
+                // hide info span and recover pointer event
+                $("#computing-node-similarity-span").hide();
+                $(_self.el).css("pointer-events", "");
+                // muted at geoView.render()
+                $("#svg-geo-view").css("pointer-events", "");
+            }
+        } else {
+            // if Web Worker not enabled or not supported
+            // add an interval to delay UI blocking caused by network computation
+            setTimeout(() => { graph.doPrank(); }, 350);
+        }
+
+        function getColor(d) {
+            let fillColor = (void 0);
+            switch (geoBase) {
+                case "state":
+                    // to proceed only when the title string is from one of 50 states,
+                    // this validation is due to mismatch between state set from geo shape file and our database
+                    if (d4.set(conf.static.states).has(d.stateId)) {
+                        if (d.stateId === "NE") {
+                            // special case: no data for NE 
+                            fillColor = d4.rgb(css_variables["--color-unadopted"]).brighter(1);
+                        } else {
+                            let node = _attr.nodes[d.stateId];
+                            if (isColorNeeded && node.valid) {
+                                // return corresponding color for one states that adopted current policy
+                                fillColor = colorScale(node["metadata"][meta]);
+                            } else {
+                                // return default color otherwise
+                                fillColor = css_variables["--color-unadopted"];
+                            }
+                        }
+                    }
+                    break;
+                case "region":
+                    fillColor = colorScale[conf.pipe.regionOf[d.stateId]];
+                default:
+                    // won't ever happen
+            }
+            return fillColor;
         }
 
         // Use elliptical arc path segments to doubly-encode directionality.
-        function tick() {
-            links.attr({
-                d: (d) => {
+        function ticked() {
+            links
+                .attr("d", d => {
                     let dx = d.target.x - d.source.x,
                         dy = d.target.y - d.source.y,
                         dr = Math.sqrt(dx * dx + dy * dy);
                     return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
-                },
-                x1: (d) => d.source.x,
-                y1: (d) => d.source.y,
-                x2: (d) => d.target.x,
-                y2: (d) => d.target.y
-            });
-            circles.attr({
-                cx: (d) => d.x,
-                cy: (d) => d.y
-            });
-            texts.attr("transform", (d) => "translate(" + d.x + "," + d.y + ")");
+                })
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            circles
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            texts
+                .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
         }
 
-        function dragstart(d) {
-            d3.select(this).classed("fixed", d.fixed = true);
+        function dragstarted(d) {
+            if (!d4.event.active) {
+                simulation.alphaTarget(0.3).restart();
+            }
+            d.fx = d.x;
+            d.fy = d.y;
         }
 
-        function dblclick(d) {
-            d3.select(this).classed("fixed", d.fixed = false);
+        function dragged(d) {
+            d.fx = d4.event.x;
+            d.fy = d4.event.y;
         }
-        _self.postRender();
+
+        function dragended(d) {
+            if (!d4.event.active) {
+                simulation.alphaTarget(0);
+            }
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // expose filtered edges and nodes to the view class
+        $.extend(_attr, {
+            filteredEdges: filteredEdges,
+            filteredNodes: filteredNodes
+        });
+
         return this;
     },
-    preRender() {
-        this.$el.hide();
-        $("#policy-network-wrapper .loader-img").show();
-    },
-    postRender() {
-        $("#policy-network-wrapper .loader-img").hide();
-        this.$el.show();
+    /**
+     * light up relevant nodes.
+     * @param {string} stateId stateId of the target node
+     */
+    lightUp(stateId) {
+        try {
+            this.findNodeById(stateId).addClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.lightUpNodes(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.lightUpNodes(inNodeList, "in-nodes");
+                    this.lightUpNodes(outNodeList, "out-nodes");
+                    this.lightUpEdges(this.getEdgeNameList(inNodeList, stateId), "in-nodes");
+                    this.lightUpEdges(this.getEdgeNameList(stateId, outNodeList), "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
+        }
+
     },
     /**
-     * Retrieve current selection of states as a list.
-     * @param {Backbone.Model} conditions 
-     * @returns {Array<string>} state list in their IDs.
+     * turn off relevant nodes.
+     * @param {string} stateId stateId of the target node
      */
-    getSelectedIds(conditions) {
-        if ((conditions.get("regionList").length === 0 && conditions.get("stateList").length === 0) ||
-            conditions.get("policy") === "unselected") {
-            return _.flatMap(conf.static.regions);
+    turnOff(stateId) {
+        try {
+            this.findNodeById(stateId).removeClass("hovered");
+            switch (this._attr.c.get("nodeRelevance")) {
+                case conf.bases.nodeRelevance[1].id:
+                    // similar
+                    let nodeList = this._attr._graph.getSimilarNodes("prank", stateId);
+                    this.turnOffNodes(nodeList, "in-nodes");
+                    break;
+                case conf.bases.nodeRelevance[0].id:
+                    // connected
+                    let inNodeList = this._attr._graph.getInNodes(stateId),
+                        outNodeList = this._attr._graph.getOutNodes(stateId);
+                    this.turnOffNodes(inNodeList, "in-nodes");
+                    this.turnOffNodes(outNodeList, "out-nodes");
+                    this.turnOffEdges(this.getEdgeNameList(inNodeList, stateId), "in-nodes");
+                    this.turnOffEdges(this.getEdgeNameList(stateId, outNodeList), "out-nodes");
+                    break;
+            }
+        } catch (e) {
+            // ignore exceptions raised when user trigger events that require information from this._attr._graph which hasn't been initialized yet.
         }
-        switch (conditions.get("geoBase")) {
-            case "state":
-                return conditions.get("stateList");
-            case "region":
-                return _.flatten(conditions.get("regionList").map(region => conf.static.regions[region]))
-            default:
-                //shouldn't happen
+    },
+    /**
+     * apply colorClass to circles with ids in nodeList.
+     * @param {Array} nodeList stateId list of nodes that need to light up
+     * @param {string} colorClass class name that is going to apply
+     */
+    lightUpNodes(nodeList, colorClass) {
+        let _self = this;
+        nodeList.length !== 0 && nodeList.forEach(node => _self.findNodeById(node.name).addClass(colorClass));
+    },
+    /**
+     * remove colorClass from circles with ids in nodeLists.
+     * @param {Array} nodeList stateId list of nodes that need to turn off
+     * @param {string} colorClass class name that is going to remove
+     */
+    turnOffNodes(nodeList, colorClass) {
+        let _self = this;
+        nodeList.length !== 0 && nodeList.forEach(node => _self.findNodeById(node.name).removeClass(colorClass));
+    },
+    lightUpEdges(edgeList, colorClass) {
+        let _self = this;
+        edgeList.length !== 0 && edgeList.forEach(edgeName => _self.findEdgeByName(edgeName).addClass(colorClass));
+    },
+    turnOffEdges(edgeList, colorClass) {
+        let _self = this;
+        edgeList.length !== 0 && edgeList.forEach(edgeName => _self.findEdgeByName(edgeName).removeClass(colorClass));
+    },
+    findNodeById(stateId) {
+        return $("#network-node-group").find("circle[title=" + stateId + "]");
+    },
+    findEdgeByName(edgeName) {
+        return $("#network-edge-group").find("path[edge-name=" + edgeName + "]");
+    },
+    /**
+     * create edge name list.
+     * @param {Array<string>} sourceNodeNameList
+     * @param {string} targetNode
+     * OR
+     * @param {string} sourceNode
+     * @param {Array<string>} targetNodeNameList
+     */
+    getEdgeNameList() {
+        let edgeNameList = []
+        try {
+            if (Array.isArray(arguments[0])) {
+                edgeNameList = arguments[0].map(sourceNode => sourceNode.name + "-" + arguments[1]);
+            } else {
+                edgeNameList = arguments[1].map(targetNode => arguments[0] + "-" + targetNode.name);
+            }
+        } catch (e) {
+            console.log("invalid edge args.");
+        } finally {
+            return edgeNameList;
         }
+    },
+    /**
+     * An edge is valid iff:
+     *  both source and target nodes have adopted current policy, and 
+     *  at lease one of two nodes are selected to show when render state-wise map, or
+     *  both source and target nodes are selected to show when render regional map.
+     */
+    isAValidEdge(edge) {
+        let _attr = this._attr,
+            selectedIdList = d4.set(_attr.c.getSelectedIds()); // selected states
+        return (_attr.nodes[edge.source].valid && _attr.nodes[edge.target].valid) &&
+            (_attr.c.get("geoBase") === "state" ?
+                selectedIdList.has(edge.source) || selectedIdList.has(edge.target) :
+                selectedIdList.has(edge.source) && selectedIdList.has(edge.target));
     },
     getLinkValidityClass(edge) {
         return (edge.validity ?
@@ -1023,19 +1464,142 @@ let NetworkView = Backbone.View.extend({
             "violate-the-rule");
     },
     isFollowingNetworkRule(edge) {
-        let nodes = this._attr.nodes;
         return +edge.source.adoptedYear <= +edge.target.adoptedYear;
     },
     isNodeDefault(node) {
         return node.valid && node.adoptedYear === 9999;
+    },
+    prepareMarker() {
+        this._attr.defs.append("marker")
+            .attr("id", "edge-marker")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", -1.5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+        this._attr.defs.append("marker")
+            .attr("id", "triangle-marker")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 0)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+    },
+    drawLegend() {
+        this._attr.legendG.selectAll("path")
+            .data(["follow-the-rule", "violate-the-rule"])
+            .enter().append("path")
+            .attr("d", (d, i) => "M0," + (i * gs.n.margin.legendYShift) + "L20," + (i * gs.n.margin.legendYShift))
+            .attr("class", d => "network-link " + d)
+            .attr("marker-end", "url(#triangle-marker)");
+
+        this._attr.legendG.selectAll("text")
+            .data(["Expected Cascades", "Deviant Cascades"])
+            .enter().append("text")
+            .attr("x", 30)
+            .attr("y", (d, i) => gs.n.margin.legendYShift * i + gs.n.margin.legendTextShift)
+            .text(d => d);
+
+    },
+    preRender() {
+        this.$el.hide();
+        $("#unable-to-process-network-notitication").hide();
+        $("#policy-network-wrapper .loader-img").show();
+    },
+    postRender() {
+        $("#policy-network-wrapper .loader-img").hide();
+        this.$el.show();
     }
 });
 
+let PolicyNetworkView = Backbone.View.extend({
+    id: 'new-policy-network-view',
+    tagName: 'div',
+    initialize() {
+        this._attr = {};
+    },
+    render() {
+        let _self = this,
+            _width = gs.pn.margin.left + gs.pn.margin.right + gs.pn.size.width,
+            _height = gs.pn.margin.top + gs.pn.margin.bottom + gs.pn.size.height;
+
+        let containter = this.el,
+            meter = document.querySelector('#playground-progress'),
+            canvas = document.createElement("canvas");
+        canvas.setAttribute('width', _width);
+        canvas.setAttribute('height', _height);
+        containter.appendChild(canvas);
+        let context = canvas.getContext('2d');
+
+        let nodes = this.model.get("policies");
+        if (conf.enableWebWorker && window.Worker) {
+            let tsneWorker = new tSNEWorker();
+            tsneWorker.postMessage({
+                nodes: nodes,
+                xRange: [gs.pn.margin.left, gs.pn.margin.left + gs.pn.size.width],
+                yRange: [gs.pn.margin.top, gs.pn.margin.top + gs.pn.size.height],
+                dists: this.model.get("text_similarities")
+            });
+            tsneWorker.onmessage = function(event) {
+                switch (event.data.type) {
+                    case "tick":
+                        return ticked(event.data);
+                    case "end":
+                        return ended(event.data);
+                }
+            }
+        }
+
+        function ticked(data) {
+            let progress = data.progress;
+            meter.style.width = 100 * progress + "%";
+        }
+
+        function ended(data) {
+            var nodes = data.nodes;
+            meter.style.display = "none";
+
+            context.clearRect(0, 0, _width, _height);
+            context.save();
+
+            context.beginPath();
+            nodes.forEach(drawNode);
+            context.fill();
+            context.strokeStyle = "#fff";
+            context.stroke();
+
+            context.restore();
+        }
+
+        function drawNode(d) {
+            context.moveTo(d.x + 3, d.y);
+            context.arc(d.x, d.y, 3, 0, 2 * Math.PI);
+        }
+
+        return this;
+    }
+});
+
+/**
+ * PolicyGroupView: (Policy table)
+ * Policy table reveals more information about the filtered policies, which also let users to: 
+ * - select one policy to begin inspection,
+ * - search policies by keywords,
+ * - and so on.
+ */
 let PolicyGroupView = Backbone.View.extend({
     el: "#policy-group-table",
     initialize() {
-        $(this.el).bootstrapTable({
-            sortClass: "relevance",
+        this.$el.bootstrapTable({
+            sortName: "adoption_count",
+            sortOrder: "desc",
             height: 400,
             pagination: true,
             onlyInfoPagination: false,
@@ -1061,21 +1625,26 @@ let PolicyGroupView = Backbone.View.extend({
                 title: 'Policy ID',
                 sortable: true,
                 searchable: true,
-                clickToSelect: true,
                 visible: false
             }, {
                 field: 'policy_name',
                 title: 'Policy Name',
                 sortable: true,
                 searchable: true,
-                clickToSelect: true
+                order: 'asc'
+            }, {
+                field: 'adoption_count',
+                title: 'Adoptions',
+                titleTooltip: 'Number of states that adopted this policy.',
+                sortable: true,
+                searchable: false,
+                order: 'desc'
             }, {
                 field: 'subject',
                 title: 'Subject',
                 titleTooltip: 'Subject to which a policy belongs.',
                 sortable: true,
                 searchable: false,
-                clickToSelect: true,
                 order: 'asc'
             }, {
                 field: 'policy_start',
@@ -1083,7 +1652,6 @@ let PolicyGroupView = Backbone.View.extend({
                 titleTooltip: 'The year that the first adoption occurred.',
                 sortable: true,
                 searchable: false,
-                clickToSelect: true,
                 order: 'asc'
             }, {
                 field: 'policy_end',
@@ -1091,11 +1659,21 @@ let PolicyGroupView = Backbone.View.extend({
                 titleTooltip: 'The year that the last adoption occurred.',
                 sortable: true,
                 searchable: false,
-                clickToSelect: true,
                 order: 'asc'
+            }, {
+                field: 'has_full_text',
+                title: 'Full Text',
+                titleTooltip: "Whether there's full text available or not.",
+                sortable: true,
+                searchable: false,
+                formatter: function(value, row, index) {
+                    return value ?
+                        '<span class="glyphicon glyphicon-star" aria-hidden="true"></span>' :
+                        '<span class="glyphicon glyphicon-star-empty" aria-hidden="true"></span>';
+                }
             }],
             formatLoadingMessage: () => 'Loading policies, please wait...',
-            formatNoMatches: () => 'Oops! No matching policies. Please try to adjust your time range.',
+            formatNoMatches: () => 'Oops! No matching policies. Please try to adjust your time window.',
             formatShowingRows: (pageFrom, pageTo, totalRows) => 'Showing ' + pageFrom + ' to ' + pageTo + ' of ' + totalRows + ' policies'
         });
 
@@ -1113,38 +1691,62 @@ let PolicyGroupView = Backbone.View.extend({
         _self.updateSelection(conditions);
     },
     updateSelection(conditions) {
-        let _self = this;
-        $(this.el).bootstrapTable("uncheckAll");
+        this.$el.bootstrapTable("uncheckAll");
         if (conditions.get("policy") !== conf.bases.policy.default) {
-            $(this.el).bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
+            this.$el.bootstrapTable("checkBy", { field: "policy_id", values: [conditions.get("policy")] });
         }
     },
     clear() {
-        $(this.el).bootstrapTable('removeAll');
+        this.$el.bootstrapTable('removeAll');
     },
     preRender() {
         this.$el.bootstrapTable('showLoading');
     }
 });
 
+/**
+ * DiffusionView: (inspection view, cascade view)
+ * to perform visual hypothesis test.
+ * Allows for comparing specific policy cascades with 
+ * a) the expected patterns in a group network, or 
+ * b) the state contexts (attributes)
+ *  x-axis: influence or adoption order
+ *  y-axis: attribute ranking
+ *  (top) cascade follows expected influence direction
+ *  (bottom) cascade violates expected influence direction
+ */
 let DiffusionView = Backbone.View.extend({
     el: "#svg-diffusion-view",
     initialize() {
         this._attr = {};
     },
+    /**
+     * render and prepare static elements that do not change according to different `conditions`, including
+     * - svg groups
+     * - some of scales
+     * - labels
+     * - and so on.
+     * @param {object} conditions Backbone.Model 
+     */
     render(conditions) {
-        // console.log("rendering diffusion...");
         let _self = this,
             _attr = this._attr, // closure vars
             isSnapshot = arguments.length !== 1;
 
-        $(_self.el).empty();
+        // toggle notification jumbotron and stop rendering
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            this.postRender(conditions);
+            return this;
+        }
+
+        this.$el.empty();
 
         let _height = gs.d.margin.top + gs.d.size.pathHeight + gs.d.margin.bottom,
             _width = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
             pathXShift = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth, // min x of pathG
-            pathYMid = gs.d.margin.top,
+            bottomLabelYShift = gs.d.margin.top + gs.d.size.pathHeight,
             circleXShift = pathXShift,
+            xAxisLableXShift = pathXShift + gs.d.size.pathWidth,
             circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
             yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
 
@@ -1156,6 +1758,7 @@ let DiffusionView = Backbone.View.extend({
             .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
             .classed('svg-content-responsive', true);
 
+        // create unique ids to prevent incorrect interaction behaviors for snapshot
         let idPrefix = isSnapshot ? Math.random().toString(36).substr(2, 8) + "-" : '',
             guidanceLineG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-guidance-line-group',
@@ -1167,6 +1770,11 @@ let DiffusionView = Backbone.View.extend({
                 'class': 'circles',
                 'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
             }),
+            xAxisLableG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-x-axis-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (xAxisLableXShift) + "," + (circleYShift) + ")"
+            }),
             pathG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-path-group',
                 'class': 'paths',
@@ -1174,7 +1782,7 @@ let DiffusionView = Backbone.View.extend({
             }),
             xLabelG = circleG.append('g').attr({
                 'id': idPrefix + 'diffusion-x-label-group',
-                'class': 'x-labels',
+                'class': 'label-group',
                 'transform': "translate(" + (0) + "," + (0) + ")"
             }),
             upBarG = svg.append('g').attr({
@@ -1187,9 +1795,14 @@ let DiffusionView = Backbone.View.extend({
                 'class': 'bars',
                 'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
             }),
+            bottomLabelG = svg.append('g').attr({
+                'id': idPrefix + 'diffusion-bottom-label-group',
+                'class': 'x-labels',
+                'transform': "translate(" + (xAxisLableXShift) + "," + (bottomLabelYShift) + ")"
+            }),
             yLabelG = svg.append('g').attr({
                 'id': idPrefix + 'diffusion-y-label-group',
-                'class': 'y-labels',
+                'class': 'label-group',
                 'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
             }),
             refLineG = pathG.append('g').attr({
@@ -1198,6 +1811,15 @@ let DiffusionView = Backbone.View.extend({
                 'transform': "translate(" + (0) + "," + (0) + ")"
             }),
             defs = svg.append('defs');
+
+        bottomLabelG.selectAll("text")
+            .data(["Deviant Cascades"])
+            .enter()
+            .append("text")
+            .attr({
+                transform: "translate(-120, -10)"
+            })
+            .text(d => d);
 
         let xScale = d3.scale.linear()
             .domain([0, 49])
@@ -1227,6 +1849,8 @@ let DiffusionView = Backbone.View.extend({
             upBarG: upBarG,
             bottomBarG: bottomBarG,
             yLabelG: yLabelG,
+            xAxisLableG: xAxisLableG,
+            bottomLabelG: bottomLabelG,
             refLineG: refLineG,
             guidanceLineG: guidanceLineG,
             defs: defs,
@@ -1246,9 +1870,8 @@ let DiffusionView = Backbone.View.extend({
 
         _self.update();
 
-        if (!isSnapshot) {
-            _self.bindTriggers();
-        }
+        // only listen to event if it isn't a snapshot
+        !isSnapshot && _self.bindTriggers();
 
         return this;
     },
@@ -1256,18 +1879,26 @@ let DiffusionView = Backbone.View.extend({
         // console.log("updating diffusion...");
         let _self = this,
             _attr = this._attr,
-            stat = this.model.get("stat"),
             cstat = this.model.get("cstat"),
             nodes = _attr.nodes,
-            links = _attr.links;
+            links = _attr.links,
+            getDescriptionStr = function(d) {
+                let description = conf.bases.xAttributeList.find(x => x.id === d).description;
+                if (d === conf.bases.xAttributeList[0].id) {
+                    let cType = _attr.c.get("centrality"),
+                        cString = conf.bases.centralityList.find(x => x.id === cType).description;
+                    description += (": " + cString);
+                }
+                return description;
+            };
 
         // define radius scale for circles
-        // let xSeq = conf.pipe.metaToId[$('#sequence-select').selectpicker('val')],
         let xSeq = _attr.c.get("centrality"),
             radiusScale = d3.scale.linear()
             .domain([cstat.min[xSeq], cstat.max[xSeq]])
             .range(gs.d.size.circle);
 
+        // data binding 
         let paths = _attr.pathG.selectAll('path')
             .data(links),
             guids = _attr.guidanceLineG.selectAll('path')
@@ -1281,11 +1912,35 @@ let DiffusionView = Backbone.View.extend({
             bottomBars = _attr.bottomBarG.selectAll('rect')
             .data(nodes);
 
+        // add anotation for y-axis
+        _attr.yLabelG.selectAll("text").remove();
+        _attr.yLabelG.selectAll("text")
+            .data([_attr.c.get("metadata")])
+            .enter()
+            .append("text")
+            .attr({
+                transform: gs.d.margin.yLabelTransform
+            })
+            .text(d => conf.bases.yAttributeList.find(x => x.id === d).description);
+
+        _attr.xAxisLableG.selectAll("text").remove();
+        _attr.xAxisLableG.selectAll("text")
+            .data([_attr.c.get("sequence")])
+            .enter()
+            .append("text")
+            .attr({
+                transform: (d) => {
+                    let description = getDescriptionStr(d);
+                    return "translate(" + (-description.length * gs.d.multiplier.text) + ", " + gs.d.margin.xLabel + ")";
+                }
+            })
+            .text(d => getDescriptionStr(d));
+
         paths.transition()
             .duration(gs.d.config.transitionTime)
-            .attrTween("d", (d, i) => {
+            .attrTween("d", (d) => {
                 let c = d.coords,
-                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
+                    n = _self.processCoordinates(d),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1323,9 +1978,9 @@ let DiffusionView = Backbone.View.extend({
 
         guids.transition()
             .duration(gs.d.config.transitionTime)
-            .attrTween("d", (d, i) => {
+            .attrTween("d", (d) => {
                 let c = d.gcoords,
-                    n = _self.processCoordinates(nodes, cstat, _attr.c, d, i),
+                    n = _self.processCoordinates(d),
                     interpolateX1 = d3.interpolate(c.x1, n.x1),
                     interpolateX2 = d3.interpolate(c.x2, n.x2),
                     interpolateXMid = d3.interpolate(c.xMid, n.xMid),
@@ -1347,13 +2002,13 @@ let DiffusionView = Backbone.View.extend({
 
         circles.transition()
             .duration(gs.d.config.transitionTime)
-            .attrTween("cx", (d, i) => {
+            .attrTween("cx", (d) => {
                 let interpolateX = d3.interpolate(d.circleX, _attr.xScale(d.sequenceOrder));
                 return function(t) {
                     return d.circleX = interpolateX(t);
                 }
             })
-            .attrTween("r", (d, i) => {
+            .attrTween("r", (d) => {
                 let interpolateR = d3.interpolate(d.circleR, radiusScale(d.centralities[xSeq]));
                 return function(t) {
                     return d.circleR = interpolateR(t);
@@ -1380,7 +2035,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         if (_self.isNodeDefault(d)) {
                             return css_variables["--color-unadopted"];
@@ -1389,9 +2044,9 @@ let DiffusionView = Backbone.View.extend({
                         }
                     }
                 },
-                stroke: (d, i) => {
+                stroke: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(2);
+                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
                     } else {
                         if (_self.isNodeDefault(d)) {
                             return d3.rgb(css_variables["--color-unadopted"]).darker(1);
@@ -1432,11 +2087,11 @@ let DiffusionView = Backbone.View.extend({
         paths.enter()
             .append('path')
             .attr({
-                d: (d, i) => {
-                    d.coords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
+                d: (d) => {
+                    d.coords = _self.processCoordinates(d);
                     return _self.linkBuilder(d);
                 },
-                class: (d, i) => {
+                class: (d) => {
                     let source = nodes[d.source],
                         target = nodes[d.target],
                         isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
@@ -1444,8 +2099,8 @@ let DiffusionView = Backbone.View.extend({
                     d.isValid = source.valid && target.valid;
 
                     if (printDiagnoseInfo) {
-                        console.groupCollapsed("Source: node-" + d.source + "\t" + source.stateId, "Target: node-" + d.target + "\t" + target.stateId + "\t" + isValid + "\t" + isFollowingNetworkRule)
-                        if (isValid) {
+                        console.groupCollapsed("Source: node-" + d.source + "\t" + source.stateId, "Target: node-" + d.target + "\t" + target.stateId + "\t" + d.isValid + "\t" + isFollowingNetworkRule)
+                        if (d.isValid) {
                             console.log("Both valid.");
                         } else {
                             console.log("Source " + (source.valid ? "valid." : "invalid."));
@@ -1481,11 +2136,11 @@ let DiffusionView = Backbone.View.extend({
         guids.enter()
             .append('path')
             .attr({
-                d: (d, i) => {
-                    d.gcoords = _self.processCoordinates(nodes, cstat, _attr.c, d, i);
+                d: (d) => {
+                    d.gcoords = _self.processCoordinates(d);
                     return _self.guidanceBuilder(d);
                 },
-                class: (d, i) => {
+                class: (d) => {
                     let isValid = nodes[d.source].valid && nodes[d.target].valid,
                         isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
 
@@ -1510,16 +2165,23 @@ let DiffusionView = Backbone.View.extend({
             .duration(gs.d.config.transitionTime)
             .call(_self.barTween, _attr, "bottom");
         _self.createBars(bottomBars, "bottom");
-        _self.postRender();
+        _self.postRender(_attr.c);
         return this;
     },
     preRender() {
         this.$el.hide();
-        $("#diffusion-wrapper .loader-img").show();
+        $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").hide();
+        $("#diffusiion-policy-unselected-notitication").hide();
+        $("#diffusion-wrapper").find(".loader-img").show();
     },
-    postRender() {
-        $("#diffusion-wrapper .loader-img").hide();
-        this.$el.show();
+    postRender(conditions) {
+        $("#diffusion-wrapper").find(".loader-img").hide();
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            $("#diffusiion-policy-unselected-notitication").show();
+        } else {
+            $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").show();
+            this.$el.show();
+        }
     },
     getPathColor(source, target) {
         if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
@@ -1578,7 +2240,7 @@ let DiffusionView = Backbone.View.extend({
             .style({
                 fill: (d) => {
                     if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
+                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
                     } else {
                         if (this.isNodeDefault(d)) {
                             return css_variables["--color-unadopted"];
@@ -1716,15 +2378,18 @@ let DiffusionView = Backbone.View.extend({
             [xScale(c.x1), yScale(c.y1)]
         ]);
     },
-    processCoordinates(nodes, cstat, c, d, i) {
-        const divider = 0.3,
-            yPartition1 = 0.25,
-            yPartition2 = 0.75,
-            centralityType = c.get("centrality"),
+    processCoordinates(d) {
+        let divider = 0.3,
+            _attr = this._attr,
+            nodes = _attr.nodes,
+            cstat = _attr.cstat,
+            // yPartition1 = 0.25,
+            // yPartition2 = 0.75,
+            centralityType = this._attr.c.get("centrality"),
             thicknessParam = nodes[d.source].centralities[centralityType],
-            standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]),
-            ySeq = conf.pipe.metaToId[c.get("metadata")],
-            xSeq = conf.pipe.metaToId[c.get("sequence")];
+            standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]);
+        // ySeq = conf.pipe.metaToId[c.get("metadata")],
+        // xSeq = conf.pipe.metaToId[c.get("sequence")];
 
         let x1 = nodes[d.source].sequenceOrder,
             x2 = nodes[d.target].sequenceOrder,
@@ -1762,194 +2427,190 @@ let DiffusionView = Backbone.View.extend({
                 break;
         }
     },
+    pathOverHandler(e) {
+        let _self = this,
+            _curr = $(e.target),
+            className = _curr.attr("class"),
+            classNameList = className.split(' '),
+            isStroke = (classNameList[0] === 'diffusion-strokes'),
+            isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+        if (isStroke && isValidPath) {
+
+            let validityCategory = classNameList[1];
+
+            [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+                // add ref lines
+                _self.drawRefLines(+nodeId, validityCategory);
+
+                // light up bars
+                _self.lightUpBars(validityCategory, nodeId);
+
+                // light up circles
+                $("#diffusion-node-" + nodeId).addClass("hovered-item");
+
+                // move mouseovered nodes to front
+                // d3.select("#diffusion-node-" + nodeId).moveToFront();
+            });
+
+            // light up mouseovered path
+            _curr.addClass("hovered-item");
+
+            // move mouseovered to front
+            // d3.select("#" + pathId).moveToFront();
+
+        }
+    },
+    pathOutHandler(e) {
+        let _curr = $(e.target),
+            className = _curr.attr("class"),
+            classNameList = className.split(' '),
+            isStroke = (classNameList[0] === 'diffusion-strokes'),
+            isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
+
+        if (isStroke && isValidPath) {
+            let _curr = $(e.target);
+
+            // remove ref lines
+            $("#diffusion-ref-line-group").empty();
+
+            [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
+
+                // recover lighted bars
+                $(".bar-" + nodeId).removeClass("hovered-item");
+
+                // recover up circles
+                $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+            });
+
+            // recover lighted path
+            _curr.removeClass("hovered-item");
+
+        }
+    },
+    circleOverHandler(e) {
+        let _curr = $(e.target),
+            className = _curr.attr("class"),
+            isCircle = (className === "diffusion-circles");
+        if (isCircle) {
+            this.lightUpStrokes(_curr.attr("nodeId"));
+        }
+    },
+    circleOutHandler(e) {
+        let _curr = $(e.target),
+            className = _curr.attr("class"),
+            classNameList = className.split(' '),
+            isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
+
+        if (isCircle) {
+            this.turnOffStrokes(_curr.attr("nodeId"));
+        }
+    },
+    lightUpStrokes(nodeId) {
+        let _self = this,
+            __pathG = $("#" + _self._attr.pathG.attr('id')),
+            __asSource = __pathG.find("path[source=" + nodeId + "]"),
+            __asTarget = __pathG.find("path[target=" + nodeId + "]");
+
+        let nodeMap = {};
+        nodeMap[nodeId] = true;
+
+        __asSource.each((i) => {
+            let __theStroke = $(__asSource[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("target")] = true;
+                __theStroke.addClass("hovered-item");
+
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach(nodeId => {
+                    let validityCategory = __theStroke.attr("class").split(' ')[1];
+                    // add ref lines
+                    _self.drawRefLines(+nodeId, validityCategory);
+                    // light up bars
+                    _self.lightUpBars(validityCategory, nodeId);
+                });
+            }
+        });
+
+        __asTarget.each((i) => {
+            let __theStroke = $(__asTarget[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("source")] = true;
+                __theStroke.addClass("hovered-item");
+
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
+                    let validityCategory = __theStroke.attr("class").split(' ')[1];
+                    // add ref lines
+                    _self.drawRefLines(+nodeId, validityCategory);
+                    // light up bars
+                    _self.lightUpBars(validityCategory, nodeId);
+                });
+            }
+        });
+
+        Object.keys(nodeMap).forEach((nodeId) => {
+            $("#diffusion-node-" + nodeId).addClass("hovered-item");
+        });
+    },
+    turnOffStrokes(nodeId) {
+        let _self = this,
+            __pathG = $("#" + _self._attr.pathG.attr('id')),
+            __asSource = __pathG.find("path[source=" + nodeId + "]"),
+            __asTarget = __pathG.find("path[target=" + nodeId + "]");
+
+        let nodeMap = {};
+        nodeMap[nodeId] = true;
+
+        __asSource.each((i) => {
+            let __theStroke = $(__asSource[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("target")] = true;
+                __theStroke.removeClass("hovered-item");
+                // recover lighted bars
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
+                    $(".bar-" + nodeId).removeClass("hovered-item");
+                });
+            }
+        });
+
+        __asTarget.each((i) => {
+            let __theStroke = $(__asTarget[i]);
+            if (!__theStroke.hasClass("invalid-arc")) {
+                nodeMap[__theStroke.attr("source")] = true;
+                __theStroke.removeClass("hovered-item");
+                // recover lighted bars
+                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
+                    $(".bar-" + nodeId).removeClass("hovered-item");
+                });
+            }
+        });
+
+        // remove ref lines
+        $("#diffusion-ref-line-group").empty();
+
+        Object.keys(nodeMap).forEach((nodeId) => {
+            $("#diffusion-node-" + nodeId).removeClass("hovered-item");
+        });
+    },
     bindTriggers() {
         let _self = this,
-            _attr = this._attr,
-            __svg = $(this.el);
+            __pathG = $("#" + _self._attr.pathG.attr('id')),
+            __circleG = $("#" + _self._attr.circleG.attr('id'));
 
-        let pathOverHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    pathId = _curr.attr("id"),
-                    className = _curr.attr("class"),
-                    classNameList = className.split(' '),
-                    isStroke = (classNameList[0] === 'diffusion-strokes'),
-                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
-
-                if (isStroke && isValidPath) {
-                    // why does it firing twice ???????
-                    // console.log(e);
-                    // console.log(e.type);
-                    // console.log(className);
-                    let validityCategory = classNameList[1];
-
-                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-                        // add ref lines
-                        _self.drawRefLines(+nodeId, validityCategory);
-
-                        // light up bars
-                        _self.lightUpBars(validityCategory, nodeId);
-
-                        // light up circles
-                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
-
-                        // move mouseovered nodes to front
-                        // d3.select("#diffusion-node-" + nodeId).moveToFront();
-                    });
-
-                    // light up mouseovered path
-                    _curr.addClass("hovered-item");
-
-                    // move mouseovered to front
-                    // d3.select("#" + pathId).moveToFront();
-
-                }
-            },
-            pathOutHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    classNameList = className.split(' '),
-                    isStroke = (classNameList[0] === 'diffusion-strokes'),
-                    isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
-
-                if (isStroke && isValidPath) {
-                    let _curr = $(e.target);
-
-                    // remove ref lines
-                    $("#diffusion-ref-line-group").empty();
-
-                    [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-
-                        // recover lighted bars
-                        $(".bar-" + nodeId).removeClass("hovered-item");
-
-                        // recover up circles
-                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-                    });
-
-                    // recover lighted path
-                    _curr.removeClass("hovered-item");
-
-                }
-            },
-            circleOverHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    isCircle = (className === "diffusion-circles");
-                if (isCircle) {
-                    let nodeId = _curr.attr("nodeId"),
-                        _pathG = $("#diffusion-path-group"),
-                        _asSource = _pathG.find("path[source=" + nodeId + "]"),
-                        _asTarget = _pathG.find("path[target=" + nodeId + "]");
-
-                    let nodeMap = {},
-                        targetMap = {};
-                    nodeMap[nodeId] = true;
-
-                    _asSource.each((i) => {
-                        let _theStroke = $(_asSource[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("target")] = true;
-                            _theStroke.addClass("hovered-item");
-
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                let validityCategory = _theStroke.attr("class").split(' ')[1];
-                                // add ref lines
-                                _self.drawRefLines(+nodeId, validityCategory);
-                                // light up bars
-                                _self.lightUpBars(validityCategory, nodeId);
-                            });
-                        }
-                    });
-
-                    _asTarget.each((i) => {
-                        let _theStroke = $(_asTarget[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("source")] = true;
-                            _theStroke.addClass("hovered-item");
-
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                let validityCategory = _theStroke.attr("class").split(' ')[1];
-                                // add ref lines
-                                _self.drawRefLines(+nodeId, validityCategory);
-                                // light up bars
-                                _self.lightUpBars(validityCategory, nodeId);
-                            });
-                        }
-                    });
-
-                    Object.keys(nodeMap).forEach((nodeId) => {
-                        $("#diffusion-node-" + nodeId).addClass("hovered-item");
-                    });
-                }
-            },
-            circleOutHandler = function(e) {
-                e.stopPropagation();
-                let _curr = $(e.target),
-                    className = _curr.attr("class"),
-                    classNameList = className.split(' '),
-                    isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
-
-                if (isCircle) {
-                    let nodeId = _curr.attr("nodeId"),
-                        _pathG = $("#diffusion-path-group"),
-                        _asSource = _pathG.find("path[source=" + nodeId + "]"),
-                        _asTarget = _pathG.find("path[target=" + nodeId + "]");
-
-                    let nodeMap = {},
-                        targetMap = {};
-                    nodeMap[nodeId] = true;
-
-                    _asSource.each((i) => {
-                        let _theStroke = $(_asSource[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("target")] = true;
-                            _theStroke.removeClass("hovered-item");
-                            // recover lighted bars
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                $(".bar-" + nodeId).removeClass("hovered-item");
-                            });
-                        }
-                    });
-
-                    _asTarget.each((i) => {
-                        let _theStroke = $(_asTarget[i]);
-                        if (!_theStroke.hasClass("invalid-arc")) {
-                            nodeMap[_theStroke.attr("source")] = true;
-                            _theStroke.removeClass("hovered-item");
-                            // recover lighted bars
-                            [_theStroke.attr("source"), _theStroke.attr("target")].forEach((nodeId) => {
-                                $(".bar-" + nodeId).removeClass("hovered-item");
-                            });
-                        }
-                    });
-
-                    // remove ref lines
-                    $("#diffusion-ref-line-group").empty();
-
-                    Object.keys(nodeMap).forEach((nodeId) => {
-                        $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-                    });
-                }
-            };
-
-        __svg.off();
+        __pathG.off();
+        __circleG.off();
 
         // mouseover events
-        __svg.on('mouseover', pathOverHandler);
-        __svg.on('mouseover', circleOverHandler);
+        __pathG.on('mouseover', e => _self.pathOverHandler(e));
+        __circleG.on('mouseover', e => _self.circleOverHandler(e));
 
         // mouseout events
-        __svg.on('mouseout', pathOutHandler);
-        __svg.on('mouseout', circleOutHandler);
+        __pathG.on('mouseout', e => _self.pathOutHandler(e));
+        __circleG.on('mouseout', e => _self.circleOutHandler(e));
 
     },
     drawRefLines(nodeId, validityCategory) {
 
-        let _self = this,
-            _attr = this._attr,
+        let _attr = this._attr,
             nodes = _attr.nodes,
             xScale = _attr.xScale,
             yTopScale = _attr.yTopScale,
@@ -2041,13 +2702,19 @@ let DiffusionView = Backbone.View.extend({
     }
 });
 
+/**
+ * RingView:
+ * - to display policy cluster
+ * - to reveal cluster detail in tooltip when hovered
+ * - to have a cluster selected when clicked
+ */
 let RingView = Backbone.View.extend({
     el: "#svg-ring-view",
     initialize() {
         this._attr = {};
-        $(this.el).on('mouseleave', () => {
-            $("#ring-tooltip").css("opacity", 0);
-        });
+    },
+    events: {
+        'click': 'switchCluster'
     },
     render(conditions) {
         let _self = this,
@@ -2057,15 +2724,17 @@ let RingView = Backbone.View.extend({
             nameDomain = _.concat(method, clusterObj.children.map((d) => d.name)),
             colorSchema = d3.scale.ordinal()
             .domain(nameDomain)
-            .range(method === "subject" ? color15 : color7),
+            .range(method === "subject" ? color15 : color21),
             ldaTerms = conf.static.ldaTerms;
 
         $(_self.el).empty();
         $("#ring-tooltip").remove();
 
+        // compute full canvas size
         let _width = gs.r.margin.left + gs.r.margin.right + gs.r.size.width,
             _height = gs.r.margin.top + gs.r.margin.bottom + gs.r.size.height;
 
+        // create svg element and groups for ring and label
         let svg = _attr.svg = d3.select(_self.el)
             .attr({
                 'preserveAspectRatio': 'xMidYMid meet',
@@ -2083,42 +2752,43 @@ let RingView = Backbone.View.extend({
                 transform: "translate(" + (_width / 2) + "," + (_height / 2) + ")"
             });
 
+        // create layout and arc generator
         let partition = d3.layout.partition()
             .sort((a, b) => a.size - b.size)
-            .size(method === "subject" ? [2 * Math.PI, 2 * gs.r.size.r] : [2 * Math.PI, gs.r.size.r * gs.r.size.r])
+            .size([2 * Math.PI, 2 * gs.r.size.r])
             .value(d => d.size),
-            arc = (method === "subject" ?
-                d3.svg.arc()
+            arc = (d3.svg.arc()
                 .startAngle(d => d.x)
                 .endAngle(d => d.x + d.dx)
                 .innerRadius(d => d.depth * d.y / 2)
-                .outerRadius(d => (d.depth * (d.y) + d.dy) / 2) :
-                d3.svg.arc()
-                .startAngle(d => d.x)
-                .endAngle(d => d.x + d.dx)
-                .innerRadius(d => Math.sqrt(d.y))
-                .outerRadius(d => Math.sqrt(d.y + d.dy))),
+                .outerRadius(d => (d.depth * (d.y) + d.dy) / 2)),
+
             tooltip = d3.select("body")
             .append("div")
             .attr("id", "ring-tooltip");
 
+        // data binding
         let paths = ringG.datum(clusterObj).selectAll("path")
             .data(partition.nodes),
             labels = labelG.datum(clusterObj).selectAll("text")
             .data(partition.nodes);
 
+        // expose variables for modular access
         $.extend(_attr, {
             ringG: ringG,
-            labelG: labelG
+            labelG: labelG,
+            c: conditions
         });
 
+        // create paths (arcs) and bind events
         paths.enter().append("path")
             .attr({
                 d: arc,
-                seq: d => getFullSeqStr(d)
+                seq: d => getFullSeqStr(d),
+                id: d => getElementId(d) // Add id to each path
             })
             .style({
-                stroke: "#fff",
+                stroke: "", // No stroke as default
                 fill: d => {
                     if (d.depth === 0 || d.depth === 1) {
                         return colorSchema(d.name);
@@ -2133,22 +2803,45 @@ let RingView = Backbone.View.extend({
             .on("mouseout", mouseOutArc)
             .on("click", mouseClickArc);
 
+        // create labels
         labels.enter().append("text")
             .attr({
                 transform: d => "rotate(" + computeTextRotation(d) + ")",
-                x: d => (method === "subject" ?
-                    d.depth * d.y / 2 :
-                    Math.sqrt(d.y)),
+                x: d => (d.depth * d.y / 2),
                 dx: 6, // margin
-                dy: ".35em"
+                dy: ".35em",
+                id: d => getElementId(d) // Add id to each text, corresponds to path id
             }) // vertical-align
             .text(d => displayText(d));
 
+        // Inital ring
+        initialStroke();
+
+        /**
+         * get ID for each element.
+         * @param {object} d current node
+         */
+        function getElementId(d) {
+            if (d.depth === 0) {
+                return "node";
+            } else {
+                return method === "subject" ? d.id : d.name;
+            }
+        };
+
+        /**
+         * compute rotation angle for each label.
+         * @param {object} d current node
+         */
         function computeTextRotation(d) {
             let shift = (d.depth === 0 ? 180 : -90);
             return (d.x + d.dx / 2) * 180 / Math.PI + shift;
         };
 
+        /**
+         * retrieve cluster identifier from node object.
+         * @param {object} d current node
+         */
         function getSeqStr(d) {
             let seq = "",
                 curr = d;
@@ -2159,10 +2852,18 @@ let RingView = Backbone.View.extend({
             return _.trimStart(seq, "-");
         };
 
+        /**
+         * add leading '0' to form the key to retrieve cluster terms.
+         * @param {object} d current node
+         */
         function getFullSeqStr(d) {
             return d.depth ? "0-" + getSeqStr(d) : "0";
         };
 
+        /**
+         * to generate label on the arcs.
+         * @param {object} d current node
+         */
         function getHead(d) {
             if (d.depth) {
                 if (method === "subject") {
@@ -2174,12 +2875,13 @@ let RingView = Backbone.View.extend({
                 return "all";
             }
         };
-
+        /**
+         * adjust the label to fit in thickness of arcs.
+         * @param {object} d current node
+         */
         function displayText(d) {
             let text = getHead(d),
-                thickness = (method === "subject" ?
-                    (d.dy) / 2 :
-                    Math.sqrt(d.y + d.dy) - Math.sqrt(d.y));
+                thickness = ((d.dy) / 2);
             if (text.length * 8 < thickness) {
                 return text;
             } else {
@@ -2187,6 +2889,10 @@ let RingView = Backbone.View.extend({
             }
         };
 
+        /**
+         * to generate tooltip text.
+         * @param {object} d current node
+         */
         function formatDescription(d) {
             let ldaTerm = "";
             if (method === "text") {
@@ -2196,11 +2902,11 @@ let RingView = Backbone.View.extend({
                     ldaTerm += "<b>Terms:&nbsp;</b>"
                     for (let i in termArr) {
                         ldaTerm += termArr[i] + ", ";
-                        if ((+i + 1) / 5 === 1) {
+                        if ((+i + 1) % 5 === 0) {
                             ldaTerm += "</br>";
                         }
                     }
-                    ldaTerm = ldaTerm.trim().replace(/,+$/, "") + '</br>'; // replace tailing comma with a break
+                    ldaTerm = ldaTerm.replace(/<\/br>+$/, "").trim().replace(/,+$/, "") + '</br>'; // replace tailing and break
                 }
             }
             return '<b>' + (method === "text" ? "Cluster" : "Subject") + ':&nbsp;</b>' + getHead(d) + '</br>' +
@@ -2208,18 +2914,30 @@ let RingView = Backbone.View.extend({
                 "<b>Total:&nbsp;</b>" + d.size + '&nbsp;policies';
         };
 
+        /* event handlers */
+
         function mouseOverArc(d) {
-            d3.select(this).style("stroke", "black");
+            // d3.select(this).style("stroke", "black");
+
+            // Change corresponding text color to red
+            if (d.depth === 0) {
+                d3.select('g#ring-label-group').selectAll("text").filter(d => d.depth === 0).style("fill", "red");
+            } else {
+                d3.select('g#ring-label-group').selectAll("text").filter(d => (method === "subject" ? d.id : d.name) === parseInt(d3.select(this).attr("id"))).style("fill", "red");
+            }
             tooltip.html(formatDescription(d));
             return tooltip.style("opacity", 0.9);
         };
 
-        function mouseOutArc() {
-            d3.select(this).style("stroke", "");
+        function mouseOutArc(d) {
+            // d3.select(this).style("stroke", "white");
+
+            // Change all text color to black
+            d3.select('g#ring-label-group').selectAll("text").style("fill", "black");
             return tooltip.style("opacity", 0);
         };
 
-        function mouseMoveArc(d) {
+        function mouseMoveArc() {
             return tooltip.style({
                 top: (d3.event.pageY + gs.r.margin.tShiftY) + "px",
                 left: (d3.event.pageX + gs.r.margin.tShiftX) + "px"
@@ -2227,23 +2945,184 @@ let RingView = Backbone.View.extend({
         };
 
         function mouseClickArc() {
+            d3.select(this).moveToFront();
             let __target = $(d3.event.target),
-                __prevSelected = $("#ring-group .hovered-item");
-            $("#ring-group path").removeClass("hovered-item");
+                __prevSelected = $("#ring-group .clicked-item");
             if (__prevSelected[0] !== __target[0]) {
-                __target.addClass("hovered-item");
+                $("#ring-group path").removeClass("clicked-item");
+                __target.addClass("clicked-item");
             }
         };
 
-        // this.bindTriggers();
+        function initialStroke() {
+            d3.select('#node').moveToFront();
+            $("#ring-group #node").addClass("clicked-item");
+        };
+
         return this;
     },
-    bindTriggers() {
-        let __svg = $(this.el);
-        __svg.off();
-        __svg.on("mouseout", () => {
-            d3.select("#ring-tooltip").style("opacity", 0);
-        });
+    /**
+     * ring view click, update policy group
+     * @param {object} e event
+     */
+    switchCluster(e) {
+        let seq = $(e.target).attr("seq"),
+            seqList = seq.split("-"),
+            conditions = this._attr.c;
+        switch (conditions.get("method")) {
+            case "subject":
+                let subjectId = (seqList.length === 1 ?
+                        conf.bases.subject.id :
+                        seqList[1]),
+                    subjectName = conf.pipe.subjectIdToName[subjectId];
+                conditions.set({
+                    "subject": subjectName,
+                    "param": seq,
+                    "policy": conf.bases.policy.default
+                });
+                break;
+            case "text":
+                conditions.set({
+                    "param": seq,
+                    "policy": conf.bases.policy.default
+                });
+                break;
+            default:
+                break;
+        }
+    }
+});
+
+/**
+ * Dropdowns
+ * Customized dropdown menu that:
+ * - can be disabled/enabled entirely or patially
+ * - has a changeable label
+ */
+let DropdownController = Backbone.View.extend({
+    render() {},
+    /**
+     * set dropdown label text.
+     * @param {string} labelString to be set to the dropdown.
+     */
+    label(labelString) {
+        this.$el.find(".dropdown-toggle").contents().first().replaceWith(labelString);
+        return this;
+    },
+    /**
+     * disable the dropdown.
+     */
+    disable() {
+        this.$el.addClass("disabled");
+        return this;
+    },
+    /**
+     * enable the dropdown.
+     */
+    enable() {
+        this.$el.removeClass("disabled");
+    },
+    /**
+     * disable single or multiple options
+     * @param {string|Array<string>} arguments one single aid or an aid array.
+     */
+    disableOption() {
+        let __lis = this.$el.find(".dropdown-menu");
+        if (typeof arguments[0] === "string") {
+            // single option
+            __lis.find("a[aid=" + arguments[0] + "]").parent().addClass("disabled");
+        } else {
+            // multi-option
+            for (let aid of arguments[0]) {
+                __lis.find("a[aid=" + aid + "]").parent().addClass("disabled");
+            }
+        }
+    },
+    /**
+     * enable one single option or multiple options or all option.
+     * @param {string|Array<string>|null} arguments one single aid to enable, or aid array to enable, or null to enable all options.
+     */
+    enableOption() {
+        let __lis = this.$el.find(".dropdown-menu");
+        if (!arguments.length) {
+            // enable all options
+            __lis.each(() => {
+                // @this current <li>
+                $(this).removeClass("disabled");
+            })
+        } else if (typeof arguments[0] === "string") {
+            // enable one single option
+            __lis.find("a[aid=" + arguments[0] + "]").parent().removeClass("disabled");
+        } else {
+            // enable multiple options
+            for (let aid of arguments[0]) {
+                __lis.find("a[aid=" + aid + "]").parent().removeClass("disabled");
+            }
+        }
+    },
+    /**
+     * pick one or multiple options.
+     * @param {string|Array<string>} arguments one single aid or an aid array.
+     */
+    pickOption() {
+        this.clearOption();
+        if (typeof arguments[0] === "string") {
+            // single selection
+            this.$el.find("ul a[aid=" + arguments[0] + "]").parent().addClass("active");
+        } else {
+            // multi-selection
+            console.log("//TODO");
+        }
+    },
+    /**
+     * clear one or all selections.
+     * @param {string|null} arguments one single aid to be cleared or null to clear all selections.
+     */
+    clearOption() {
+        if (!arguments.length) {
+            // clear all selection
+            this.$el.find("ul>li[class='active']").removeClass("active");
+        } else {
+            // clear selection specified by arguments[0]
+            this.$el.find("ul>li[aid=" + arguments[0] + "]").removeClass("active");
+        }
+    }
+});
+
+/**
+ * Switchs
+ * Customized switch component that:
+ * - can append a label as title
+ * - can apply two alignment
+ */
+let BootstrapSwitchView = Backbone.View.extend({
+    initialize() {
+        this.$el.hide();
+        this.$el.addClass("bs-switch-wrapper");
+        this.$el.append("<span></span>", "<input type='checkbox'>");
+    },
+    label(labelString) {
+        this.$el.find("span").html(labelString + "&nbsp;");
+        return this;
+    },
+    align(alignment) {
+        switch (alignment) {
+            case "right":
+                this.$el.addClass("bootstrap-switch-right");
+                break;
+            case "left":
+                this.$el.addClass("bootstrap-switch-left");
+                break;
+        }
+        return this;
+    },
+    render(opts) {
+        this.$el.find("input").bootstrapSwitch(opts);
+        this.$el.show();
+        return this;
+    },
+    $switch() {
+        return this.$el.find(".bootstrap-switch");
     }
 });
 
@@ -2258,9 +3137,13 @@ module.exports = {
     PolicyView: PolicyView,
     PolicyDetailView: PolicyDetailView,
     PolicyTrendView: PolicyTrendView,
+    PolicyNetworkView: PolicyNetworkView,
     GeoView: GeoView,
     RingView: RingView,
     NetworkView: NetworkView,
     DiffusionView: DiffusionView,
-    PolicyGroupView: PolicyGroupView
+    PolicyGroupView: PolicyGroupView,
+    DropdownController: DropdownController,
+    BootstrapSwitchView: BootstrapSwitchView,
+    PlaygroundView: PlaygroundView
 };

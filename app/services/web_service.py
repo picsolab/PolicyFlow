@@ -7,7 +7,9 @@ import random
 from .helper import DecimalEncoder
 from .base_service import BaseService
 from .computing_service import ComputingService
-from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao
+from ..models import get_state_index
+from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao, \
+    PolicySimilarityDao
 
 computing_service = ComputingService()
 
@@ -23,13 +25,10 @@ class PageService(BaseService):
     def get_subject_list():
         """get all subject from database."""
         output = {}
-        subject_pipe = {}
         policy_set = {}
         policy_pipe = {}
-        subjects = SubjectDao.get_all_valid_subjects()
+        subject_pipe = SubjectService.get_valid_subject_pipe()
         policies = PolicyDao.get_policy_id_name_subject()
-        for subject in subjects:
-            subject_pipe[subject.subjectId] = subject.subjectName
         for policy in policies:
             if policy.policySubjectId in subject_pipe:
                 policy_set.setdefault(subject_pipe[policy.policySubjectId], []).append(policy.policyId)
@@ -45,21 +44,17 @@ class PageService(BaseService):
     def get_cluster_based_on_cluster_method(cluster_method):
         """get cluster"""
         output = {"name": cluster_method}
+        children = []
         if cluster_method == "subject":
             subjects = SubjectDao.get_all_valid_subjects()
             children = [{"name": s.subjectName, "id": s.subjectId, "valid": s.subjectValid, "size": len(s.policies)}
                         for s in subjects]
-            output["children"] = children
-            output["size"] = reduce(lambda x, y: x + y["size"], children, 0)
         elif cluster_method == "text":
             reduced_policy = {}
             policies = PolicyDao.get_policy_per_lda_cluster()
-            for policy in policies:
-                reduced_policy.setdefault(policy[0], []).append({"name": policy[1], "size": policy[2]})
-            output["children"] = reduce(lambda x, y: x + [{"name": y, "children": reduced_policy[y],
-                                                           "size": reduce(lambda a, b: a + b["size"], reduced_policy[y],
-                                                                          0)}], reduced_policy, [])
-            output["size"] = reduce(lambda x, y: x + y["size"], output["children"], 0)
+            children = [{"name": p.policyLda1, "size": p.policyCount} for p in policies]
+        output["children"] = children
+        output["size"] = reduce(lambda x, y: x + y["size"], children, 0)
         return json.dumps(output)
 
 
@@ -108,6 +103,22 @@ class PolicyService(BaseService):
         return method, param, start_year, end_year
 
     @staticmethod
+    def get_policy_id_list_n_set():
+        global subject_pipe
+        policies = PolicyDao.get_policy_id_name_subject()
+        policy_ids_list = []
+        policy_ids_dict = {}
+        for index, policy in enumerate(policies):
+            policy_ids_list.append({
+                "index": index,
+                "policyId": policy.policyId,
+                "policyName": policy.policyName,
+                "policySubject": subject_pipe[policy.policySubjectId]
+            })
+            policy_ids_dict[policy.policyId] = index
+        return policy_ids_list, policy_ids_dict
+
+    @staticmethod
     def get_q_policy_group(method, param, start_year, end_year):
         policy_dao = PolicyDao(start_year=start_year, end_year=end_year)
         if method == 'subject':
@@ -150,8 +161,8 @@ class PolicyService(BaseService):
         years = detail.keys()
         output["policyId"] = result.policyId
         output["policyName"] = result.policyName
-        output["policyStart"] = min(years)
-        output["policyEnd"] = max(years)
+        output["policyStart"] = None if len(years) == 0 else min(years)
+        output["policyEnd"] = None if len(years) == 0 else max(years)
         output["detail"] = detail
         output["message"] = "success"
         return json.dumps(output)
@@ -159,13 +170,19 @@ class PolicyService(BaseService):
     @staticmethod
     @app.route("/api/policies/")
     def get_policies_by_params():
+        global policy_contains_full_text_set
         method, param, start_year, end_year = PolicyService.parse_args(request.args)
         policies = PolicyService.get_policy_group(method, param, start_year, end_year)
 
         if policies is not None:
-            return json.dumps({"policies": [
-                {"policy_id": p.policyId, "policy_name": p.policyName, "subject": p.subject.subjectName,
-                 "policy_start": p.policyStart, "policy_end": p.policyEnd}
+            return json.dumps({"policies": [{
+                "policy_id": p.policyId,
+                "policy_name": p.policyName,
+                "subject": p.subject.subjectName,
+                "policy_start": p.policyStart,
+                "policy_end": p.policyEnd,
+                "adoption_count": len(p.cascades),
+                "has_full_text": p.policyId in policy_contains_full_text_set}
                 for p in policies]})
 
         return json.dumps({})
@@ -189,13 +206,29 @@ class PolicyService(BaseService):
 
         q_policies = PolicyService.get_q_policy_group(method, param, start_year, end_year)
         text_top, cascade_top = policy_dao.get_top_similar_policies(q_policies, policy_id, 5)
-        text_similarities = [{"policy_id": item.policyId2, "policy_name": item.policyName,
-                              "policy_text_similarity": item.policyTextSimilarity} for item in text_top]
-        cascade_similarities = [{"policy_id": item.policyId2, "policy_name": item.policyName,
-                                 "policy_cascade_similarity": item.policyCascadeSimilarity} for item in cascade_top]
+        text_similarities = [{
+            "policy_id": item.policyId2,
+            "policy_name": item.policyName,
+            "policy_text_similarity": item.policyTextSimilarity}
+            for item in text_top]
+        cascade_similarities = [{
+            "policy_id": item.policyId2,
+            "policy_name": item.policyName,
+            "policy_cascade_similarity": item.policyCascadeSimilarity}
+            for item in cascade_top]
         output["text_similarities"] = text_similarities
         output["cascade_similarities"] = cascade_similarities
         return json.dumps(output, cls=DecimalEncoder)
+
+    @staticmethod
+    @app.route("/api/policy/network/")
+    def get_policy_network():
+        global policy_id_list, text_similarity_list, cascade_similarity_list
+        return json.dumps({
+            "policies": policy_id_list,
+            "text_similarities": text_similarity_list,
+            "cascade_similarities": cascade_similarity_list},
+            cls=DecimalEncoder)
 
     @staticmethod
     @app.route("/api/policy/trend/<method>/<param>")
@@ -277,6 +310,7 @@ class NetworkService(BaseService):
             temp_object = {}
             stateId = state.stateId
             temp_object["stateId"] = stateId
+            temp_object["stateIndex"] = get_state_index(stateId)
             temp_object["stateName"] = state.stateName
             temp_meta_set = {}
             if stateId == "NE":
@@ -350,8 +384,73 @@ class NetworkService(BaseService):
         return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
 
 
+class PolicySimilarityService(BaseService):
+    @staticmethod
+    def get_similarity_matrices():
+        global policy_count
+        text_similarities = [[None] * policy_count for i in range(policy_count)]
+        cascade_similarities = [[None] * policy_count for i in range(policy_count)]
+        similarities = PolicySimilarityDao.get_all_similarities()
+        for similarity in similarities:
+            index1 = policy_id_dict[similarity.policyId1]
+            index2 = policy_id_dict[similarity.policyId2]
+            text_similarities[index1][index2] = similarity.policyTextSimilarity
+            cascade_similarities[index1][index2] = similarity.policyCascadeSimilarity
+        for i in range(policy_count):
+            text_similarities[i][i] = 1
+            cascade_similarities[i][i] = 1
+        return text_similarities, cascade_similarities
+
+
+class PolicyTextService(BaseService):
+    @staticmethod
+    def get_policy_contain_full_text():
+        policy_set = set()
+        policies = PolicyTextDao.get_policy_with_full_text()
+        for policy in policies:
+            policy_set.add(policy.policyId)
+        return policy_set
+
+
+class SubjectService(BaseService):
+    @staticmethod
+    def get_valid_subject_pipe():
+        subject_dict = {}
+        subjects = SubjectDao.get_all_valid_subjects()
+        for subject in subjects:
+            subject_dict[subject.subjectId] = subject.subjectName
+        return subject_dict
+
+    @staticmethod
+    def get_subject_pipe():
+        subject_dict = {}
+        subjects = SubjectDao.get_all_subjects()
+        for subject in subjects:
+            subject_dict[subject.subjectId] = subject.subjectName
+        return subject_dict
+
+
 class ServiceUtils:
     """service utils"""
 
     def __init__(self):
         pass
+
+
+def __init__():
+    """init globals, do not change order"""
+    global subject_pipe
+    subject_pipe = SubjectService.get_subject_pipe()
+
+    global policy_id_list, policy_id_dict, policy_count
+    policy_id_list, policy_id_dict = PolicyService.get_policy_id_list_n_set()
+    policy_count = len(policy_id_dict)
+
+    global text_similarity_list, cascade_similarity_list
+    text_similarity_list, cascade_similarity_list = PolicySimilarityService.get_similarity_matrices()
+
+    global policy_contains_full_text_set
+    policy_contains_full_text_set = PolicyTextService.get_policy_contain_full_text()
+
+
+__init__()

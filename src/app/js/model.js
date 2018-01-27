@@ -15,20 +15,48 @@ let Conditions = Backbone.Model.extend({
         param: conf.pipe.subjectToId[conf.bases.subject.default],
         startYear: 0,
         endYear: 9999,
-        networkIters: 50
+        networkIters: 50,
+        nodeRelevance: conf.bases.nodeRelevance[0].id
     },
     initialize: () => {},
     setupCentralityValidity() {
-        let validity = this.get("metadata") === "centrality" || this.get("sequence") === "centrality";
+        // either is on "centrality"
+        let validity = (this.get("metadata") === conf.bases.yAttributeList[0].id ||
+            this.get("sequence") === conf.bases.xAttributeList[0].id);
         this.set("cvalidity", validity);
+        return this;
     },
+    /**
+     * modify selected states according to use's selection.
+     * @param {string} tract state id string    
+     */
     toggleTractList(tract) {
         let theListName = this.getTractListName(),
             theList = this.getTractList();
-        if (_.indexOf(theList, tract) !== -1) {
-            this.set(theListName, _.filter(theList, (o) => o !== tract));
-        } else {
+        if (_.indexOf(theList, tract) === -1) {
+            // append the selected state to corresponding list if it does not exist
             this.set(theListName, _.concat(theList, tract));
+        } else {
+            // remove the selected state from the list if it exists
+            this.set(theListName, _.filter(theList, (o) => o !== tract));
+        }
+    },
+    /**
+     * Retrieve current selection of states as a list.
+     * @returns {Array<string>} state list in their IDs.
+     */
+    getSelectedIds() {
+        let _self = this;
+        if ((this.get("regionList").length === 0 && this.get("stateList").length === 0)) {
+            return _.flatMap(conf.static.regions);
+        }
+        switch (this.get("geoBase")) {
+            case "state":
+                return this.get("stateList");
+            case "region":
+                return _.flatten(_self.get("regionList").map(region => conf.static.regions[region]))
+            default:
+                //shouldn't happen
         }
     },
     getTractList() {
@@ -48,7 +76,7 @@ let Conditions = Backbone.Model.extend({
 
 let PolicyOptionsModel = Backbone.Model.extend({
     url: '/api/subjects',
-    parse(response, options) {
+    parse(response) {
         this.set({
             "pipe": response.pipe,
             "policies": $.extend({ "All": response.all }, response.policies)
@@ -57,6 +85,7 @@ let PolicyOptionsModel = Backbone.Model.extend({
 });
 
 let PolicyModel = Backbone.Model.extend({
+    idAttribute: "policyId",
     initialize() {
         this.urlRoot = conf.api.root + conf.api.policyBase;
         this.url = this.urlRoot + conf.bases.policy.default;
@@ -159,7 +188,8 @@ let DynamicNetworkModel = Backbone.Model.extend({
             _self.set({
                 "edgesInStateIds": data,
                 "edgesInIndices": edgesInIndices
-            });
+            }, { silent: true });
+            _self.trigger("change");
         });
     }
 });
@@ -188,6 +218,19 @@ let NetworkModel = Backbone.Model.extend({
                 cstat: centralityStat
             }, { silent: true });
             _self.trigger("change");
+        });
+    }
+});
+
+let PolicyNetworkModel = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.policyBase + conf.api.networkBase;
+        this.url = this.urlRoot;
+    },
+    populate() {
+        let _self = this;
+        $.getJSON(_self.url).done(data => {
+            _self.set(data);
         });
     }
 });
@@ -264,7 +307,8 @@ let PolicyGroupModel = Backbone.Model.extend({
             "start_year": conditions.get("startYear"),
             "end_year": conditions.get("endYear")
         }).done(data => {
-            this.set(data);
+            this.set(data, { silent: true });
+            this.trigger("change");
         });
     }
 });
@@ -292,6 +336,7 @@ module.exports = {
     PolicyOptionsModel: PolicyOptionsModel,
     PolicyDetailModel: PolicyDetailModel,
     PolicyTrendModel: PolicyTrendModel,
+    PolicyNetworkModel: PolicyNetworkModel,
     GeoModel: GeoModel,
     NetworkModel: NetworkModel,
     DynamicNetworkModel: DynamicNetworkModel,

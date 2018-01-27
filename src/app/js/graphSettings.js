@@ -1,5 +1,21 @@
 const css_variables = require('!css-variables-loader!../css/variables.css');
 const GraphSettings = {
+    // policy network settings
+    pn: {
+        margin: {
+            top: 50,
+            right: 50,
+            bottom: 50,
+            left: 50
+        },
+        size: {
+            width: 500,
+            height: 500
+        },
+        multiplier: {},
+        config: {}
+    },
+
     // policy view settings
     p: {
         margin: {
@@ -16,7 +32,7 @@ const GraphSettings = {
         },
         size: {
             width: 270,
-            height: 600
+            height: 585
         },
         multiplier: {
 
@@ -33,7 +49,9 @@ const GraphSettings = {
             top: 25,
             left: 15,
             bottom: 25,
-            right: 10
+            right: 10,
+            yLabelTransform: "translate(5,0) rotate(90)",
+            xLabel: -12
         },
         size: {
             // width: 850,
@@ -52,7 +70,8 @@ const GraphSettings = {
             rectHeight: 2
         },
         multiplier: {
-            snapshot: 0.25
+            snapshot: 0.25,
+            text: 7
         },
         config: {
             transitionTime: 1500
@@ -137,11 +156,15 @@ const GraphSettings = {
             left: 10,
             bottom: 10,
             right: 10,
-            labelXShift: 2
+            labelXShift: 2,
+            legendYShift: 15,
+            legendTextShift: 3,
+            collisionMargin: 8
         },
         size: {
-            height: 500,
-            width: 500
+            height: 450,
+            width: 500,
+            legendWidth: 120
         },
         multiplier: {
 

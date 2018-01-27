@@ -16,7 +16,7 @@ class BaseDao(object):
     def helper_get_valid_year(year):
         max_year = 1999
         min_year = 1960
-        if year < max_year:
+        if year < min_year:
             year = min_year
         elif year > max_year:
             year = max_year
@@ -89,6 +89,10 @@ class PolicyTextDao(BaseDao):
     def get_policy_text_by_policy_id(policy_id):
         return PolicyText.query.filter(PolicyText.policyId == policy_id).first()
 
+    @staticmethod
+    def get_policy_with_full_text():
+        return PolicyText.query.filter(PolicyText.fullText1 != "").all()
+
 
 class PolicyDao(BaseDao):
     """policy dao providing policy related data"""
@@ -104,32 +108,36 @@ class PolicyDao(BaseDao):
         return Policy.query.all()
 
     @staticmethod
+    def get_policy_ids():
+        return Policy.query.with_entities(Policy.policyId).all()
+
+    @staticmethod
     def get_policy_id_name_subject():
         return Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId).all()
 
     @staticmethod
     def get_policy_per_lda_cluster():
-        stmt = text("SELECT policy_lda_1 AS policyLda1, policy_lda_2 AS policyLda2, COUNT(*) AS policyCount "
-                    "FROM policy "
-                    "GROUP BY policy_lda_1, policy_lda_2 "
-                    "HAVING policyCount >= 5")
-        return db.session.execute(stmt).fetchall()
+        policy_count = func.count().label('policyCount')
+        policy_lda1 = Policy.policyLda1.label('policyLda1')
+        # stmt = text("SELECT policy_lda_1 AS policyLda1, policy_lda_2 AS policyLda2, COUNT(*) AS policyCount "
+        #             "FROM policy "
+        #             "GROUP BY policy_lda_1, policy_lda_2 "
+        #             "HAVING policyCount >= 5")
+        return Session().query(policy_lda1, policy_count).group_by(policy_lda1).having(policy_count >= 5)
 
     @staticmethod
     def get_policy_by_id(policy_id):
         return Policy.query.filter(Policy.policyId == policy_id).first()
 
     def get_q_all_policies_with_valid_cluster_count(self):
-        policy_count = func.count().label('policy_count')
+        policy_count = func.count().label('policyCount')
         policy_lda1 = Policy.policyLda1.label('policyLda1')
-        policy_lda2 = Policy.policyLda2.label('policyLda2')
-        lda_tuple = tuple_(Policy.policyLda1, Policy.policyLda2)
-        sq_policy = Session().query(policy_lda1, policy_lda2, policy_count) \
-            .group_by(policy_lda1, policy_lda2) \
+        sq_policy = Session().query(policy_lda1, policy_count) \
+            .group_by(policy_lda1) \
             .having(policy_count > 5) \
             .subquery()
-        valid_lda_tuples = Session().query(sq_policy.c.policyLda1, sq_policy.c.policyLda2).subquery()
-        return Session().query(Policy).filter(lda_tuple.in_(valid_lda_tuples),
+        valid_ldas = Session().query(sq_policy.c.policyLda1).subquery()
+        return Session().query(Policy).filter(policy_lda1.in_(valid_ldas),
                                               Policy.policyStart >= self.start_year,
                                               Policy.policyEnd <= self.end_year)
 
@@ -148,10 +156,12 @@ class PolicyDao(BaseDao):
             return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyStart >= self.start_year,
                                        Policy.policyEnd <= self.end_year)
         elif len(params) == 3:
+            # currently won't be reached
             return Policy.query.filter(Policy.policyLda1 == params[1], Policy.policyLda2 == params[2],
                                        Policy.policyStart >= self.start_year, Policy.policyEnd <= self.end_year)
 
-    def get_top_similar_policies(self, q_policies, policy_id, top_count):
+    @staticmethod
+    def get_top_similar_policies(q_policies, policy_id, top_count):
         p_id_1 = PolicySimilarity.policyId1.label('policyId1')
         p_id_2 = PolicySimilarity.policyId2.label('policyId2')
         p_ts = PolicySimilarity.policyTextSimilarity.label('policyTextSimilarity')
@@ -164,6 +174,22 @@ class PolicyDao(BaseDao):
         cascade_top = all_filtered_policies.from_self(p_id_2, p_name, p_cs) \
             .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_cs.desc()).limit(top_count)
         return text_top, cascade_top
+
+
+class PolicySimilarityDao(BaseDao):
+    """policy similarity dao providing policy similarity related data"""
+
+    @staticmethod
+    def get_all_similarities():
+        return PolicySimilarity.query.all()
+
+    @staticmethod
+    def get_text_similarity():
+        return Session().query(PolicySimilarity.policyId1, PolicySimilarity.policyId2, PolicySimilarity.policyTextSimilarity).all()
+
+    @staticmethod
+    def get_cascade_similarity():
+        return Session().query(PolicySimilarity.policyId1, PolicySimilarity.policyId2, PolicySimilarity.policyCascadeSimilarity).all()
 
 
 class TextQueryDao(BaseDao):

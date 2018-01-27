@@ -5,11 +5,51 @@ A workspace to run some data manipulations.
 
 ## Database change logs
 
+### 20171117
+
+new policy text from Scott, and convert character set to utf-8.
+
+Dump: 
+
+- `./backup/diffusion_v2_utf8.sql`
+- `./backup/diffusion_v2_1.sql`
+
+Script:
+
+- `./scripts/db_migration/migrate_1117_add_full_text.sql`
+- `./scripts/migrate.py`
+
+### 20171008
+
+trim leading spaces in policy names.
+
+`update policy set policy_name = trim(policy_name);`
+
+### 20170924
+
+back up entire database of PolicyFlow `v2.0.0`.
+
+Dump: `./backup/diffusion2017vis_v2.sql`
+
+### 20170912
+
+update policy clusters model using [Google word2vec](https://code.google.com/archive/p/word2vec/), the pre-trained model can be download [here](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit).
+
+Script:
+
+- update `policy`: `./scripts/migrate_0912_update_policy_cluster.sql`
+- update `policy_similarity`: `./scripts/migrate_0912_policy_similarity.sql`
+- update `policy_text`: `./scripts/migrate_0912_update_policy_text.sql`
+
+Dump: `./backup/diffusion2017vis_20170912.sql`
+
+
 ### 20170829
 
 backup.
 
 Dump: `./backup/diffusion2017vis_20170829.sql`
+
 
 ### 20170825
 
