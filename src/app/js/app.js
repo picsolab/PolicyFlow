@@ -8,19 +8,17 @@ let Collection = require('./collection.js');
 let appRouter = new Router.AppRouter();
 let conditions = new Model.Conditions(),
     policyGroupModel = new Model.PolicyGroupModel(),
-    policyModel = new Model.PolicyModel(),
+    // policyModel = new Model.PolicyModel(),
     policyDetailModel = new Model.PolicyDetailModel(),
     policyTrendModel = new Model.PolicyTrendModel(),
     geoModel = new Model.GeoModel(),
     ringModel = new Model.RingModel(),
     networkModel = new Model.NetworkModel(),
-    diffusionModel = new Model.DiffusionModel(),
+    // diffusionModel = new Model.DiffusionModel(),
+    diffusionModel2 = new Model.DiffusionModel2(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
     snapshotCollection = new Collection.SnapshotCollection();
-let policyView = new View.PolicyView({
-        model: policyModel
-    }),
-    policyDetailView = new View.PolicyDetailView({
+let policyDetailView = new View.PolicyDetailView({
         model: policyDetailModel
     }),
     policyTrendView = new View.PolicyTrendView({
@@ -35,8 +33,11 @@ let policyView = new View.PolicyView({
     networkView = new View.NetworkView({
         model: networkModel
     }),
-    diffusionView = new View.DiffusionView({
-        model: diffusionModel
+    // diffusionView = new View.DiffusionView({
+    //     model: diffusionModel
+    // }),
+    diffusionView2 = new View.DiffusionView2({
+        model: diffusionModel2
     }),
     policyGroupView = new View.PolicyGroupView({
         model: policyGroupModel
@@ -52,10 +53,13 @@ let policyView = new View.PolicyView({
     }),
     geoSwitch = new View.BootstrapSwitchView({
         el: "#geo-switch"
-    }),
-    sequenceSwitch = new View.BootstrapSwitchView({
-        el: "#sequence-switch"
     });
+    // sequenceSwitch = new View.BootstrapSwitchView({
+    //     el: "#sequence-switch"
+    // });
+    // policyView = new View.PolicyView({
+    //     model: policyModel
+    // })
 
 $(document).ready(() => {
     setupRenderingTriggers();
@@ -88,7 +92,7 @@ function setupRenderingControllers() {
         if (conditions.hasChanged('policy')) {
             setupNav(conditions);
             policyDetailModel.populate(conditions);
-            policyModel.populate(conditions);
+            // policyModel.populate(conditions);
             geoModel.populate(conditions);
             if (!conditions.hasChanged("param")) {
                 policyGroupView.updateSelection(conditions);
@@ -97,21 +101,26 @@ function setupRenderingControllers() {
                     conditions.hasChanged("startYear") ||
                     conditions.hasChanged("endYear"))) {
                 networkModel.populate(conditions);
-                diffusionModel.populate(conditions);
+                // diffusionModel.populate(conditions);
+                diffusionModel2.populate(conditions);
             }
+            //diffusionModel2.populate(conditions);
+            console.log("policy hasChanged: ", conditions);
+
         } else {
             if (conditions.hasChanged('centrality')) {
-                // the inspection view is disabled when no policy has been selected, so do not update it's sub-component.
-                if (conditions.get('policy') !== conf.bases.policy.default) {
-                    if (conditions.get('metadata') === "centrality") {
-                        diffusionView.doSort("metadata");
-                    }
-                    if (conditions.get('sequence') === "centrality") {
-                        diffusionView.doSort("sequence");
-                    }
-                }
+                // // the inspection view is disabled when no policy has been selected, so do not update it's sub-component.
+                // if (conditions.get('policy') !== conf.bases.policy.default) {
+                //     if (conditions.get('metadata') === "centrality") {
+                //         diffusionView.doSort("metadata");
+                //     }
+                //     if (conditions.get('sequence') === "centrality") {
+                //         diffusionView.doSort("sequence");
+                //     }
+                // }
                 networkView.preRender();
                 networkView.update();
+                diffusionView2.doSort();
             }
             if (conditions.hasChanged('metadata')) {
                 diffusionView.doSort("metadata");
@@ -121,14 +130,15 @@ function setupRenderingControllers() {
                     networkView.update();
                 }
             }
-            if (conditions.hasChanged('sequence')) {
-                diffusionView.doSort("sequence");
-            }
+            // if (conditions.hasChanged('sequence')) {
+            //     diffusionView.doSort("sequence");
+            // }
             if (conditions.hasChanged('metadata') ||
                 conditions.hasChanged('sequence') ||
                 (conditions.hasChanged('centrality') &&
                     conditions.get('policy') !== conf.bases.policy.default)) {
-                diffusionView.update();
+                // diffusionView.update();
+                diffusionView2.update();
             }
         }
         if (conditions.hasChanged("param")) {
@@ -160,18 +170,22 @@ function setupRenderingControllers() {
 }
 
 function setupRenderingTriggers() {
-    policyModel.on('change', () => {
-        policyView.render();
-    });
+    // policyModel.on('change', () => {
+    //     policyView.render();
+    // });
 
     networkModel.on('change', () => {
         networkView.preRender();
         networkView.render(conditions);
     });
 
-    diffusionModel.on("change", () => {
-        diffusionView.preRender();
-        diffusionView.render(conditions);
+    // diffusionModel.on("change", () => {
+    //     diffusionView.preRender();
+    //     diffusionView.render(conditions);
+    // });
+
+    diffusionModel2.on("change", () => {
+        diffusionView2.render(conditions);
     });
 
     geoModel.on("change", () => {
@@ -191,8 +205,10 @@ function setupRenderingTriggers() {
     });
 
     dynamicNetworkModel.on("change", () => {
+        console.log("setupRenderingTriggers hasChanged: ", conditions, dynamicNetworkModel.get("edgesInIndices"));
         networkModel.populate(conditions, dynamicNetworkModel.get("edgesInStateIds"));
-        diffusionModel.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
+        // diffusionModel.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
+        diffusionModel2.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
     });
 
     policyGroupModel.on("change", () => {
@@ -206,9 +222,10 @@ function initRendering() {
     ringModel.populate(conditions);
     policyTrendModel.populate(conditions);
     policyGroupModel.populate(conditions);
-    policyModel.populate(conditions);
+    // policyModel.populate(conditions);
     geoModel.populate(conditions);
     dynamicNetworkModel.populate(conditions);
+    //diffusionModel2.populate(conditions);
 }
 
 function bindDomEvents() {
@@ -274,14 +291,14 @@ function bindDomEvents() {
         }
     });
 
-    // setup x-seq to conditions
-    sequenceSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => {
-        if (state) {
-            conditions.set("sequence", conf.bases.xAttributeList[0].id);
-        } else {
-            conditions.set("sequence", conf.bases.xAttributeList[1].id);
-        }
-    });
+    // // setup x-seq to conditions
+    // sequenceSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => {
+    //     if (state) {
+    //         conditions.set("sequence", conf.bases.xAttributeList[0].id);
+    //     } else {
+    //         conditions.set("sequence", conf.bases.xAttributeList[1].id);
+    //     }
+    // });
 
     // policy-geo-controller
     geoSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => setTimeout(geoSwitchHandler, 350, e, state));
@@ -294,71 +311,71 @@ function bindDomEvents() {
         }
     });
 
-    $("#add-snapshot").on("click", () => {
-        snapshotCollection.add(diffusionView, conditions);
-    });
+    // $("#add-snapshot").on("click", () => {
+    //     snapshotCollection.add(diffusionView, conditions);
+    // });
 
     document.getElementById("snapshot-wrapper").addEventListener('click', retrieveCascadeHandler, false);
 }
 
 function bindCrossViewEvents() {
-    // lightup DiffusionView strokes from PolicyView
-    policyView.$el.on('mouseover', e => {
-        let __target = $(e.target);
-        if (__target.hasClass("state")) {
-            // if __target is a rect
-            let stateIndex = conf.pipe.statesToIndices[__target.attr("value")];
-            diffusionView.lightUpStrokes(stateIndex);
-        } else if (__target.hasClass("text-tip")) {
-            // if __target is a `text`
-            let stateIndex = conf.pipe.statesToIndices[__target[0].classList[2]];
-            diffusionView.lightUpStrokes(stateIndex);
-        }
-    });
+    // // lightup DiffusionView strokes from PolicyView
+    // policyView.$el.on('mouseover', e => {
+    //     let __target = $(e.target);
+    //     if (__target.hasClass("state")) {
+    //         // if __target is a rect
+    //         let stateIndex = conf.pipe.statesToIndices[__target.attr("value")];
+    //         diffusionView.lightUpStrokes(stateIndex);
+    //     } else if (__target.hasClass("text-tip")) {
+    //         // if __target is a `text`
+    //         let stateIndex = conf.pipe.statesToIndices[__target[0].classList[2]];
+    //         diffusionView.lightUpStrokes(stateIndex);
+    //     }
+    // });
 
-    // turnoff DiffusionVies strokes from PolicyView
-    policyView.$el.on('mouseout', e => {
-        let __target = $(e.target);
-        if (__target.hasClass("state")) {
-            // if __target is a rect
-            let stateIndex = conf.pipe.statesToIndices[__target.attr("value")];
-            diffusionView.turnOffStrokes(stateIndex);
-        } else if (__target.hasClass("text-tip")) {
-            // if __target is a `text`
-            let stateIndex = conf.pipe.statesToIndices[__target[0].classList[2]];
-            diffusionView.turnOffStrokes(stateIndex);
-        }
-    });
+    // // turnoff DiffusionVies strokes from PolicyView
+    // policyView.$el.on('mouseout', e => {
+    //     let __target = $(e.target);
+    //     if (__target.hasClass("state")) {
+    //         // if __target is a rect
+    //         let stateIndex = conf.pipe.statesToIndices[__target.attr("value")];
+    //         diffusionView.turnOffStrokes(stateIndex);
+    //     } else if (__target.hasClass("text-tip")) {
+    //         // if __target is a `text`
+    //         let stateIndex = conf.pipe.statesToIndices[__target[0].classList[2]];
+    //         diffusionView.turnOffStrokes(stateIndex);
+    //     }
+    // });
 
-    // lightup PolicyView squares from DiffusionView
-    diffusionView.$el.on('mouseover', e => {
-        let __target = $(e.target);
-        if (__target.hasClass("diffusion-strokes")) {
-            // if __target is a stroke
-            let sourceIndex = __target.attr("source"),
-                targetIndex = __target.attr("target"),
-                sourceNode = conf.static.states[+sourceIndex],
-                targetNode = conf.static.states[+targetIndex];
-            [sourceNode, targetNode].forEach(node => {
-                policyView.lightUp(policyView.getRect(node));
-            });
-        }
-    });
+    // // lightup PolicyView squares from DiffusionView
+    // diffusionView.$el.on('mouseover', e => {
+    //     let __target = $(e.target);
+    //     if (__target.hasClass("diffusion-strokes")) {
+    //         // if __target is a stroke
+    //         let sourceIndex = __target.attr("source"),
+    //             targetIndex = __target.attr("target"),
+    //             sourceNode = conf.static.states[+sourceIndex],
+    //             targetNode = conf.static.states[+targetIndex];
+    //         [sourceNode, targetNode].forEach(node => {
+    //             policyView.lightUp(policyView.getRect(node));
+    //         });
+    //     }
+    // });
 
-    // turnoff PolicyView squares from DiffusionView
-    diffusionView.$el.on('mouseout', e => {
-        let __target = $(e.target);
-        if (__target.hasClass("diffusion-strokes")) {
-            // if __target is a stroke
-            let sourceIndex = __target.attr("source"),
-                targetIndex = __target.attr("target"),
-                sourceNode = conf.static.states[+sourceIndex],
-                targetNode = conf.static.states[+targetIndex];
-            [sourceNode, targetNode].forEach(node => {
-                policyView.turnOff(policyView.getRect(node));
-            });
-        }
-    });
+    // // turnoff PolicyView squares from DiffusionView
+    // diffusionView.$el.on('mouseout', e => {
+    //     let __target = $(e.target);
+    //     if (__target.hasClass("diffusion-strokes")) {
+    //         // if __target is a stroke
+    //         let sourceIndex = __target.attr("source"),
+    //             targetIndex = __target.attr("target"),
+    //             sourceNode = conf.static.states[+sourceIndex],
+    //             targetNode = conf.static.states[+targetIndex];
+    //         [sourceNode, targetNode].forEach(node => {
+    //             policyView.turnOff(policyView.getRect(node));
+    //         });
+    //     }
+    // });
 
     networkView.$el.on('mouseover', e => $(e.target).hasClass("network-node") && geoView.lightUp($(e.target).attr("title")));
     networkView.$el.on('mouseout', e => $(e.target).hasClass("network-node") && geoView.turnOff($(e.target).attr("title")));
@@ -373,18 +390,18 @@ function initDom() {
     // centrality drop down
     influenceDropdown.pickOption(conf.bases.centralityList[0].id);
 
-    // sequence switch
-    sequenceSwitch
-        .label("X-Axis")
-        .align("right")
-        .render({
-            size: "mini",
-            state: true,
-            onText: "Influence",
-            offText: "AdoptionYear",
-            onColor: "primary",
-            offColor: "primary"
-        });
+    // // sequence switch
+    // sequenceSwitch
+    //     .label("X-Axis")
+    //     .align("right")
+    //     .render({
+    //         size: "mini",
+    //         state: true,
+    //         onText: "Influence",
+    //         offText: "AdoptionYear",
+    //         onColor: "primary",
+    //         offColor: "primary"
+    //     });
 
     // geo switch
     geoSwitch
@@ -456,19 +473,19 @@ function recoverDomBy(conditions) {
     // recover metadata dropdown
     influenceDropdown.pickOption(conditions.get("metadata"));
 
-    // recover sequence switch
-    switch (conditions.get("sequence")) {
-        // centrality
-        case conf.bases.xAttributeList[0].id:
-            $("#sequence-checkbox").bootstrapSwitch("state", true);
-            break;
-        case conf.bases.xAttributeList[1].id:
-            $("#sequence-checkbox").bootstrapSwitch("state", false);
-            break;
-        default:
-            //none
-            break;
-    }
+    // // recover sequence switch
+    // switch (conditions.get("sequence")) {
+    //     // centrality
+    //     case conf.bases.xAttributeList[0].id:
+    //         $("#sequence-checkbox").bootstrapSwitch("state", true);
+    //         break;
+    //     case conf.bases.xAttributeList[1].id:
+    //         $("#sequence-checkbox").bootstrapSwitch("state", false);
+    //         break;
+    //     default:
+    //         //none
+    //         break;
+    // }
 
     setupCentralityDropdown();
 }
@@ -498,11 +515,11 @@ function setupCentralityDropdown() {
     // if no policy has been selected, `sequence` can only be "centrality"
     if (isPolicyUnselected) {
         // if sequence switch is on AdoptionYear
-        if (!$("#sequence-checkbox").bootstrapSwitch("state")) {
-            // set it to true: "centrality"
-            $("#sequence-checkbox").bootstrapSwitch("state", true);
-            conditions.set('sequence', conf.bases.xAttributeList[0].id);
-        }
+        // if (!$("#sequence-checkbox").bootstrapSwitch("state")) {
+        //     // set it to true: "centrality"
+        //     $("#sequence-checkbox").bootstrapSwitch("state", true);
+        //     conditions.set('sequence', conf.bases.xAttributeList[0].id);
+        // }
     } else {
         if (conditions.setupCentralityValidity().get("cvalidity")) {
             // either attributeDropdown or the sequence switch is on 'centrality'
@@ -512,5 +529,5 @@ function setupCentralityDropdown() {
             influenceDropdown.disable();
         }
     }
-    $("#sequence-checkbox").bootstrapSwitch("disabled", isPolicyUnselected);
+    // $("#sequence-checkbox").bootstrapSwitch("disabled", isPolicyUnselected);
 }

@@ -3,13 +3,18 @@ from flask import request, g, json
 from app import app
 
 import random
+import sys
+import json
+import numpy as np
 
+from ..services.helper import rel_path
 from .helper import DecimalEncoder
 from .base_service import BaseService
 from .computing_service import ComputingService
 from ..models import get_state_index
 from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao, \
     PolicySimilarityDao
+from operator import itemgetter
 
 computing_service = ComputingService()
 
@@ -371,6 +376,16 @@ class NetworkService(BaseService):
     def get_specified_diffusion_by(policy_id):
         """get_specified_diffusion_by policy_id"""
         data_list, stat = NetworkService.get_policy_detail(policy_id)
+        return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
+
+    @staticmethod
+    @app.route("/api/diffusion2/<policy_id>")
+    def get_specified_diffusion2_by(policy_id):
+        """get_specified_diffusion2_by policy_id"""
+        # return a sample json file
+        data_list, stat = NetworkService.get_policy_detail(policy_id)
+        #sample_file_path = rel_path("../resource/ex-policy-diffusion.json")
+
         return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
 
     @staticmethod

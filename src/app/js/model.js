@@ -277,6 +277,7 @@ let DiffusionModel = Backbone.Model.extend({
             edges = (arguments.length === 2 ?
                 arguments[1] :
                 this.get("edges"));
+        console.log("edges in diffmodel1:", edges);
         this.url = this.urlRoot + conditions.get("policy");
         return $.getJSON(_self.url).done((data) => {
             // console.log(_self.url);
@@ -330,6 +331,162 @@ let RingModel = Backbone.Model.extend({
     }
 });
 
+let DiffusionModel2 = Backbone.Model.extend({
+    initialize() {
+        this.urlRoot = conf.api.root + conf.api.diffusionBase2;
+        this.url = this.urlRoot + conf.models.conditions.defaults.policy;
+    },
+    populate() {
+        let _self = this,
+            centralities = conf.static.centrality.centralities,
+            centralityStat = conf.static.centrality.stat,
+            conditions = arguments[0],
+            edges = (arguments.length === 2 ?
+                arguments[1] :
+                this.get("edges"));
+        this.url = this.urlRoot + conditions.get("policy");
+
+        return $.getJSON(_self.url).done(data => {
+            let nodes = data.nodes,
+                edgesData = _self.setData(edges, nodes),
+                nodesWithEdge = nodes.filter(function(d) { return d.adoptedYear !== 9999; });
+            nodes.forEach((node, i) => {
+                nodes[i]["centralities"] = centralities[node.stateId];
+            });
+
+            _self.set({
+                "rawData": data,
+                "nodes": nodes,
+                "edges": edges,
+                "data": edgesData,
+                "nodesWithEdge": nodesWithEdge,
+                "stateYear": _self.setStateYearData(nodes),
+                "yearCount": _self.setYearCountData(nodesWithEdge),
+                "dMatrix": _self.setMatrixData(nodes, edgesData),
+                "stat": data.stat,
+                "cstat": centralityStat
+            });
+        });
+    },
+    setData: function(edgesData, nodes) {
+        edgesData.forEach(function(edge) {
+            edge.sourceStateInfo = {};
+            edge.targetStateInfo = {};
+
+            nodes.forEach(function(node) {
+                if (edge.source == node.stateIndex) {
+                    edge.sourceStateInfo.adoptedYear = node.adoptedYear;
+                    edge.sourceStateInfo.metadata = node.metadata;
+                    edge.sourceName = node.stateId;
+                    edge.sourceCentralities = node.centralities;
+                }
+                if (edge.target == node.stateIndex) {
+                    edge.targetStateInfo.adoptedYear = node.adoptedYear;
+                    edge.targetStateInfo.metadata = node.metadata;
+                    edge.targetName = node.stateId;
+                    edge.targetCentralities = node.centralities;
+                }
+            });
+        });
+
+        return edgesData;
+    },
+    // For the coordinates of pcView
+    setStateYearData: function(nodes) {
+        var stateYear = {};
+        nodes.filter(function(d, i) {
+                return d.adoptedYear != 9999;
+            })
+            .forEach(function(d) { stateYear[d.stateId] = d.adoptedYear; });
+
+        return stateYear;
+    },
+    setNodesWithEdges: function() {
+        var _self = this;
+
+        return _self.nodes.filter(function(d) { return d.adoptedYear != 9999; });
+    },
+    setYearCountData: function(nodesWithEdge) {
+        var yearCount = [];
+
+        nodesWithEdge.forEach(function(node) {
+            var year_overlaps = yearCount.filter(function(d) { return node.adoptedYear == d.year; });
+            // if year_count does not have a year
+            if (year_overlaps.length == 0 || year_overlaps == "undefined") {
+                yearCount.push({
+                    "year": node.adoptedYear,
+                    "count": 1
+                });
+            } else { // If a year exists
+                yearCount.forEach(function(d) {
+                    if (d.year == node.adoptedYear) {
+                        d.count += 1;
+                    }
+                });
+            }
+        });
+
+        return yearCount;
+    },
+    setMatrixData: function(nodes, edgesData) {
+        var dMatrix = [];
+        var years = nodes.filter(function(d){ return d.adoptedYear != 9999; })
+                                .map(function(d){ return d.adoptedYear; });
+        var yearArray = [];
+
+        var minYear = d4.min(years),
+            maxYear = d4.max(years);
+
+        for(i=minYear; i<=maxYear; i++){
+            yearArray.push(i);
+        }
+
+        edgesData = edgesData.filter(function(d){ return d.sourceStateInfo.adoptedYear != 9999 && d.targetStateInfo.adoptedYear != 9999; });
+
+        // Initialize matrix
+        nodes.forEach(function(node){
+           yearArray.forEach(function(year){
+               // Identify edges that are connected to the corresponding cell
+               // sourceEdges = edges from sources to this node
+               var inEdgeMatch = edgesData.filter(function(edge){
+                   return edge.targetName == node.stateId
+                       && edge.targetStateInfo.adoptedYear == year
+                       && edge.sourceStateInfo.adoptedYear != 9999
+                       && edge.targetStateInfo.adoptedYear != 9999; });
+
+               // targetEdge = edges from this node to target
+               var outEdgeMatch = edgesData.filter(function(edge){
+                   return edge.sourceName == node.stateId
+                       && edge.sourceStateInfo.adoptedYear == year
+                       && edge.sourceStateInfo.adoptedYear != 9999
+                       && edge.targetStateInfo.adoptedYear != 9999; });
+
+               var cellInfo = {
+                   isSource: false,
+                   isTarget: false,
+                   node: node.stateId,
+                   year: year,
+                   outEdges: [],  // this node is a source node, and the edge goes from this node
+                   inEdges: []       // this node is a target node, and the edge goes to this node
+               };
+
+               if(inEdgeMatch && inEdgeMatch.length != 0){
+                   cellInfo.isTarget = true;
+                   cellInfo.inEdges = inEdgeMatch;
+               }
+               if(outEdgeMatch && outEdgeMatch.length != 0){
+                   cellInfo.isSource = true;
+                   cellInfo.outEdges = outEdgeMatch;
+               }
+
+               dMatrix.push(cellInfo);
+           });
+        });
+
+        return dMatrix;
+    }
+});
+
 module.exports = {
     Conditions: Conditions,
     PolicyModel: PolicyModel,
@@ -344,5 +501,6 @@ module.exports = {
     DiffusionModel: DiffusionModel,
     StateModel: StateModel,
     PolicyGroupModel: PolicyGroupModel,
-    RingModel: RingModel
+    RingModel: RingModel,
+    DiffusionModel2: DiffusionModel2
 };

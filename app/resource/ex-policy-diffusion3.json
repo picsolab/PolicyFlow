@@ -1,0 +1,2933 @@
+{
+  "nodes": [
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 0,
+      "stateId": "AK",
+      "stateName": "Alaska",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.368085,
+        "ci": 66.1731,
+        "pd": 0.407284,
+        "pop": 0.271,
+        "pci": 2.02687,
+        "lp": 0.224
+      },
+      "centralities": {
+        "close": 0,
+        "betweenness": 0,
+        "pageRank": 0,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 22,
+      "sequenceOrder": 15,
+      "circleX": 214.28571428571428,
+      "circleR": 3,
+      "labelX": 211.28571428571428,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 145.91836734693877,
+      "bottomY": 504.0816326530612
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 1,
+      "stateId": "AL",
+      "stateName": "Alabama",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.421286,
+        "ci": 10.8097,
+        "pd": 65.6809,
+        "pop": 3.443,
+        "pci": 1.14222,
+        "lp": 0.11
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020020345,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 25,
+      "sequenceOrder": 14,
+      "circleX": 200,
+      "circleR": 3,
+      "labelX": 197,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 165.81632653061226,
+      "bottomY": 484.1836734693877
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 2,
+      "stateId": "AR",
+      "stateName": "Arkansas",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.34212,
+        "ci": 21.5312,
+        "pd": 35.6159,
+        "pop": 1.894,
+        "pci": 1.0617,
+        "lp": 0.076
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 44,
+      "sequenceOrder": 17,
+      "circleX": 242.85714285714286,
+      "circleR": 3,
+      "labelX": 239.85714285714286,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 291.83673469387753,
+      "bottomY": 358.1632653061224
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 3,
+      "stateId": "AZ",
+      "stateName": "Arizona",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.188124,
+        "ci": 41.8533,
+        "pd": 13.6503,
+        "pop": 1.556,
+        "pci": 1.34287,
+        "lp": 0.183
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020020345,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 17,
+      "sequenceOrder": 16,
+      "circleX": 228.57142857142856,
+      "circleR": 3,
+      "labelX": 225.57142857142856,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 112.75510204081633,
+      "bottomY": 537.2448979591837
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 4,
+      "stateId": "CA",
+      "stateName": "California",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.150559,
+        "ci": 55.8222,
+        "pd": 107.933,
+        "pop": 17.668,
+        "pci": 1.82252,
+        "lp": 0.41
+      },
+      "centralities": {
+        "close": 0.001375516,
+        "betweenness": 89,
+        "pageRank": 0.031640307,
+        "hit": 17,
+        "outdegree": 17
+      },
+      "metadataOrder": 0,
+      "sequenceOrder": 0,
+      "circleX": 0,
+      "circleR": 10,
+      "labelX": -3,
+      "labelY": 10,
+      "meta": 17,
+      "width": 70,
+      "pad": 70,
+      "upY": 0,
+      "bottomY": 650
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 5,
+      "stateId": "CO",
+      "stateName": "Colorado",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.0592476,
+        "ci": 53.4849,
+        "pd": 18.5986,
+        "pop": 1.936,
+        "pci": 1.48623,
+        "lp": 0.167
+      },
+      "centralities": {
+        "close": 0.000483325,
+        "betweenness": 20,
+        "pageRank": 0.020595013,
+        "hit": 3,
+        "outdegree": 3
+      },
+      "metadataOrder": 5,
+      "sequenceOrder": 4,
+      "circleX": 57.14285714285714,
+      "circleR": 4.235294117647059,
+      "labelX": 54.14285714285714,
+      "labelY": 10,
+      "meta": 3,
+      "width": 12.352941176470589,
+      "pad": 12.352941176470589,
+      "upY": 33.16326530612245,
+      "bottomY": 616.8367346938775
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 6,
+      "stateId": "CT",
+      "stateName": "Connecticut",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0841671,
+        "ci": 60.4425,
+        "pd": 515.387,
+        "pop": 2.857,
+        "pci": 1.95777,
+        "lp": 0.124
+      },
+      "centralities": {
+        "close": 0.006024096,
+        "betweenness": 9,
+        "pageRank": 0.018754731,
+        "hit": 7,
+        "outdegree": 7
+      },
+      "metadataOrder": 1,
+      "sequenceOrder": 1,
+      "circleX": 14.285714285714285,
+      "circleR": 5.88235294117647,
+      "labelX": 11.285714285714285,
+      "labelY": 10,
+      "meta": 7,
+      "width": 28.823529411764703,
+      "pad": 28.823529411764703,
+      "upY": 6.632653061224489,
+      "bottomY": 643.3673469387754
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 7,
+      "stateId": "DE",
+      "stateName": "Delaware",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.239917,
+        "ci": 54.1415,
+        "pd": 203.719,
+        "pop": 0.507,
+        "pci": 1.98575,
+        "lp": 0.164
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017976146,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 18,
+      "sequenceOrder": 18,
+      "circleX": 257.14285714285717,
+      "circleR": 3,
+      "labelX": 254.14285714285717,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 119.38775510204083,
+      "bottomY": 530.6122448979592
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 8,
+      "stateId": "FL",
+      "stateName": "Florida",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.294807,
+        "ci": 31.9409,
+        "pd": 85.5869,
+        "pop": 5.628,
+        "pci": 1.29163,
+        "lp": 0.101
+      },
+      "centralities": {
+        "close": 0.000452694,
+        "betweenness": 4,
+        "pageRank": 0.017280801,
+        "hit": 1,
+        "outdegree": 1
+      },
+      "metadataOrder": 12,
+      "sequenceOrder": 8,
+      "circleX": 114.28571428571428,
+      "circleR": 3.411764705882353,
+      "labelX": 111.28571428571428,
+      "labelY": 10,
+      "meta": 1,
+      "width": 4.117647058823529,
+      "pad": 4.117647058823529,
+      "upY": 79.59183673469387,
+      "bottomY": 570.4081632653061
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 9,
+      "stateId": "GA",
+      "stateName": "Georgia",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.408485,
+        "ci": 14.418,
+        "pd": 72.8984,
+        "pop": 4.332,
+        "pci": 1.27986,
+        "lp": 0.153
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 26,
+      "sequenceOrder": 19,
+      "circleX": 271.42857142857144,
+      "circleR": 3,
+      "labelX": 268.42857142857144,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 172.44897959183675,
+      "bottomY": 477.55102040816325
+    },
+    {
+      "adoptedYear": 1967,
+      "stateIndex": 10,
+      "stateId": "HI",
+      "stateName": "Hawaii",
+      "dataYear": 1967,
+      "valid": true,
+      "metadata": {
+        "md": 0.471544,
+        "ci": 70.5834,
+        "pd": 66.1378,
+        "pop": 0.723,
+        "pci": 1.94551,
+        "lp": 0.199
+      },
+      "centralities": {
+        "close": 0,
+        "betweenness": 0,
+        "pageRank": 0,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 30,
+      "sequenceOrder": 20,
+      "circleX": 285.7142857142857,
+      "circleR": 3,
+      "labelX": 282.7142857142857,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 198.9795918367347,
+      "bottomY": 451.0204081632653
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 11,
+      "stateId": "IA",
+      "stateName": "Iowa",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0207141,
+        "ci": 41.639,
+        "pd": 48.7269,
+        "pop": 2.742,
+        "pci": 1.61339,
+        "lp": 0.16
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017976146,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 33,
+      "sequenceOrder": 23,
+      "circleX": 328.5714285714286,
+      "circleR": 3,
+      "labelX": 325.5714285714286,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 218.87755102040816,
+      "bottomY": 431.12244897959187
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 12,
+      "stateId": "ID",
+      "stateName": "Idaho",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.0291011,
+        "ci": 49.2071,
+        "pd": 8.17289,
+        "pop": 0.683,
+        "pci": 1.25812,
+        "lp": 0.068
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.023338648,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 36,
+      "sequenceOrder": 21,
+      "circleX": 300,
+      "circleR": 3,
+      "labelX": 297,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 238.77551020408166,
+      "bottomY": 411.2244897959184
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 13,
+      "stateId": "IL",
+      "stateName": "Illinois",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.190575,
+        "ci": 47.3343,
+        "pd": 184.637,
+        "pop": 10.693,
+        "pci": 1.89666,
+        "lp": 0.233
+      },
+      "centralities": {
+        "close": 0.000483325,
+        "betweenness": 12,
+        "pageRank": 0.017280801,
+        "hit": 3,
+        "outdegree": 3
+      },
+      "metadataOrder": 6,
+      "sequenceOrder": 5,
+      "circleX": 71.42857142857143,
+      "circleR": 4.235294117647059,
+      "labelX": 68.42857142857143,
+      "labelY": 10,
+      "meta": 3,
+      "width": 12.352941176470589,
+      "pad": 12.352941176470589,
+      "upY": 39.795918367346935,
+      "bottomY": 610.2040816326531
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 14,
+      "stateId": "IN",
+      "stateName": "Indiana",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.110722,
+        "ci": 42.4462,
+        "pd": 135.147,
+        "pop": 4.922,
+        "pci": 1.62881,
+        "lp": 0.129
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020595013,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 46,
+      "sequenceOrder": 22,
+      "circleX": 314.2857142857143,
+      "circleR": 3,
+      "labelX": 311.2857142857143,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 305.10204081632656,
+      "bottomY": 344.8979591836735
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 15,
+      "stateId": "KS",
+      "stateName": "Kansas",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0878782,
+        "ci": 28.4059,
+        "pd": 26.8114,
+        "pop": 2.206,
+        "pci": 1.51344,
+        "lp": 0.127
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 15,
+      "sequenceOrder": 24,
+      "circleX": 342.85714285714283,
+      "circleR": 3,
+      "labelX": 339.85714285714283,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 99.48979591836735,
+      "bottomY": 550.5102040816327
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 16,
+      "stateId": "KY",
+      "stateName": "Kentucky",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.133352,
+        "ci": 63.1125,
+        "pd": 77.4355,
+        "pop": 3.129,
+        "pci": 1.13337,
+        "lp": 0.135
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020020345,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 16,
+      "sequenceOrder": 25,
+      "circleX": 357.14285714285717,
+      "circleR": 3,
+      "labelX": 354.14285714285717,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 106.12244897959182,
+      "bottomY": 543.8775510204082
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 17,
+      "stateId": "LA",
+      "stateName": "Louisiana",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.437072,
+        "ci": 34.2304,
+        "pd": 65.7908,
+        "pop": 3.446,
+        "pci": 1.15658,
+        "lp": 0.178
+      },
+      "centralities": {
+        "close": 0.000452694,
+        "betweenness": 6,
+        "pageRank": 0.02153404,
+        "hit": 1,
+        "outdegree": 1
+      },
+      "metadataOrder": 11,
+      "sequenceOrder": 9,
+      "circleX": 128.57142857142858,
+      "circleR": 3.411764705882353,
+      "labelX": 125.57142857142858,
+      "labelY": 10,
+      "meta": 1,
+      "width": 4.117647058823529,
+      "pad": 4.117647058823529,
+      "upY": 72.95918367346938,
+      "bottomY": 577.0408163265306
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 18,
+      "stateId": "MA",
+      "stateName": "Maine",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.0476567,
+        "ci": 71.912,
+        "pd": 516.183,
+        "pop": 5.448,
+        "pci": 1.69222,
+        "lp": 0.444
+      },
+      "centralities": {
+        "close": 0.000452694,
+        "betweenness": 2,
+        "pageRank": 0.017976146,
+        "hit": 1,
+        "outdegree": 1
+      },
+      "metadataOrder": 10,
+      "sequenceOrder": 10,
+      "circleX": 142.85714285714286,
+      "circleR": 3.411764705882353,
+      "labelX": 139.85714285714286,
+      "labelY": 10,
+      "meta": 1,
+      "width": 4.117647058823529,
+      "pad": 4.117647058823529,
+      "upY": 66.3265306122449,
+      "bottomY": 583.6734693877552
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 19,
+      "stateId": "MD",
+      "stateName": "Maryland",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.282957,
+        "ci": 76.0408,
+        "pd": 281.478,
+        "pop": 3.492,
+        "pci": 1.63187,
+        "lp": 0.136
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 19,
+      "sequenceOrder": 26,
+      "circleX": 371.42857142857144,
+      "circleR": 3,
+      "labelX": 368.42857142857144,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 126.0204081632653,
+      "bottomY": 523.9795918367347
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 20,
+      "stateId": "ME",
+      "stateName": "Massachusetts",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.012273,
+        "ci": 74.5564,
+        "pd": 28.18,
+        "pop": 0.997,
+        "pci": 1.35068,
+        "lp": 0.11
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 20,
+      "sequenceOrder": 27,
+      "circleX": 385.71428571428567,
+      "circleR": 3,
+      "labelX": 382.71428571428567,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 132.6530612244898,
+      "bottomY": 517.3469387755102
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 21,
+      "stateId": "MI",
+      "stateName": "Michigan",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.171199,
+        "ci": 55.9422,
+        "pd": 84.6521,
+        "pop": 8.187,
+        "pci": 1.71717,
+        "lp": 0.346
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.018754731,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 21,
+      "sequenceOrder": 28,
+      "circleX": 400,
+      "circleR": 3,
+      "labelX": 397,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 139.28571428571428,
+      "bottomY": 510.71428571428567
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 22,
+      "stateId": "MN",
+      "stateName": "Minnesota",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.024541,
+        "ci": 60.2145,
+        "pd": 40.6162,
+        "pop": 3.531,
+        "pci": 1.43802,
+        "lp": 0.151
+      },
+      "centralities": {
+        "close": 0.001402525,
+        "betweenness": 58,
+        "pageRank": 0.018754731,
+        "hit": 1,
+        "outdegree": 1
+      },
+      "metadataOrder": 8,
+      "sequenceOrder": 11,
+      "circleX": 157.14285714285714,
+      "circleR": 3.411764705882353,
+      "labelX": 154.14285714285714,
+      "labelY": 10,
+      "meta": 1,
+      "width": 4.117647058823529,
+      "pad": 4.117647058823529,
+      "upY": 53.06122448979591,
+      "bottomY": 596.9387755102041
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 23,
+      "stateId": "MO",
+      "stateName": "Missouri",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.167106,
+        "ci": 40.0543,
+        "pd": 64.0825,
+        "pop": 4.467,
+        "pci": 1.59169,
+        "lp": 0.228
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 23,
+      "sequenceOrder": 30,
+      "circleX": 428.57142857142856,
+      "circleR": 3,
+      "labelX": 425.57142857142856,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 152.55102040816328,
+      "bottomY": 497.44897959183675
+    },
+    {
+      "adoptedYear": 1966,
+      "stateIndex": 24,
+      "stateId": "MS",
+      "stateName": "Mississippi",
+      "dataYear": 1966,
+      "valid": true,
+      "metadata": {
+        "md": 0.48991,
+        "ci": 0.96254,
+        "pd": 46.3539,
+        "pop": 2.245,
+        "pci": 1.00888,
+        "lp": 0.164
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.030387467,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 24,
+      "sequenceOrder": 29,
+      "circleX": 414.2857142857143,
+      "circleR": 3,
+      "labelX": 411.2857142857143,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 159.18367346938774,
+      "bottomY": 490.8163265306123
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 25,
+      "stateId": "MT",
+      "stateName": "Montana",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0689608,
+        "ci": 43.3426,
+        "pd": 4.80142,
+        "pop": 0.706,
+        "pci": 1.44548,
+        "lp": 0.066
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 14,
+      "sequenceOrder": 31,
+      "circleX": 442.8571428571429,
+      "circleR": 3,
+      "labelX": 439.8571428571429,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 92.85714285714285,
+      "bottomY": 557.1428571428571
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 26,
+      "stateId": "NC",
+      "stateName": "North Carolina",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.383285,
+        "ci": 2.27626,
+        "pd": 90.3582,
+        "pop": 4.863,
+        "pci": 1.2159,
+        "lp": 0.155
+      },
+      "centralities": {
+        "close": 0.000462321,
+        "betweenness": 4,
+        "pageRank": 0.017280801,
+        "hit": 1,
+        "outdegree": 1
+      },
+      "metadataOrder": 9,
+      "sequenceOrder": 12,
+      "circleX": 171.42857142857142,
+      "circleR": 3.411764705882353,
+      "labelX": 168.42857142857142,
+      "labelY": 10,
+      "meta": 1,
+      "width": 4.117647058823529,
+      "pad": 4.117647058823529,
+      "upY": 59.693877551020414,
+      "bottomY": 590.3061224489795
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 27,
+      "stateId": "ND",
+      "stateName": "North Dakota",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0400567,
+        "ci": 41.7896,
+        "pd": 9.17985,
+        "pop": 0.649,
+        "pci": 1.42721,
+        "lp": 0.062
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 27,
+      "sequenceOrder": 36,
+      "circleX": 514.2857142857143,
+      "circleR": 3,
+      "labelX": 511.28571428571433,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 179.0816326530612,
+      "bottomY": 470.9183673469388
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 28,
+      "stateId": "NE",
+      "stateName": "Nebraska",
+      "dataYear": -1,
+      "valid": true,
+      "metadata": {},
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 28,
+      "sequenceOrder": 32,
+      "circleX": 457.1428571428571,
+      "circleR": 3,
+      "labelX": 454.1428571428571,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 185.7142857142857,
+      "bottomY": 464.28571428571433
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 29,
+      "stateId": "NH",
+      "stateName": "New Hampshire ",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.00849652,
+        "ci": 48.4337,
+        "pd": 72.306,
+        "pop": 0.676,
+        "pci": 1.538,
+        "lp": 0.079
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017976146,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 29,
+      "sequenceOrder": 34,
+      "circleX": 485.7142857142857,
+      "circleR": 3,
+      "labelX": 482.7142857142857,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 192.3469387755102,
+      "bottomY": 457.65306122448976
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 30,
+      "stateId": "NJ",
+      "stateName": "New Jersey",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.159217,
+        "ci": 73.4947,
+        "pd": 763.536,
+        "pop": 6.66,
+        "pci": 1.80712,
+        "lp": 0.132
+      },
+      "centralities": {
+        "close": 0.000462535,
+        "betweenness": 4,
+        "pageRank": 0.017976146,
+        "hit": 2,
+        "outdegree": 2
+      },
+      "metadataOrder": 7,
+      "sequenceOrder": 7,
+      "circleX": 100,
+      "circleR": 3.8235294117647056,
+      "labelX": 97,
+      "labelY": 10,
+      "meta": 2,
+      "width": 8.235294117647058,
+      "pad": 8.235294117647058,
+      "upY": 46.42857142857142,
+      "bottomY": 603.5714285714287
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 31,
+      "stateId": "NM",
+      "stateName": "New Mexico",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.148186,
+        "ci": 41.4976,
+        "pd": 8.32303,
+        "pop": 1.012,
+        "pci": 1.27929,
+        "lp": 0.115
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 31,
+      "sequenceOrder": 35,
+      "circleX": 500,
+      "circleR": 3,
+      "labelX": 497,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 205.6122448979592,
+      "bottomY": 444.3877551020408
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 32,
+      "stateId": "NV",
+      "stateName": "Nevada",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.144414,
+        "ci": 21.2402,
+        "pd": 4.01549,
+        "pop": 0.444,
+        "pci": 1.91265,
+        "lp": 0.112
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 32,
+      "sequenceOrder": 33,
+      "circleX": 471.4285714285714,
+      "circleR": 3,
+      "labelX": 468.4285714285714,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 212.24489795918365,
+      "bottomY": 437.7551020408163
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 33,
+      "stateId": "NY",
+      "stateName": "New York ",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.163109,
+        "ci": 66.701,
+        "pd": 322.409,
+        "pop": 17.589,
+        "pci": 1.91681,
+        "lp": 0.364
+      },
+      "centralities": {
+        "close": 0.007246377,
+        "betweenness": 37,
+        "pageRank": 0.017976146,
+        "hit": 5,
+        "outdegree": 5
+      },
+      "metadataOrder": 2,
+      "sequenceOrder": 2,
+      "circleX": 28.57142857142857,
+      "circleR": 5.0588235294117645,
+      "labelX": 25.57142857142857,
+      "labelY": 10,
+      "meta": 5,
+      "width": 20.58823529411765,
+      "pad": 20.58823529411765,
+      "upY": 13.265306122448978,
+      "bottomY": 636.7346938775511
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 34,
+      "stateId": "OH",
+      "stateName": "Ohio",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.150863,
+        "ci": 46.9154,
+        "pd": 222.775,
+        "pop": 9.986,
+        "pci": 1.52856,
+        "lp": 0.21
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017280801,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 34,
+      "sequenceOrder": 37,
+      "circleX": 528.5714285714286,
+      "circleR": 3,
+      "labelX": 525.5714285714286,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 225.51020408163265,
+      "bottomY": 424.48979591836735
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 35,
+      "stateId": "OK",
+      "stateName": "Oklahoma",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.175255,
+        "ci": 36.5615,
+        "pd": 34.9076,
+        "pop": 2.44,
+        "pci": 1.33868,
+        "lp": 0.136
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020020345,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 35,
+      "sequenceOrder": 38,
+      "circleX": 542.8571428571429,
+      "circleR": 3,
+      "labelX": 539.8571428571429,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 232.14285714285714,
+      "bottomY": 417.85714285714283
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 36,
+      "stateId": "OR",
+      "stateName": "Oregon",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.0408615,
+        "ci": 62.2014,
+        "pd": 18.8354,
+        "pop": 1.853,
+        "pci": 1.48388,
+        "lp": 0.193
+      },
+      "centralities": {
+        "close": 0.000483559,
+        "betweenness": 16,
+        "pageRank": 0.020336746,
+        "hit": 4,
+        "outdegree": 4
+      },
+      "metadataOrder": 3,
+      "sequenceOrder": 3,
+      "circleX": 42.857142857142854,
+      "circleR": 4.647058823529411,
+      "labelX": 39.857142857142854,
+      "labelY": 10,
+      "meta": 4,
+      "width": 16.470588235294116,
+      "pad": 16.470588235294116,
+      "upY": 19.897959183673468,
+      "bottomY": 630.1020408163266
+    },
+    {
+      "adoptedYear": 1967,
+      "stateIndex": 37,
+      "stateId": "PA",
+      "stateName": "Pennsylvania",
+      "dataYear": 1967,
+      "valid": true,
+      "metadata": {
+        "md": 0.141379,
+        "ci": 54.3675,
+        "pd": 253.635,
+        "pop": 11.681,
+        "pci": 1.74675,
+        "lp": 0.286
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.018754731,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 37,
+      "sequenceOrder": 39,
+      "circleX": 557.1428571428571,
+      "circleR": 3,
+      "labelX": 554.1428571428571,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 245.40816326530611,
+      "bottomY": 404.5918367346939
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 38,
+      "stateId": "RI",
+      "stateName": "Rhode Island",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.0473028,
+        "ci": 83.3153,
+        "pd": 572.856,
+        "pop": 0.885,
+        "pci": 1.58312,
+        "lp": 0.135
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.023338648,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 38,
+      "sequenceOrder": 40,
+      "circleX": 571.4285714285714,
+      "circleR": 3,
+      "labelX": 568.4285714285714,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 252.0408163265306,
+      "bottomY": 397.9591836734694
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 39,
+      "stateId": "SC",
+      "stateName": "South Carolina",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.455077,
+        "ci": 1.26105,
+        "pd": 77.8876,
+        "pop": 2.494,
+        "pci": 1.10853,
+        "lp": 0.174
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.03400272,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 39,
+      "sequenceOrder": 41,
+      "circleX": 585.7142857142858,
+      "circleR": 3,
+      "labelX": 582.7142857142858,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 258.6734693877551,
+      "bottomY": 391.32653061224494
+    },
+    {
+      "adoptedYear": 1964,
+      "stateIndex": 40,
+      "stateId": "SD",
+      "stateName": "South Dakota",
+      "dataYear": 1964,
+      "valid": true,
+      "metadata": {
+        "md": 0.0775117,
+        "ci": 49.9523,
+        "pd": 9.09024,
+        "pop": 0.701,
+        "pci": 1.15658,
+        "lp": 0.097
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020595013,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 40,
+      "sequenceOrder": 42,
+      "circleX": 600,
+      "circleR": 3,
+      "labelX": 597,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 265.3061224489796,
+      "bottomY": 384.69387755102036
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 41,
+      "stateId": "TN",
+      "stateName": "Tennessee",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.276065,
+        "ci": 41.2274,
+        "pd": 88.2208,
+        "pop": 3.718,
+        "pci": 1.09292,
+        "lp": 0.061
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020595013,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 41,
+      "sequenceOrder": 43,
+      "circleX": 614.2857142857142,
+      "circleR": 3,
+      "labelX": 611.2857142857142,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 271.9387755102041,
+      "bottomY": 378.0612244897959
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 42,
+      "stateId": "TX",
+      "stateName": "Texas",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.220366,
+        "ci": 26.5729,
+        "pd": 38.6379,
+        "pop": 10.378,
+        "pci": 1.38552,
+        "lp": 0.19
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.045689926,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 42,
+      "sequenceOrder": 44,
+      "circleX": 628.5714285714286,
+      "circleR": 3,
+      "labelX": 625.5714285714286,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 278.57142857142856,
+      "bottomY": 371.42857142857144
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 43,
+      "stateId": "UT",
+      "stateName": "Utah",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0372513,
+        "ci": 40.9739,
+        "pd": 11.7083,
+        "pop": 0.994,
+        "pci": 1.41578,
+        "lp": 0.057
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.020595013,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 43,
+      "sequenceOrder": 45,
+      "circleX": 642.8571428571429,
+      "circleR": 3,
+      "labelX": 639.8571428571429,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 285.2040816326531,
+      "bottomY": 364.795918367347
+    },
+    {
+      "adoptedYear": 1966,
+      "stateIndex": 44,
+      "stateId": "VA",
+      "stateName": "Virginia",
+      "dataYear": 1966,
+      "valid": true,
+      "metadata": {
+        "md": 0.330148,
+        "ci": 3.58069,
+        "pd": 104.173,
+        "pop": 4.456,
+        "pci": 1.50527,
+        "lp": 0.094
+      },
+      "centralities": {
+        "close": 0.000452694,
+        "betweenness": 6,
+        "pageRank": 0.035283694,
+        "hit": 1,
+        "outdegree": 1
+      },
+      "metadataOrder": 13,
+      "sequenceOrder": 13,
+      "circleX": 185.71428571428572,
+      "circleR": 3.411764705882353,
+      "labelX": 182.71428571428572,
+      "labelY": 10,
+      "meta": 1,
+      "width": 4.117647058823529,
+      "pad": 4.117647058823529,
+      "upY": 86.22448979591837,
+      "bottomY": 563.7755102040816
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 45,
+      "stateId": "VT",
+      "stateName": "Vermont",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.00404131,
+        "ci": 57.1878,
+        "pd": 42.0117,
+        "pop": 0.404,
+        "pci": 1.40036,
+        "lp": 0.213
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.017976146,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 45,
+      "sequenceOrder": 46,
+      "circleX": 657.1428571428572,
+      "circleR": 3,
+      "labelX": 654.1428571428572,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 298.46938775510205,
+      "bottomY": 351.53061224489795
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 46,
+      "stateId": "WA",
+      "stateName": "Washington",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0694573,
+        "ci": 49.5903,
+        "pd": 41.6141,
+        "pop": 2.967,
+        "pci": 1.74474,
+        "lp": 0.098
+      },
+      "centralities": {
+        "close": 0.000517598,
+        "betweenness": 28,
+        "pageRank": 0.017280801,
+        "hit": 3,
+        "outdegree": 3
+      },
+      "metadataOrder": 4,
+      "sequenceOrder": 6,
+      "circleX": 85.71428571428571,
+      "circleR": 4.235294117647059,
+      "labelX": 82.71428571428571,
+      "labelY": 10,
+      "meta": 3,
+      "width": 12.352941176470589,
+      "pad": 12.352941176470589,
+      "upY": 26.530612244897956,
+      "bottomY": 623.469387755102
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 47,
+      "stateId": "WI",
+      "stateName": "Wisconsin",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0460818,
+        "ci": 52.7298,
+        "pd": 64.6143,
+        "pop": 4.232,
+        "pci": 1.58769,
+        "lp": 0.275
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.03097851,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 47,
+      "sequenceOrder": 48,
+      "circleX": 685.7142857142857,
+      "circleR": 3,
+      "labelX": 682.7142857142857,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 311.734693877551,
+      "bottomY": 338.26530612244903
+    },
+    {
+      "adoptedYear": 1965,
+      "stateIndex": 48,
+      "stateId": "WV",
+      "stateName": "West Virginia",
+      "dataYear": 1965,
+      "valid": true,
+      "metadata": {
+        "md": 0.0923985,
+        "ci": 45.9752,
+        "pd": 73.7102,
+        "pop": 1.786,
+        "pci": 1.23074,
+        "lp": 0.119
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.02153404,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 48,
+      "sequenceOrder": 47,
+      "circleX": 671.4285714285714,
+      "circleR": 3,
+      "labelX": 668.4285714285714,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 318.3673469387755,
+      "bottomY": 331.63265306122446
+    },
+    {
+      "adoptedYear": 1963,
+      "stateIndex": 49,
+      "stateId": "WY",
+      "stateName": "Wyoming",
+      "dataYear": 1963,
+      "valid": true,
+      "metadata": {
+        "md": 0.0426219,
+        "ci": 38.5459,
+        "pd": 3.43513,
+        "pop": 0.336,
+        "pci": 1.48153,
+        "lp": 0.048
+      },
+      "centralities": {
+        "close": 0.000443262,
+        "betweenness": 0,
+        "pageRank": 0.02153404,
+        "hit": 0,
+        "outdegree": 0
+      },
+      "metadataOrder": 49,
+      "sequenceOrder": 49,
+      "circleX": 700,
+      "circleR": 3,
+      "labelX": 697,
+      "labelY": 10,
+      "meta": 0,
+      "width": 0,
+      "pad": 0,
+      "upY": 325,
+      "bottomY": 325
+    }
+  ],
+  "edges": [
+    {
+      "source": 4,
+      "target": 36,
+      "value": 28624.92,
+      "coords": {
+        "x1": 0,
+        "x2": 3,
+        "xMid": 0.8999999999999999,
+        "y1": 0,
+        "y2": 3,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 3,
+        "xMid": 0.8999999999999999,
+        "y1": 0,
+        "y2": 3,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 31,
+      "value": 26662.63,
+      "coords": {
+        "x1": 0,
+        "x2": 35,
+        "xMid": 10.5,
+        "y1": 0,
+        "y2": 31,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 35,
+        "xMid": 10.5,
+        "y1": 0,
+        "y2": 31,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 19,
+      "value": 26323.43,
+      "coords": {
+        "x1": 0,
+        "x2": 26,
+        "xMid": 7.8,
+        "y1": 0,
+        "y2": 19,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 26,
+        "xMid": 7.8,
+        "y1": 0,
+        "y2": 19,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 42,
+      "value": 25996.8,
+      "coords": {
+        "x1": 0,
+        "x2": 44,
+        "xMid": 13.2,
+        "y1": 0,
+        "y2": 42,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 44,
+        "xMid": 13.2,
+        "y1": 0,
+        "y2": 42,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 8,
+      "value": 25888.43,
+      "coords": {
+        "x1": 0,
+        "x2": 8,
+        "xMid": 2.4,
+        "y1": 0,
+        "y2": 12,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 8,
+        "xMid": 2.4,
+        "y1": 0,
+        "y2": 12,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 5,
+      "value": 25678.24,
+      "coords": {
+        "x1": 0,
+        "x2": 4,
+        "xMid": 1.2,
+        "y1": 0,
+        "y2": 5,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 4,
+        "xMid": 1.2,
+        "y1": 0,
+        "y2": 5,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 32,
+      "value": 25539.61,
+      "coords": {
+        "x1": 0,
+        "x2": 33,
+        "xMid": 9.9,
+        "y1": 0,
+        "y2": 32,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 33,
+        "xMid": 9.9,
+        "y1": 0,
+        "y2": 32,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 46,
+      "value": 25483.88,
+      "coords": {
+        "x1": 0,
+        "x2": 6,
+        "xMid": 1.7999999999999998,
+        "y1": 0,
+        "y2": 4,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 6,
+        "xMid": 1.7999999999999998,
+        "y1": 0,
+        "y2": 4,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 26,
+      "value": 25336.61,
+      "coords": {
+        "x1": 0,
+        "x2": 12,
+        "xMid": 3.5999999999999996,
+        "y1": 0,
+        "y2": 9,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 12,
+        "xMid": 3.5999999999999996,
+        "y1": 0,
+        "y2": 9,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 3,
+      "value": 25246.61,
+      "coords": {
+        "x1": 0,
+        "x2": 16,
+        "xMid": 4.8,
+        "y1": 0,
+        "y2": 17,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 16,
+        "xMid": 4.8,
+        "y1": 0,
+        "y2": 17,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 13,
+      "value": 25164.15,
+      "coords": {
+        "x1": 0,
+        "x2": 5,
+        "xMid": 1.5,
+        "y1": 0,
+        "y2": 6,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 5,
+        "xMid": 1.5,
+        "y1": 0,
+        "y2": 6,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 25,
+      "value": 25148.51,
+      "coords": {
+        "x1": 0,
+        "x2": 31,
+        "xMid": 9.299999999999999,
+        "y1": 0,
+        "y2": 14,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 31,
+        "xMid": 9.299999999999999,
+        "y1": 0,
+        "y2": 14,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 20,
+      "value": 24602.05,
+      "coords": {
+        "x1": 0,
+        "x2": 27,
+        "xMid": 8.1,
+        "y1": 0,
+        "y2": 20,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 27,
+        "xMid": 8.1,
+        "y1": 0,
+        "y2": 20,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 14,
+      "value": 24589.68,
+      "coords": {
+        "x1": 0,
+        "x2": 22,
+        "xMid": 6.6,
+        "y1": 0,
+        "y2": 46,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 22,
+        "xMid": 6.6,
+        "y1": 0,
+        "y2": 46,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 30,
+      "value": 24408.95,
+      "coords": {
+        "x1": 0,
+        "x2": 7,
+        "xMid": 2.1,
+        "y1": 0,
+        "y2": 7,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 7,
+        "xMid": 2.1,
+        "y1": 0,
+        "y2": 7,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 23,
+      "value": 24003.22,
+      "coords": {
+        "x1": 0,
+        "x2": 30,
+        "xMid": 9,
+        "y1": 0,
+        "y2": 23,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 30,
+        "xMid": 9,
+        "y1": 0,
+        "y2": 23,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 36,
+      "target": 16,
+      "value": 23876.13,
+      "coords": {
+        "x1": 3,
+        "x2": 25,
+        "xMid": 9.6,
+        "y1": 3,
+        "y2": 16,
+        "ym1": 3,
+        "ym2": 4.019607843137255
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 3,
+        "x2": 25,
+        "xMid": 9.6,
+        "y1": 3,
+        "y2": 16,
+        "ym1": 3,
+        "ym2": 4.019607843137255
+      }
+    },
+    {
+      "source": 4,
+      "target": 15,
+      "value": 23670.86,
+      "coords": {
+        "x1": 0,
+        "x2": 24,
+        "xMid": 7.199999999999999,
+        "y1": 0,
+        "y2": 15,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 24,
+        "xMid": 7.199999999999999,
+        "y1": 0,
+        "y2": 15,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 34,
+      "value": 23645.76,
+      "coords": {
+        "x1": 0,
+        "x2": 37,
+        "xMid": 11.1,
+        "y1": 0,
+        "y2": 34,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 37,
+        "xMid": 11.1,
+        "y1": 0,
+        "y2": 34,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 7,
+      "value": 23616.49,
+      "coords": {
+        "x1": 0,
+        "x2": 18,
+        "xMid": 5.3999999999999995,
+        "y1": 0,
+        "y2": 18,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 18,
+        "xMid": 5.3999999999999995,
+        "y1": 0,
+        "y2": 18,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 9,
+      "value": 23544.22,
+      "coords": {
+        "x1": 0,
+        "x2": 19,
+        "xMid": 5.7,
+        "y1": 0,
+        "y2": 26,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 19,
+        "xMid": 5.7,
+        "y1": 0,
+        "y2": 26,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 39,
+      "value": 23209.13,
+      "coords": {
+        "x1": 0,
+        "x2": 41,
+        "xMid": 12.299999999999999,
+        "y1": 0,
+        "y2": 39,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 41,
+        "xMid": 12.299999999999999,
+        "y1": 0,
+        "y2": 39,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 37,
+      "value": 22940.66,
+      "coords": {
+        "x1": 0,
+        "x2": 39,
+        "xMid": 11.7,
+        "y1": 0,
+        "y2": 37,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 39,
+        "xMid": 11.7,
+        "y1": 0,
+        "y2": 37,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 28,
+      "value": 22799.3,
+      "coords": {
+        "x1": 0,
+        "x2": 32,
+        "xMid": 9.6,
+        "y1": 0,
+        "y2": 28,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 32,
+        "xMid": 9.6,
+        "y1": 0,
+        "y2": 28,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 41,
+      "value": 22718.66,
+      "coords": {
+        "x1": 0,
+        "x2": 43,
+        "xMid": 12.9,
+        "y1": 0,
+        "y2": 41,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 43,
+        "xMid": 12.9,
+        "y1": 0,
+        "y2": 41,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 38,
+      "value": 22705.93,
+      "coords": {
+        "x1": 0,
+        "x2": 40,
+        "xMid": 12,
+        "y1": 0,
+        "y2": 38,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 40,
+        "xMid": 12,
+        "y1": 0,
+        "y2": 38,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 2,
+      "value": 22553.93,
+      "coords": {
+        "x1": 0,
+        "x2": 17,
+        "xMid": 5.1,
+        "y1": 0,
+        "y2": 44,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 17,
+        "xMid": 5.1,
+        "y1": 0,
+        "y2": 44,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 27,
+      "value": 22464.2,
+      "coords": {
+        "x1": 0,
+        "x2": 36,
+        "xMid": 10.799999999999999,
+        "y1": 0,
+        "y2": 27,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 36,
+        "xMid": 10.799999999999999,
+        "y1": 0,
+        "y2": 27,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 43,
+      "value": 22325.57,
+      "coords": {
+        "x1": 0,
+        "x2": 45,
+        "xMid": 13.5,
+        "y1": 0,
+        "y2": 43,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 45,
+        "xMid": 13.5,
+        "y1": 0,
+        "y2": 43,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 45,
+      "value": 22279.84,
+      "coords": {
+        "x1": 0,
+        "x2": 46,
+        "xMid": 13.799999999999999,
+        "y1": 0,
+        "y2": 45,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 46,
+        "xMid": 13.799999999999999,
+        "y1": 0,
+        "y2": 45,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 35,
+      "value": 22173.93,
+      "coords": {
+        "x1": 0,
+        "x2": 38,
+        "xMid": 11.4,
+        "y1": 0,
+        "y2": 35,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 38,
+        "xMid": 11.4,
+        "y1": 0,
+        "y2": 35,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 22,
+      "target": 44,
+      "value": 22141.38,
+      "coords": {
+        "x1": 11,
+        "x2": 13,
+        "xMid": 11.6,
+        "y1": 8,
+        "y2": 13,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 11,
+        "x2": 13,
+        "xMid": 11.6,
+        "y1": 8,
+        "y2": 13,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      }
+    },
+    {
+      "source": 22,
+      "target": 11,
+      "value": 22077.01,
+      "coords": {
+        "x1": 11,
+        "x2": 23,
+        "xMid": 14.6,
+        "y1": 8,
+        "y2": 33,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 11,
+        "x2": 23,
+        "xMid": 14.6,
+        "y1": 8,
+        "y2": 33,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      }
+    },
+    {
+      "source": 33,
+      "target": 21,
+      "value": 21901.74,
+      "coords": {
+        "x1": 2,
+        "x2": 28,
+        "xMid": 9.8,
+        "y1": 2,
+        "y2": 21,
+        "ym1": 2,
+        "ym2": 3.2745098039215685
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 2,
+        "x2": 28,
+        "xMid": 9.8,
+        "y1": 2,
+        "y2": 21,
+        "ym1": 2,
+        "ym2": 3.2745098039215685
+      }
+    },
+    {
+      "source": 4,
+      "target": 29,
+      "value": 21863.38,
+      "coords": {
+        "x1": 0,
+        "x2": 34,
+        "xMid": 10.2,
+        "y1": 0,
+        "y2": 29,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 34,
+        "xMid": 10.2,
+        "y1": 0,
+        "y2": 29,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 17,
+      "value": 21787.47,
+      "coords": {
+        "x1": 0,
+        "x2": 9,
+        "xMid": 2.6999999999999997,
+        "y1": 0,
+        "y2": 11,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 9,
+        "xMid": 2.6999999999999997,
+        "y1": 0,
+        "y2": 11,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 22,
+      "value": 21765.01,
+      "coords": {
+        "x1": 0,
+        "x2": 11,
+        "xMid": 3.3,
+        "y1": 0,
+        "y2": 8,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 11,
+        "xMid": 3.3,
+        "y1": 0,
+        "y2": 8,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 40,
+      "value": 21463.01,
+      "coords": {
+        "x1": 0,
+        "x2": 42,
+        "xMid": 12.6,
+        "y1": 0,
+        "y2": 40,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 42,
+        "xMid": 12.6,
+        "y1": 0,
+        "y2": 40,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 6,
+      "value": 20952.91,
+      "coords": {
+        "x1": 0,
+        "x2": 1,
+        "xMid": 0.3,
+        "y1": 0,
+        "y2": 1,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 1,
+        "xMid": 0.3,
+        "y1": 0,
+        "y2": 1,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 46,
+      "target": 49,
+      "value": 20654.82,
+      "coords": {
+        "x1": 6,
+        "x2": 49,
+        "xMid": 18.9,
+        "y1": 4,
+        "y2": 49,
+        "ym1": 4,
+        "ym2": 4.764705882352941
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 6,
+        "x2": 49,
+        "xMid": 18.9,
+        "y1": 4,
+        "y2": 49,
+        "ym1": 4,
+        "ym2": 4.764705882352941
+      }
+    },
+    {
+      "source": 22,
+      "target": 1,
+      "value": 20590.09,
+      "coords": {
+        "x1": 11,
+        "x2": 14,
+        "xMid": 11.9,
+        "y1": 8,
+        "y2": 25,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 11,
+        "x2": 14,
+        "xMid": 11.9,
+        "y1": 8,
+        "y2": 25,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      }
+    },
+    {
+      "source": 22,
+      "target": 24,
+      "value": 20440.72,
+      "coords": {
+        "x1": 11,
+        "x2": 29,
+        "xMid": 16.4,
+        "y1": 8,
+        "y2": 24,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 11,
+        "x2": 29,
+        "xMid": 16.4,
+        "y1": 8,
+        "y2": 24,
+        "ym1": 8,
+        "ym2": 8.254901960784313
+      }
+    },
+    {
+      "source": 4,
+      "target": 12,
+      "value": 20104.72,
+      "coords": {
+        "x1": 0,
+        "x2": 21,
+        "xMid": 6.3,
+        "y1": 0,
+        "y2": 36,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 21,
+        "xMid": 6.3,
+        "y1": 0,
+        "y2": 36,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 47,
+      "value": 20087.99,
+      "coords": {
+        "x1": 0,
+        "x2": 48,
+        "xMid": 14.399999999999999,
+        "y1": 0,
+        "y2": 47,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 48,
+        "xMid": 14.399999999999999,
+        "y1": 0,
+        "y2": 47,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 33,
+      "value": 19469.16,
+      "coords": {
+        "x1": 0,
+        "x2": 2,
+        "xMid": 0.6,
+        "y1": 0,
+        "y2": 2,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 2,
+        "xMid": 0.6,
+        "y1": 0,
+        "y2": 2,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 18,
+      "value": 18192.87,
+      "coords": {
+        "x1": 0,
+        "x2": 10,
+        "xMid": 3,
+        "y1": 0,
+        "y2": 10,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 10,
+        "xMid": 3,
+        "y1": 0,
+        "y2": 10,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 48,
+      "value": 17882.87,
+      "coords": {
+        "x1": 0,
+        "x2": 47,
+        "xMid": 14.1,
+        "y1": 0,
+        "y2": 48,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 47,
+        "xMid": 14.1,
+        "y1": 0,
+        "y2": 48,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 18,
+      "target": 4,
+      "value": 17311.05,
+      "coords": {
+        "x1": 10,
+        "x2": 0,
+        "xMid": 7,
+        "y1": 10,
+        "y2": 0,
+        "ym1": 10,
+        "ym2": 9.745098039215687
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 10,
+        "x2": 0,
+        "xMid": 7,
+        "y1": 10,
+        "y2": 0,
+        "ym1": 10,
+        "ym2": 9.745098039215687
+      }
+    },
+    {
+      "source": 4,
+      "target": 10,
+      "value": 16598.85,
+      "coords": {
+        "x1": 0,
+        "x2": 20,
+        "xMid": 6,
+        "y1": 0,
+        "y2": 30,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 20,
+        "xMid": 6,
+        "y1": 0,
+        "y2": 30,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    },
+    {
+      "source": 4,
+      "target": 0,
+      "value": 16460.49,
+      "coords": {
+        "x1": 0,
+        "x2": 15,
+        "xMid": 4.5,
+        "y1": 0,
+        "y2": 22,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      },
+      "isValid": true,
+      "gcoords": {
+        "x1": 0,
+        "x2": 15,
+        "xMid": 4.5,
+        "y1": 0,
+        "y2": 22,
+        "ym1": 0,
+        "ym2": 4.333333333333333
+      }
+    }
+  ],
+  "stat": {
+    "max": {
+      "md": 0.48991,
+      "ci": 83.3153,
+      "lp": 0.444,
+      "pop": 17.668,
+      "pci": 2.02687,
+      "pd": 763.536
+    },
+    "min": {
+      "md": 0.00404131,
+      "ci": 0.96254,
+      "lp": 0.048,
+      "pop": 0.271,
+      "pci": 1.00888,
+      "pd": 0.407284
+    }
+  },
+  "cstat": {
+    "max": {
+      "close": 0.007246377,
+      "betweenness": 89,
+      "pageRank": 0.045689926,
+      "hit": 17,
+      "outdegree": 17
+    },
+    "min": {
+      "close": 0,
+      "betweenness": 0,
+      "pageRank": 0,
+      "hit": 0,
+      "outdegree": 0
+    }
+  }
+}

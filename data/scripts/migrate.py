@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from argparse import ArgumentParser
 import pandas as pd
 from app import db
-from app.models import Policy, Cascade, RootState, PolicyText
+from app.models import Policy, Cascade, RootState
 from app.dao import PolicyDao
 
 Session = sessionmaker(bind=db.engine)
@@ -33,23 +33,6 @@ def get_fixed_description(policy_id, description):
         return _THE_OTHER_DESCRIPTION
 
     return description
-
-
-def add_policy_full_test():
-    df = pd.read_stata(rel_path('../external/raw/longer_bill_text_1108/bill_text.dta'))
-    policies = df.drop_duplicates('policy')
-    session = Session()
-    text_count = 0
-    link_count = 0
-    for p in policies.itertuples():
-        if p.link is not "":
-            link_count += 1
-        if p.policytext is not "":
-            text_count += 1
-        session.query(PolicyText).filter(PolicyText.policyId == p.policy).update(
-            {'fullText1': p.policytext, 'fullTextUrl1': p.link})
-    session.commit()
-    print """link: %d , text: %d""" % (link_count, text_count)
 
 
 def add_policy_n_description():
@@ -184,5 +167,3 @@ if __name__ == '__main__':
         get_stat_for_0708_update()
     if operation == "u":
         alter_major_topic()
-    if operation == "t":
-        add_policy_full_test()

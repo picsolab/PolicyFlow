@@ -15,6 +15,26 @@ const GraphSettings = {
         multiplier: {},
         config: {}
     },
+    
+    // new diffusion view settings
+    f: {
+        size: {
+            width: 800,
+            height: 680,
+            mainWidth: 650,
+            mainHeight: 650,
+            upperPaneHeight: 30,
+            rightPaneWidth: 50,
+            timeLineHeight: 30
+        },
+        margin: {
+            timeLineBottom: 5
+        },
+        padding: 30,
+        config: {
+            smoothness: 0.35
+        }
+    },
 
     // policy view settings
     p: {

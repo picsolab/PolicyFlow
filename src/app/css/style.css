@@ -60,7 +60,7 @@
 
 .clicked-item {
     stroke: var(--color-clicked) !important;
-    stroke-width: 5;
+    stroke-width: 3;
     z-index: 50;
     position: relative;
 }
