@@ -13,7 +13,6 @@ from .base_service import BaseService
 from .computing_service import ComputingService
 from ..models import get_state_index
 from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao
-from sklearn.cluster import MeanShift, estimate_bandwidth
 from operator import itemgetter
 
 computing_service = ComputingService()
