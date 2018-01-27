@@ -7,6 +7,7 @@ import random
 from .helper import DecimalEncoder
 from .base_service import BaseService
 from .computing_service import ComputingService
+from ..models import get_state_index
 from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao
 
 computing_service = ComputingService()
@@ -45,21 +46,17 @@ class PageService(BaseService):
     def get_cluster_based_on_cluster_method(cluster_method):
         """get cluster"""
         output = {"name": cluster_method}
+        children = []
         if cluster_method == "subject":
             subjects = SubjectDao.get_all_valid_subjects()
             children = [{"name": s.subjectName, "id": s.subjectId, "valid": s.subjectValid, "size": len(s.policies)}
                         for s in subjects]
-            output["children"] = children
-            output["size"] = reduce(lambda x, y: x + y["size"], children, 0)
         elif cluster_method == "text":
             reduced_policy = {}
             policies = PolicyDao.get_policy_per_lda_cluster()
-            for policy in policies:
-                reduced_policy.setdefault(policy[0], []).append({"name": policy[1], "size": policy[2]})
-            output["children"] = reduce(lambda x, y: x + [{"name": y, "children": reduced_policy[y],
-                                                           "size": reduce(lambda a, b: a + b["size"], reduced_policy[y],
-                                                                          0)}], reduced_policy, [])
-            output["size"] = reduce(lambda x, y: x + y["size"], output["children"], 0)
+            children = [{"name": p.policyLda1, "size": p.policyCount} for p in policies]
+        output["children"] = children
+        output["size"] = reduce(lambda x, y: x + y["size"], children, 0)
         return json.dumps(output)
 
 
@@ -277,6 +274,7 @@ class NetworkService(BaseService):
             temp_object = {}
             stateId = state.stateId
             temp_object["stateId"] = stateId
+            temp_object["stateIndex"] = get_state_index(stateId)
             temp_object["stateName"] = state.stateName
             temp_meta_set = {}
             if stateId == "NE":
