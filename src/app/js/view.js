@@ -90,6 +90,8 @@ let DiffusionView3 = Backbone.View.extend({
         var plot = d4.select("#new-diffusion-view"),
             svg = plot
                 .append("svg")
+                //.attr('preserveAspectRatio', 'xMidYMin meet')
+                //.attr('viewBox', ("0 0 " + gs.p.size.width + " " + gs.p.size.height + ""))
                 .attr("width", gs.f.size.width)
                 .attr("height", gs.f.size.height)
                 .style("border-bottom", "#d1d1d1 1px solid");
@@ -105,7 +107,7 @@ let DiffusionView3 = Backbone.View.extend({
         // Define scales and axes
         let xScale = d4.scaleTime(),     // xScale.range is dynamic according to the length of yearly timeline
             yScale = d4.scaleBand()
-                .range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]);
+                .range([gs.f.size.height - 100, gs.f.size.upperPaneHeight + 10]);
 
         // Timeline bar
         let yScale_timeline = d4.scaleLinear()
@@ -131,17 +133,17 @@ let DiffusionView3 = Backbone.View.extend({
             for(var i=minYear - 1; i<=maxYear; i++){ // minYear - 1 because there is a dummy year as the leftmost column
                 ticks.push(new Date(i, 0, 1));
             }
-            xAxisSettingTop = d4.axisTop(xScale).tickSize(5).tickValues(ticks);
-            xAxisSettingTop = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
+            xAxisSettingTop = d4.axisTop(xScale).tickSize(0).tickValues(ticks);
+            xAxisSettingBottom = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
         }
-        else if (yearRange <= 10){
+        else if (yearRange <= 15){
             ticks = [new Date(minYear, 0, 1), new Date(Math.ceil((maxYear-minYear)/2), 0, 1), new Date(maxYear, 0, 1)];
-            xAxisSettingTop = d4.axisTop(xScale).tickSize(5).tickValues(ticks);
+            xAxisSettingTop = d4.axisTop(xScale).tickSize(0).tickValues(ticks);
             xAxisSettingBottom = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
         }
         else{
             xScale.nice();
-            xAxisSettingTop = d4.axisTop(xScale).tickSize(5);
+            xAxisSettingTop = d4.axisTop(xScale).tickSize(0);
             xAxisSettingBottom = d4.axisBottom(xScale).tickSize(5);
         }
 
@@ -170,7 +172,7 @@ let DiffusionView3 = Backbone.View.extend({
                 .attr("class", "g_nodes")
                 .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")")
             g_attrGraph = svg.append("g")
-                .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 40) + "," + gs.f.size.upperPaneHeight + ")")
+                .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 25) + "," + gs.f.size.upperPaneHeight + ")")
                 .style("fill", "green"),
             g_chart = svg.append("g")
                 .attr("class", "bar_chart")
@@ -179,16 +181,18 @@ let DiffusionView3 = Backbone.View.extend({
         let xAxisBottom = g_matrix.append("g")
                 .attr("class", "xAxis")
                 .attr("transform", "translate(0," + (gs.f.size.height - 100) + ")")
-                .call(xAxisSettingTop)
+                .call(xAxisSettingBottom)
                 .selectAll("text")
                 .attr("class", "x-label")
+                .attr("transform", "translate(" + cellSideLength/2 + ",0)")
                 .style("text-anchor","middle"),
             xAxisTop = g_matrix.append("g")
                 .attr("class", "xAxis")
                 .attr("transform", "translate(0," + (gs.f.size.upperPaneHeight + 10) + ")")
-                .call(xAxisSettingBottom)
+                .call(xAxisSettingTop)
                 .selectAll("text")
                 .attr("class", "x-label")
+                .attr("transform", "translate(" + cellSideLength/2 + ",0)")
                 .style("text-anchor","middle"),
             yAxis = g_matrix.append("g")
                 .attr("class", "yAxis")
@@ -197,6 +201,7 @@ let DiffusionView3 = Backbone.View.extend({
                 .selectAll("text")
                 .attr("class", "y-label")
                 .style("text-anchor","middle")
+                .style("font-size", "9px")
                 .attr("dx","1em");
 
         // Define arrows
@@ -244,6 +249,13 @@ let DiffusionView3 = Backbone.View.extend({
             .style("fill", "none");
 
         // Add legend
+        // Arc for halfcircle node.. will be reused below again
+        var circleArc = d4.arc()
+            .innerRadius(0)
+            .outerRadius(cellSideLength / 2)
+            .startAngle(0)
+            .endAngle(Math.PI);
+        // legend border
         g_legend.append("rect")
             .attr("class", "legend")
             .attr("x", 0)
@@ -253,7 +265,7 @@ let DiffusionView3 = Backbone.View.extend({
             .style("fill", "none")
             .style('shape-rendering','crispEdges')
             .style("stroke", "#EAECEE");
-
+        // source state
         g_legend.append("circle")
             .attr("class", function(d){
                 return "legend_source_circle";
@@ -262,13 +274,12 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("cy", 10)
             .attr("r", 5)
             .style("fill", "#E9CFEC");
-
         g_legend.append("text")
             .attr("x", 20)
             .attr("y", 13)
-            .text("Source state")
+            .text("Influencing state")
             .style("font-size", "10px");
-
+        // target state
         g_legend.append("circle")
             .attr("class", function(d){
                 return "legend_circle_target";
@@ -280,11 +291,48 @@ let DiffusionView3 = Backbone.View.extend({
             .style("shape-rendering", "crispEdges")
             .style("stroke", "indigo")
             .style("stroke-width", 1);
-
         g_legend.append("text")
             .attr("x", 20)
             .attr("y", 28)
-            .text("Target state")
+            .text("Influenced state")
+            .style("font-size", "10px");
+        // State in the year (node)
+        g_legend.append("path")
+            .attr("class", "legend_node")
+            .attr("d", circleArc)
+            .attr("transform", "translate(10, 40) rotate(0)")
+            .style("fill", "mediumpurple");
+        g_legend.append("text")
+            .attr("x", 20)
+            .attr("y", 43)
+            .text("State in the year")
+            .style("font-size", "10px");
+        // on the way forward
+        g_legend.append("rect")
+            .attr("class", "legend_rect")
+            .attr("x", 5)
+            .attr("y", 50)
+            .attr("width", cellSideLength*3)
+            .attr("height", cellSideLength)
+            .style("fill", "eaecee");
+        g_legend.append("text")
+            .attr("x", 40)
+            .attr("y", 58)
+            .text("Source to the node")
+            .style("font-size", "10px");
+        // on the way backward
+        g_legend.append("rect")
+            .attr("class", "legend_rect")
+            .attr("x", 5)
+            .attr("y", 65)
+            .attr("width", cellSideLength*3)
+            .attr("height", cellSideLength)
+            .style("fill", "pink")
+            .style("opacity", 0.15);
+        g_legend.append("text")
+            .attr("x", 40)
+            .attr("y", 73)
+            .text("Source to the node")
             .style("font-size", "10px");
 
         $.extend(_attr, {
@@ -312,6 +360,7 @@ let DiffusionView3 = Backbone.View.extend({
             attrGraph_colorScale: attrGraph_colorScale,
             yScale_timeline: yScale_timeline,
             timeline_colorScale: timeline_colorScale,
+            circleArc: circleArc,
             markerEnd: markerEnd,
             markerEndMouseOverFromSource: markerEndMouseOverFromSource,
             markerEndMouseOverToTarget: markerEndMouseOverToTarget,
@@ -412,7 +461,7 @@ let DiffusionView3 = Backbone.View.extend({
                 return _attr.xScale(new Date(sourceYear, 0, 1)) - _attr.xScale(new Date(d.year, 0, 1)) + (_attr.cellSideLength / 2);
             })
             .attr("cy", _attr.cellSideLength / 2)
-            .attr("r", 5)
+            .attr("r", _attr.cellSideLength / 2)
             .style("fill", "#E9CFEC");
             // .style("shape-rendering", "crispEdges")
             // .style("stroke", "black")
@@ -449,7 +498,7 @@ let DiffusionView3 = Backbone.View.extend({
                         })
                         .attr("cx", _attr.xScale(new Date(outEdge.targetStateInfo.adoptedYear, 0, 1)) - _attr.xScale(new Date(d.year, 0, 1)) + (_attr.cellSideLength / 2))
                         .attr("cy", _attr.cellSideLength / 2)
-                        .attr("r", 5)
+                        .attr("r", _attr.cellSideLength / 2)
                         .style("fill", "none")
                         //.style("shape-rendering", "crispEdges")
                         .style("stroke", "indigo")
@@ -515,12 +564,6 @@ let DiffusionView3 = Backbone.View.extend({
         //     .style("stroke", "white");
 
         // Draw half circle heading the arc toward what it goes
-        var arc = d4.arc()
-            .innerRadius(0)
-            .outerRadius(5)
-            .startAngle(0)
-            .endAngle(Math.PI);
-
         _attr.g_nodes
             .selectAll("path")
             .data(_attr.dMatrix.filter(function(d){
@@ -530,7 +573,7 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("class", function(d){
                 return "rect_node rect_node_" + d.node + " " + d.node;
             })
-            .attr("d", arc)
+            .attr("d", _attr.circleArc)
             .attr("transform", function(d){
                 var nodeYear = d.year,
                     sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
@@ -539,10 +582,10 @@ let DiffusionView3 = Backbone.View.extend({
                 // Arc heading to the right if the adoption
                 if(sourceYear <= nodeYear) {
                     rotate = "rotate(0)";
-                    return "translate(" + (_attr.xScale(new Date(d.year, 0, 1)) + 5) + "," + (_attr.yScale(d.node) + 5.5) + ") " + rotate;
+                    return "translate(" + (_attr.xScale(new Date(d.year, 0, 1)) + 5) + "," + (_attr.yScale(d.node) + _attr.cellSideLength/2) + ") " + rotate;
                 }else {
                     rotate = "rotate(180)";
-                    return "translate(" + (_attr.xScale(new Date(d.year, 0, 1)) + 5) + "," + (_attr.yScale(d.node) + 5.5) + ") " + rotate;
+                    return "translate(" + (_attr.xScale(new Date(d.year, 0, 1)) + 5) + "," + (_attr.yScale(d.node) + _attr.cellSideLength/2) + ") " + rotate;
                 }
             })
             //.style("stroke", "black")
