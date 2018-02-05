@@ -437,7 +437,7 @@ let DiffusionModel2 = Backbone.Model.extend({
         var minYear = d4.min(years),
             maxYear = d4.max(years);
 
-        for(i=minYear; i<=maxYear; i++){
+        for(i=minYear-1; i<=maxYear; i++){  // Start from minYear-1 for a dummy year as the leftmost dummy column
             yearArray.push(i);
         }
 
@@ -445,7 +445,7 @@ let DiffusionModel2 = Backbone.Model.extend({
 
         // Initialize matrix
         nodes.forEach(function(node){
-           yearArray.forEach(function(year){
+            yearArray.forEach(function(year){
                // Identify edges that are connected to the corresponding cell
                // sourceEdges = edges from sources to this node
                var inEdgeMatch = edgesData.filter(function(edge){
@@ -461,25 +461,63 @@ let DiffusionModel2 = Backbone.Model.extend({
                        && edge.sourceStateInfo.adoptedYear != 9999
                        && edge.targetStateInfo.adoptedYear != 9999; });
 
-               var cellInfo = {
+               var cellArray = []; 
+
+               cellArray.push({
                    isSource: false,
                    isTarget: false,
                    node: node.stateId,
                    year: year,
+                   month: 0,
+                   day: 1,
                    outEdges: [],  // this node is a source node, and the edge goes from this node
                    inEdges: []       // this node is a target node, and the edge goes to this node
-               };
+               });
+
+               // Add a dummy cell if year range is short enough to be equal to or less than 5
+               if (maxYear - minYear <= 5) {
+                    cellArray.push({
+                       isSource: false,
+                       isTarget: false,
+                       node: node.stateId,
+                       year: year,
+                       month: 3,
+                       day: 1,
+                       outEdges: [],
+                       inEdges: []
+                   });
+                    cellArray.push({
+                       isSource: false,
+                       isTarget: false,
+                       node: node.stateId,
+                       year: year,
+                       month: 6,
+                       day: 1,
+                       outEdges: [],
+                       inEdges: []
+                   });
+                    cellArray.push({
+                       isSource: false,
+                       isTarget: false,
+                       node: node.stateId,
+                       year: year,
+                       month: 9,
+                       day: 1,
+                       outEdges: [],
+                       inEdges: []
+                   });
+               }
 
                if(inEdgeMatch && inEdgeMatch.length != 0){
-                   cellInfo.isTarget = true;
-                   cellInfo.inEdges = inEdgeMatch;
+                   cellArray[0].isTarget = true;
+                   cellArray[0].inEdges = inEdgeMatch;
                }
                if(outEdgeMatch && outEdgeMatch.length != 0){
-                   cellInfo.isSource = true;
-                   cellInfo.outEdges = outEdgeMatch;
+                   cellArray[0].isSource = true;
+                   cellArray[0].outEdges = outEdgeMatch;
                }
 
-               dMatrix.push(cellInfo);
+               dMatrix.push.apply(dMatrix, cellArray);
            });
         });
 

@@ -105,7 +105,6 @@ function setupRenderingControllers() {
                 diffusionModel2.populate(conditions);
             }
             //diffusionModel2.populate(conditions);
-            console.log("policy hasChanged: ", conditions);
 
         } else {
             if (conditions.hasChanged('centrality')) {
@@ -205,7 +204,6 @@ function setupRenderingTriggers() {
     });
 
     dynamicNetworkModel.on("change", () => {
-        console.log("setupRenderingTriggers hasChanged: ", conditions, dynamicNetworkModel.get("edgesInIndices"));
         networkModel.populate(conditions, dynamicNetworkModel.get("edgesInStateIds"));
         // diffusionModel.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
         diffusionModel2.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));

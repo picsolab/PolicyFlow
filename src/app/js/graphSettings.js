@@ -20,7 +20,7 @@ const GraphSettings = {
     f: {
         size: {
             width: 800,
-            height: 680,
+            height: 560,
             mainWidth: 650,
             mainHeight: 650,
             upperPaneHeight: 30,
@@ -30,7 +30,7 @@ const GraphSettings = {
         margin: {
             timeLineBottom: 5
         },
-        padding: 30,
+        padding: 130,
         config: {
             smoothness: 0.35
         }

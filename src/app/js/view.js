@@ -91,7 +91,8 @@ let DiffusionView3 = Backbone.View.extend({
             svg = plot
                 .append("svg")
                 .attr("width", gs.f.size.width)
-                .attr("height", gs.f.size.height);
+                .attr("height", gs.f.size.height)
+                .style("border-bottom", "#d1d1d1 1px solid");
 
         // Data
         var dMatrix = _self.model.get("dMatrix"),
@@ -105,7 +106,8 @@ let DiffusionView3 = Backbone.View.extend({
         let xScale = d4.scaleTime(),     // xScale.range is dynamic according to the length of yearly timeline
             yScale = d4.scaleBand()
                 .range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]);
-            // Timeline bar
+
+        // Timeline bar
         let yScale_timeline = d4.scaleLinear()
                 .domain([d4.max(yearCount, function(d) { return d.count; }), 0])
                 .rangeRound([gs.f.size.upperPaneHeight, 0]),
@@ -121,55 +123,70 @@ let DiffusionView3 = Backbone.View.extend({
             maxYear = d4.max(nodesWithEdge, function(d) { return d.adoptedYear; }),
             yearRange = maxYear - minYear,
             ticks = [],
-            xAxisSetting;
+            xAxisSettingTop, xAxisSettingBottom;
 
         // Set tick values
         if(yearRange <= 5) {
-            ticks = [new Date(minYear, 0, 1), new Date(maxYear, 0, 1)];
-            xAxisSetting = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
+            // If yearRange is less than 5, mark all years
+            for(var i=minYear - 1; i<=maxYear; i++){ // minYear - 1 because there is a dummy year as the leftmost column
+                ticks.push(new Date(i, 0, 1));
+            }
+            xAxisSettingTop = d4.axisTop(xScale).tickSize(5).tickValues(ticks);
+            xAxisSettingTop = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
         }
         else if (yearRange <= 10){
             ticks = [new Date(minYear, 0, 1), new Date(Math.ceil((maxYear-minYear)/2), 0, 1), new Date(maxYear, 0, 1)];
-            xAxisSetting = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
+            xAxisSettingTop = d4.axisTop(xScale).tickSize(5).tickValues(ticks);
+            xAxisSettingBottom = d4.axisBottom(xScale).tickSize(5).tickValues(ticks);
         }
         else{
             xScale.nice();
-            xAxisSetting = d4.axisBottom(xScale).tickSize(5);
+            xAxisSettingTop = d4.axisTop(xScale).tickSize(5);
+            xAxisSettingBottom = d4.axisBottom(xScale).tickSize(5);
         }
 
-        xScale.domain([new Date(minYear, 0, 1),
+        xScale.domain([new Date(minYear - 1, 0, 1),
                         new Date(maxYear + 1, 0, 1)
                         ]);
 
         yScale.domain(nodes.map(function(d){ return d.stateId; }));
 
         cellSideLength = yScale.bandwidth();
-        matrixWidth = cellSideLength * (xScale.domain()[1].getYear() - xScale.domain()[0].getYear() + 1);
-        console.log(matrixWidth, cellSideLength);
+        matrixWidth = cellSideLength * (dMatrix.length/yScale.domain().length) + cellSideLength;
 
         xScale.rangeRound([0, matrixWidth]);
 
         // All groups and axes
         let g_matrix = svg.append("g")
                 .attr("class", "g_matrix")
-                .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")");
+                .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
+            g_legend = svg.append("g")
+                .attr("class", "g_legend")
+                .attr("transform", "translate(10, 60)"),
             g_mouseover = svg.append("g")
                 .attr("class", "mouseover-group")
-                .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")"),
+                .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
             g_nodes = svg.append("g")
                 .attr("class", "g_nodes")
-                .attr("transform", "translate(10," + gs.f.size.upperPaneHeight + ")")
+                .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")")
             g_attrGraph = svg.append("g")
-                .attr("transform", "translate(" + (matrixWidth + 40) + "," + gs.f.size.upperPaneHeight + ")")
+                .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 40) + "," + gs.f.size.upperPaneHeight + ")")
                 .style("fill", "green"),
             g_chart = svg.append("g")
                 .attr("class", "bar_chart")
-                .attr("transform", "translate(10, 25)");
+                .attr("transform", "translate(" + gs.f.padding + ",25)");
 
-        let xAxis = g_matrix.append("g")
+        let xAxisBottom = g_matrix.append("g")
                 .attr("class", "xAxis")
                 .attr("transform", "translate(0," + (gs.f.size.height - 100) + ")")
-                .call(xAxisSetting)
+                .call(xAxisSettingTop)
+                .selectAll("text")
+                .attr("class", "x-label")
+                .style("text-anchor","middle"),
+            xAxisTop = g_matrix.append("g")
+                .attr("class", "xAxis")
+                .attr("transform", "translate(0," + (gs.f.size.upperPaneHeight + 10) + ")")
+                .call(xAxisSettingBottom)
                 .selectAll("text")
                 .attr("class", "x-label")
                 .style("text-anchor","middle"),
@@ -225,6 +242,50 @@ let DiffusionView3 = Backbone.View.extend({
             .style("stroke-width", 1.5)
             .style("stroke", "indigo")
             .style("fill", "none");
+
+        // Add legend
+        g_legend.append("rect")
+            .attr("class", "legend")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", 100)
+            .attr("height", 130)
+            .style("fill", "none")
+            .style('shape-rendering','crispEdges')
+            .style("stroke", "#EAECEE");
+
+        g_legend.append("circle")
+            .attr("class", function(d){
+                return "legend_source_circle";
+            })
+            .attr("cx", 10)
+            .attr("cy", 10)
+            .attr("r", 5)
+            .style("fill", "#E9CFEC");
+
+        g_legend.append("text")
+            .attr("x", 20)
+            .attr("y", 13)
+            .text("Source state")
+            .style("font-size", "10px");
+
+        g_legend.append("circle")
+            .attr("class", function(d){
+                return "legend_circle_target";
+            })
+            .attr("cx", 10)
+            .attr("cy", 25)
+            .attr("r", 5)
+            .style("fill", "none")
+            .style("shape-rendering", "crispEdges")
+            .style("stroke", "indigo")
+            .style("stroke-width", 1);
+
+        g_legend.append("text")
+            .attr("x", 20)
+            .attr("y", 28)
+            .text("Target state")
+            .style("font-size", "10px");
 
         $.extend(_attr, {
             // getPrefix: () => {
@@ -335,7 +396,7 @@ let DiffusionView3 = Backbone.View.extend({
                 .enter().append("g")
                 .attr("class", function(d){ return "gcell " + d.node; })
                 .attr("transform", function(d){
-                    return "translate(" + _attr.xScale(new Date(d.year, 0, 1)) + "," + _attr.yScale(d.node) + ")";
+                    return "translate(" + _attr.xScale(new Date(d.year, d.month, d.day)) + "," + _attr.yScale(d.node) + ")";
                 });
 
         // Draw source node rectangles of the cell node
@@ -488,6 +549,7 @@ let DiffusionView3 = Backbone.View.extend({
             .style("fill", "mediumpurple")
             //.style("stroke-width", 1);
 
+        // Draw rects between source and node
         _self.colorRectsBetween();
 
         // Mouseover, Mouseout
@@ -1164,17 +1226,17 @@ let DiffusionView3 = Backbone.View.extend({
                         nodeYear = nodeData.year,
                         sourceYear = nodeData.inEdges[0].sourceStateInfo.adoptedYear;
                     // Select rects on the way from source to target
-                    if(sourceYear > nodeYear) {
+                    if(sourceYear > nodeYear) {  // If it goes backward
                         d4.selectAll(".rect_" + nodeName)
                             .filter(function(e){
-                                return (sourceYear > e.year) && (nodeYear < e.year);
+                                return nodeYear == e.year ? e.month!=0 : (sourceYear > e.year)&&(nodeYear < e.year);
                             })
                             .style("fill", "pink")
                             .style("opacity", 0.15);
                     } else {
                         d4.selectAll(".rect_" + nodeName)
                             .filter(function(e){
-                                return (sourceYear < e.year) && (nodeYear > e.year);
+                                return sourceYear == e.year ? e.month!=0 : (sourceYear < e.year)&&(nodeYear > e.year);
                             })
                             .style("fill", "mediumpurple")
                             .style("opacity", 0.15);
