@@ -164,7 +164,7 @@ let DiffusionView3 = Backbone.View.extend({
                 .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
             g_legend = svg.append("g")
                 .attr("class", "g_legend")
-                .attr("transform", "translate(10, 60)"),
+                .attr("transform", "translate(10, 70)"),
             g_mouseover = svg.append("g")
                 .attr("class", "mouseover-group")
                 .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
@@ -206,49 +206,49 @@ let DiffusionView3 = Backbone.View.extend({
 
         // Define arrows
         let markerEnd = svg.append("defs")
-            .append("marker")
-            .attr("id", "arrow")
-            .attr("refX", 3)
-            .attr("refY", 3)
-            .attr("markerWidth", 20)
-            .attr("markerHeight", 20)
-            .attr("markerUnits", "userSpaceOnUse")
-            .attr("orient", "auto")
-            .append("path")
-            .attr("d", "M0,6L6,3L0,0")
-            .style("stroke-width", 1)
-            .style("stroke", "gray")
-            .style("fill", "none"),
+                .append("marker")
+                .attr("id", "arrow")
+                .attr("refX", 3)
+                .attr("refY", 3)
+                .attr("markerWidth", 20)
+                .attr("markerHeight", 20)
+                .attr("markerUnits", "userSpaceOnUse")
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M0,6L6,3L0,0")
+                .style("stroke-width", 1)
+                .style("stroke", "gray")
+                .style("fill", "none"),
             markerEndMouseOverFromSource = svg.append("defs")
-            .append("marker")
-            .attr("id", "arrow-mouseover-from-source")
-            .attr("refX", 3)
-            .attr("refY", 3)
-            .attr("markerWidth", 20)
-            .attr("markerHeight", 20)
-            .attr("markerUnits", "userSpaceOnUse")
-            .attr("orient", "auto")
-            .append("path")
-            .attr("d", "M0,6L6,3L0,0")
-            .style("stroke-width", 2)
-            .style("stroke", "mediumpurple")
-            .style("fill", "none"),
+                .append("marker")
+                .attr("id", "arrow-mouseover-from-source")
+                .attr("refX", 3)
+                .attr("refY", 3)
+                .attr("markerWidth", 20)
+                .attr("markerHeight", 20)
+                .attr("markerUnits", "userSpaceOnUse")
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M0,6L6,3L0,0")
+                .style("stroke-width", 2)
+                .style("stroke", "mediumpurple")
+                .style("fill", "none"),
             markerEndMouseOverToTarget = svg.append("defs")
-            .append("marker")
-            .attr("id", "arrow-mouseover-to-target")
-            .attr("refX", 3)
-            .attr("refY", 3)
-            .attr("markerWidth", 20)
-            .attr("markerHeight", 20)
-            .attr("markerUnits", "userSpaceOnUse")
-            .attr("orient", "auto")
-            .append("path")
-            .attr("d", "M0,6L6,3L0,0")
-            .style("stroke-width", 1.5)
-            .style("stroke", "indigo")
-            .style("fill", "none");
+                .append("marker")
+                .attr("id", "arrow-mouseover-to-target")
+                .attr("refX", 3)
+                .attr("refY", 3)
+                .attr("markerWidth", 20)
+                .attr("markerHeight", 20)
+                .attr("markerUnits", "userSpaceOnUse")
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M0,6L6,3L0,0")
+                .style("stroke-width", 1.5)
+                .style("stroke", "indigo")
+                .style("fill", "none");
 
-        // Add legend
+        //***** For legend
         // Arc for halfcircle node.. will be reused below again
         var circleArc = d4.arc()
             .innerRadius(0)
@@ -260,8 +260,8 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("class", "legend")
             .attr("x", 0)
             .attr("y", 0)
-            .attr("width", 100)
-            .attr("height", 130)
+            .attr("width", 180)
+            .attr("height", 160)
             .style("fill", "none")
             .style('shape-rendering','crispEdges')
             .style("stroke", "#EAECEE");
@@ -318,7 +318,7 @@ let DiffusionView3 = Backbone.View.extend({
         g_legend.append("text")
             .attr("x", 40)
             .attr("y", 58)
-            .text("Source to the node")
+            .text("Compliant cascade to the state")
             .style("font-size", "10px");
         // on the way backward
         g_legend.append("rect")
@@ -332,9 +332,59 @@ let DiffusionView3 = Backbone.View.extend({
         g_legend.append("text")
             .attr("x", 40)
             .attr("y", 73)
-            .text("Source to the node")
+            .text("Deviant cascade to the state")
             .style("font-size", "10px");
-
+        // text: mouseover
+        g_legend.append("text")
+            .attr("x", 10)
+            .attr("y", 95)
+            .text("Mouseover")
+            .style("font-size", "10px");
+        // source node to target nodes
+        g_legend.append("path")
+            .attr("class", "legend_path_from_source_to_targets")
+            .attr("d", "M10,107L30,107")
+            .style("stroke", "gray")
+            .style("stroke-width", 1)
+            .style("stroke-opacity", 0.6)
+            .style("marker-end", "url(#arrow)")
+            .style("fill", "none")
+            .attr("opacity", 1);
+        g_legend.append("text")
+            .attr("x", 40)
+            .attr("y", 110)
+            .text("All the influenced states of..")
+            .style("font-size", "10px");
+        g_legend.append("path")
+            .attr("class", "legend_path_to_targets")
+            .attr("d", "M10,120L30,120")
+            .style("stroke", "indigo")
+            .style("stroke-width", 2)
+            .style("stroke-opacity", 0.6)
+            .style("marker-end", "url(#arrow-mouseover-to-target)")
+            .style("fill", "none")
+            .attr("opacity", 1);
+        g_legend.append("text")
+            .attr("x", 40)
+            .attr("y", 125)
+            .text("To the influenced state")
+            .style("font-size", "10px");
+        g_legend.append("path")
+            .attr("class", "legend_path_from_source")
+            .attr("d", "M10,135L30,135")
+            .style("stroke", "mediumpurple")
+            .style("stroke-width", 2)
+            .style("stroke-opacity", 0.6)
+            .style("marker-end", "url(#arrow-mouseover-from-source)")
+            .style("fill", "none")
+            .attr("opacity", 1);
+        g_legend.append("text")
+            .attr("x", 40)
+            .attr("y", 140)
+            .text("From the influencing state")
+            .style("font-size", "10px");
+        //***** end of For legend
+        
         $.extend(_attr, {
             // getPrefix: () => {
             //     return (isSnapshot ? idPrefix : "");
@@ -595,9 +645,15 @@ let DiffusionView3 = Backbone.View.extend({
         // Draw rects between source and node
         _self.colorRectsBetween();
 
-        // Mouseover, Mouseout
+        let tooltip = d3.select("body")
+            .append("div")
+            .attr("id", "ring-tooltip");
+
+        //***** Mouseover, Mouseout
+        // Mouseover the node
         _attr.svg.selectAll(".rect_node")
             .on("mouseover", function(d){
+                console.log("mouseovered on node");
                 var sourceNode, targetNodes,
                     sourceCircle, targetRects,
                     gSourceNode, dataSourceNode;
@@ -1076,10 +1132,7 @@ let DiffusionView3 = Backbone.View.extend({
                     return _attr.timeline_colorScale(d.count); });
             });
             //***- end of mouseout
-
-        //***** sorting
-        d4.select(".sorted_by_pagerank").on("change", function(){
-        });
+        //***** end of Mouseover
 
         //************* Attribute graph
         _attr.g_attrGraph.selectAll(".attrRect")
@@ -1103,12 +1156,30 @@ let DiffusionView3 = Backbone.View.extend({
         var rects = _attr.g_chart.selectAll(".bar")
             .data(_attr.yearCount)
             .enter().append("rect")
-            .attr("class", function(d){ return "bar bar_" + d.year; })
+            .attr("class", function(d){ return "year_bar bar_" + d.year; })
             .attr("x", function(d) { return _attr.xScale(new Date(d.year, 0, 1)) + 1; })
             .attr("y", function(d) { return (gs.f.size.upperPaneHeight - _attr.yScale_timeline(d.count)); })
             .attr("width", _attr.cellSideLength - 1)
             .attr("height", function(d) { return _attr.yScale_timeline(d.count); })
             .style("fill", function(d) { return _attr.timeline_colorScale(d.count); });
+        
+        // Mouseover year bars
+        _attr.g_chart.selectAll(".year_bar")
+        .on("mouseover", function(d){
+            return tooltip.html("<b>Year:</b>&nbsp;" + d.year + 
+                                "</br>" +
+                                "<b>Frequency:</b>&nbsp;" + d.count)
+                            .style("opacity", 0.9);
+        })
+        .on("mousemove", function(d){
+            return tooltip.style({
+                top: (d4.event.pageY + gs.r.margin.tShiftY) + "px",
+                left: (d4.event.pageX + gs.r.margin.tShiftX) + "px"
+            });
+        })
+        .on("mouseout", function(d){
+            return tooltip.style("opacity", 0);
+        });
     // function drawPathToTargets(d){
     //     // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
 

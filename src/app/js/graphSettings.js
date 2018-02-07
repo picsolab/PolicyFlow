@@ -30,7 +30,7 @@ const GraphSettings = {
         margin: {
             timeLineBottom: 5
         },
-        padding: 130,
+        padding: 210,
         config: {
             smoothness: 0.35
         }
