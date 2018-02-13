@@ -437,7 +437,7 @@ let DiffusionModel2 = Backbone.Model.extend({
         var minYear = d4.min(years),
             maxYear = d4.max(years);
 
-        for(i=minYear-1; i<=maxYear; i++){  // Start from minYear-1 for a dummy year as the leftmost dummy column
+        for(var i=minYear-1; i<=maxYear; i++){  // Start from minYear-1 for a dummy year as the leftmost dummy column
             yearArray.push(i);
         }
 

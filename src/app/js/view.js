@@ -170,7 +170,7 @@ let DiffusionView3 = Backbone.View.extend({
                 .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
             g_nodes = svg.append("g")
                 .attr("class", "g_nodes")
-                .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")")
+                .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
             g_attrGraph = svg.append("g")
                 .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 25) + "," + gs.f.size.upperPaneHeight + ")")
                 .style("fill", "green"),
