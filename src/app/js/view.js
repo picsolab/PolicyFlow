@@ -1132,7 +1132,7 @@ let DiffusionView3 = Backbone.View.extend({
                     return _attr.timeline_colorScale(d.count); });
             });
             //***- end of mouseout
-        //***** end of Mouseover
+         //***** end of Mouseover
 
         //************* Attribute graph
         _attr.g_attrGraph.selectAll(".attrRect")
