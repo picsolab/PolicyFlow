@@ -280,14 +280,14 @@ function bindDomEvents() {
         }
     });
 
-    // set conditions:metadata from metadata dropdown
-    document.getElementById("metadata-dropdown").addEventListener("click", function(e) {
-        let metadata = $(e.target).attr("aid");
-        if (metadata) {
-            attributeDropdown.pickOption(metadata);
-            conditions.set("metadata", metadata);
-        }
-    });
+    // // set conditions:metadata from metadata dropdown
+    // document.getElementById("metadata-dropdown").addEventListener("click", function(e) {
+    //     let metadata = $(e.target).attr("aid");
+    //     if (metadata) {
+    //         attributeDropdown.pickOption(metadata);
+    //         conditions.set("metadata", metadata);
+    //     }
+    // });
 
     // // setup x-seq to conditions
     // sequenceSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => {
