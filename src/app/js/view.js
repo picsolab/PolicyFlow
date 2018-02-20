@@ -178,7 +178,7 @@ let DiffusionView3 = Backbone.View.extend({
                 .attr("class", "g_nodes")
                 .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
             g_attrGraph = svg.append("g")
-                .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 25) + "," + gs.f.size.upperPaneHeight + ")")
+                .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 35) + "," + gs.f.size.upperPaneHeight + ")")
                 .style("fill", "green"),
             g_chart = svg.append("g")
                 .attr("class", "bar_chart")
