@@ -151,7 +151,7 @@ let DiffusionView3 = Backbone.View.extend({
                         new Date(maxYear + 1, 0, 1)
                         ]);
 
-        yScale.domain(nodes.map(function(d){ return d.stateId; }));
+        yScale.domain(nodes.sort(function(a, b){ return d4.ascending(a.adoptedYear, b.adoptedYear); }).map(function(d){ return d.stateId; }));
 
         cellSideLength = yScale.bandwidth();
         matrixWidth = cellSideLength * (dMatrix.length/yScale.domain().length) + cellSideLength;
