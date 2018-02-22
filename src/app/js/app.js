@@ -285,7 +285,7 @@ function bindDomEvents() {
     document.getElementById("centrality-dropdown").addEventListener("click", function(e) {
         let centrality = $(e.target).attr("aid");
         if (centrality) {
-            centralityDropdown.pickOption(centrality);
+            influenceDropdown.pickOption(centrality);
             conditions.set("centrality", centrality);
         }
     });
@@ -485,13 +485,13 @@ function recoverDomBy(conditions) {
     $("#method-tab-wrapper a[value=" + conditions.get("method") + "]").tab('show');
 
     // recover factor dropdown
-    attributeDropdown.pickOption(conditions.get("factor"));
-
-    // recover centrality dropdown
-    attributeDropdown.pickOption(conditions.get("centrality"));
+    factorDropdown.pickOption(conditions.get("factor"));
 
     // recover metadata dropdown
-    influenceDropdown.pickOption(conditions.get("metadata"));
+    attributeDropdown.pickOption(conditions.get("metadata"));
+
+    // recover centrality dropdown
+    influenceDropdown.pickOption(conditions.get("centrality"));
 
     // // recover sequence switch
     // switch (conditions.get("sequence")) {
