@@ -1082,8 +1082,7 @@ let DiffusionView3 = Backbone.View.extend({
         let _self = this,
             _attr = _self._attr,
             c = _attr.c,
-            isSortingByCentrality,
-            selectAttr;
+            isSortingByCentrality;
 
             if (centralityList.includes(c.get('factor'))){
                 isSortingByCentrality = true;
@@ -1100,7 +1099,7 @@ let DiffusionView3 = Backbone.View.extend({
             transition2 = _attr.g_attrGraph.transition().duration(750),
             sortedNodes;
 
-        console.log("c.factors, isSortingByCentrality, selectedAttr:", c.get('factor'), isSortingByCentrality, selectedAttr);
+        //console.log("c.factors, isSortingByCentrality, selectedAttr:", c.get('factor'), isSortingByCentrality, selectedAttr);
         //console.log(_attr.nodes.map(function(e){ return e.metadata[selectedAttr]; }));
 
         if (isSortingByCentrality) {

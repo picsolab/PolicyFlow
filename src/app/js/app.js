@@ -271,7 +271,6 @@ function bindDomEvents() {
         // change label of attributeDropdown to `Attribute`
         attributeDropdown.label("Attribute");
         attributeDropdown.enable();
-        influenceDropdown.enable();
         factorDropdown.disable();
     });
 
