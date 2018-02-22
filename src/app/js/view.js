@@ -138,7 +138,6 @@ let DiffusionView3 = Backbone.View.extend({
             xAxisSettingBottom = d4.axisBottom(xScale).tickSize(0);
         }
         else if (yearRange <= 15){
-            console.log(minYear, maxYear, "yearRange 6 and 15");
             // for(var i=minYear - 1; i<=maxYear; i++){ // minYear - 1 because there is a dummy year as the leftmost column
             //     ticks.push(new Date(i, 0, 1));
             // }
@@ -147,7 +146,6 @@ let DiffusionView3 = Backbone.View.extend({
             xAxisSettingBottom = d4.axisBottom(xScale).tickSize(0);
         }
         else{
-            console.log(minYear, maxYear, "yearRange over 15");
             xScale.nice();
             xAxisSettingTop = d4.axisTop(xScale).tickSize(0);
             xAxisSettingBottom = d4.axisBottom(xScale).tickSize(0);
@@ -158,8 +156,6 @@ let DiffusionView3 = Backbone.View.extend({
                         ]);
 
         yScale.domain(nodes.sort(function(a, b){ 
-            console.log(a.stateId, b.stateId);
-            console.log(a.adoptedYear, b.adoptedYear);
             return d4.ascending(a.adoptedYear, b.adoptedYear); }).map(function(d){ return d.stateId; }));
 
         cellSideLength = yScale.bandwidth();
@@ -1096,7 +1092,7 @@ let DiffusionView3 = Backbone.View.extend({
                 isSortingByCentrality = false;
             }
             
-            selectedAttr = (isSortingByCentrality ?
+        let selectedAttr = (isSortingByCentrality ?
                                 c.get("factor") : 
                                 conf.pipe.metaToId[c.get("factor")]);
 
