@@ -7,6 +7,7 @@ let Conditions = Backbone.Model.extend({
         metadata: conf.bases.yAttributeList[0].id,
         sequence: conf.bases.xAttributeList[0].id,
         centrality: conf.bases.centralityList[0].id,
+        factor: conf.bases.factorList[0].id,
         cvalidity: true,
         geoBase: 'state',
         regionList: [],
@@ -258,6 +259,7 @@ let ArcModel = Backbone.Model.extend({
         let _self = this;
         this.url = this.urlRoot + conditions.get("metadata") + "/" + conditions.get("policy");
         $.getJSON(_self.url).done((data) => {
+            console.log("in ArcModel", data);
             // console.log(_self.url);
             _self.set(data);
         });
@@ -347,6 +349,7 @@ let DiffusionModel2 = Backbone.Model.extend({
         this.url = this.urlRoot + conditions.get("policy");
 
         return $.getJSON(_self.url).done(data => {
+            console.log("In DiffusionModel2", data);
             let nodes = data.nodes,
                 edgesData = _self.setData(edges, nodes),
                 nodesWithEdge = nodes.filter(function(d) { return d.adoptedYear !== 9999; });
@@ -475,13 +478,24 @@ let DiffusionModel2 = Backbone.Model.extend({
                });
 
                // Add a dummy cell if year range is short enough to be equal to or less than 5
-               if (maxYear - minYear <= 5) {
+               // Don't assign dummy columns for the last year
+               if (maxYear - minYear <= 5 && year !== yearArray[yearArray.length - 1]) {
                     cellArray.push({
                        isSource: false,
                        isTarget: false,
                        node: node.stateId,
                        year: year,
-                       month: 3,
+                       month: 2,
+                       day: 1,
+                       outEdges: [],
+                       inEdges: []
+                   });
+                    cellArray.push({
+                       isSource: false,
+                       isTarget: false,
+                       node: node.stateId,
+                       year: year,
+                       month: 4,
                        day: 1,
                        outEdges: [],
                        inEdges: []
@@ -497,16 +511,80 @@ let DiffusionModel2 = Backbone.Model.extend({
                        inEdges: []
                    });
                     cellArray.push({
-                       isSource: false,
-                       isTarget: false,
-                       node: node.stateId,
-                       year: year,
-                       month: 9,
-                       day: 1,
-                       outEdges: [],
-                       inEdges: []
-                   });
+                        isSource: false,
+                        isTarget: false,
+                        node: node.stateId,
+                        year: year,
+                        month: 8,
+                        day: 1,
+                        outEdges: [],
+                        inEdges: []
+                    });
+                    cellArray.push({
+                        isSource: false,
+                        isTarget: false,
+                        node: node.stateId,
+                        year: year,
+                        month: 10,
+                        day: 1,
+                        outEdges: [],
+                        inEdges: []
+                    });
                }
+               else if (maxYear - minYear >= 5 && maxYear - minYear <= 10 && year !== yearArray[yearArray.length - 1]) {
+                    cellArray.push({
+                        isSource: false,
+                        isTarget: false,
+                        node: node.stateId,
+                        year: year,
+                        month: 3,
+                        day: 1,
+                        outEdges: [],
+                        inEdges: []
+                    });
+                    cellArray.push({
+                        isSource: false,
+                        isTarget: false,
+                        node: node.stateId,
+                        year: year,
+                        month: 6,
+                        day: 1,
+                        outEdges: [],
+                        inEdges: []
+                    });
+                    cellArray.push({
+                        isSource: false,
+                        isTarget: false,
+                        node: node.stateId,
+                        year: year,
+                        month: 9,
+                        day: 1,
+                        outEdges: [],
+                        inEdges: []
+                    });
+            }
+            else if (maxYear - minYear > 10 && maxYear - minYear <= 15 && year !== yearArray[yearArray.length - 1]) {
+                cellArray.push({
+                    isSource: false,
+                    isTarget: false,
+                    node: node.stateId,
+                    year: year,
+                    month: 4,
+                    day: 1,
+                    outEdges: [],
+                    inEdges: []
+                });
+                cellArray.push({
+                    isSource: false,
+                    isTarget: false,
+                    node: node.stateId,
+                    year: year,
+                    month: 8,
+                    day: 1,
+                    outEdges: [],
+                    inEdges: []
+                });
+        }
 
                if(inEdgeMatch && inEdgeMatch.length != 0){
                    cellArray[0].isTarget = true;

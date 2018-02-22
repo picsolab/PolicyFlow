@@ -135,7 +135,7 @@ let DiffusionView3 = Backbone.View.extend({
                 ticks.push(new Date(i, 0, 1));
             }
             xAxisSettingTop = d4.axisTop(xScale).tickSize(0).tickValues(ticks);
-            xAxisSettingBottom = d4.axisBottom(xScale).tickSize(5);
+            xAxisSettingBottom = d4.axisBottom(xScale).tickSize(0);
         }
         else if (yearRange <= 15){
             console.log(minYear, maxYear, "yearRange 6 and 15");
@@ -157,7 +157,10 @@ let DiffusionView3 = Backbone.View.extend({
                         new Date(maxYear, 0, 1)
                         ]);
 
-        yScale.domain(nodes.sort(function(a, b){ return d4.ascending(a.adoptedYear, b.adoptedYear); }).map(function(d){ return d.stateId; }));
+        yScale.domain(nodes.sort(function(a, b){ 
+            console.log(a.stateId, b.stateId);
+            console.log(a.adoptedYear, b.adoptedYear);
+            return d4.ascending(a.adoptedYear, b.adoptedYear); }).map(function(d){ return d.stateId; }));
 
         cellSideLength = yScale.bandwidth();
         matrixWidth = cellSideLength * (dMatrix.length/yScale.domain().length) + cellSideLength;
@@ -178,7 +181,8 @@ let DiffusionView3 = Backbone.View.extend({
                 .attr("class", "g_nodes")
                 .attr("transform", "translate(" + gs.f.padding + "," + gs.f.size.upperPaneHeight + ")"),
             g_attrGraph = svg.append("g")
-                .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 35) + "," + gs.f.size.upperPaneHeight + ")")
+                .attr("class", "g_attrGraph")
+                .attr("transform", "translate(" + (gs.f.padding + matrixWidth + 35) + "," + (gs.f.size.upperPaneHeight) + ")")
                 .style("fill", "green"),
             g_chart = svg.append("g")
                 .attr("class", "bar_chart")
@@ -211,6 +215,11 @@ let DiffusionView3 = Backbone.View.extend({
                 .style("text-anchor","middle")
                 .style("font-size", "9px")
                 .attr("dx","1em");
+        
+        // Change axis path border line color
+        d4.select("path.domain").attr("stroke", "#ccc");
+        // xAxisBottom.select("path.domain").style("stroke", "#ccc");
+        // yAxis.select("path.domain").style("stroke", "#ccc");
 
         // Define arrows
         let markerEnd = svg.append("defs")
@@ -272,86 +281,57 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("height", 160)
             .style("fill", "none")
             .style('shape-rendering','crispEdges')
-            .style("stroke", "#EAECEE");
-        // source state
-        g_legend.append("circle")
-            .attr("class", function(d){
-                return "legend_source_circle";
-            })
-            .attr("cx", 10)
-            .attr("cy", 10)
-            .attr("r", 5)
-            .style("fill", "#E9CFEC");
-        g_legend.append("text")
-            .attr("x", 20)
-            .attr("y", 13)
-            .text("Influencing state")
-            .style("font-size", "10px");
-        // target state
-        g_legend.append("circle")
-            .attr("class", function(d){
-                return "legend_circle_target";
-            })
-            .attr("cx", 10)
-            .attr("cy", 25)
-            .attr("r", 5)
-            .style("fill", "none")
-            .style("shape-rendering", "crispEdges")
-            .style("stroke", "indigo")
-            .style("stroke-width", 1);
-        g_legend.append("text")
-            .attr("x", 20)
-            .attr("y", 28)
-            .text("Influenced state")
-            .style("font-size", "10px");
+            .style("stroke", "#EAECEE")
+            .style("stroke-width", 1.5);
         // State in the year (node)
         g_legend.append("path")
             .attr("class", "legend_node")
             .attr("d", circleArc)
-            .attr("transform", "translate(10, 40) rotate(0)")
+            .attr("transform", "translate(10, 12) rotate(0)")
             .style("fill", "mediumpurple");
         g_legend.append("text")
             .attr("x", 20)
-            .attr("y", 43)
-            .text("State(Name on the y-label)")
+            .attr("y", 15)
+            .text("State (Name on the y-label)")
             .style("font-size", "10px");
         // on the way forward
         g_legend.append("rect")
             .attr("class", "legend_rect")
             .attr("x", 5)
-            .attr("y", 50)
+            .attr("y", 25)
             .attr("width", cellSideLength*3)
             .attr("height", cellSideLength)
-            .style("fill", "eaecee");
+            .style("fill", "mediumpurple")
+            .style("opacity", 0.15);
         g_legend.append("text")
             .attr("x", 40)
-            .attr("y", 58)
+            .attr("y", 33)
             .text("Compliant cascade to the state")
             .style("font-size", "10px");
         // on the way backward
         g_legend.append("rect")
             .attr("class", "legend_rect")
             .attr("x", 5)
-            .attr("y", 65)
+            .attr("y", 40)
             .attr("width", cellSideLength*3)
             .attr("height", cellSideLength)
             .style("fill", "pink")
             .style("opacity", 0.4);
         g_legend.append("text")
             .attr("x", 40)
-            .attr("y", 73)
+            .attr("y", 48)
             .text("Deviant cascade to the state")
             .style("font-size", "10px");
         // text: mouseover
         g_legend.append("text")
             .attr("x", 10)
-            .attr("y", 95)
+            .attr("y", 68)
             .text("Mouseover")
             .style("font-size", "10px");
         // source node to target nodes
         g_legend.append("path")
             .attr("class", "legend_path_from_source_to_targets")
-            .attr("d", "M10,107L30,107")
+            .attr("d", "M10,82L30,82")
             .style("stroke", "gray")
             .style("stroke-width", 1)
             .style("stroke-opacity", 0.6)
@@ -360,12 +340,17 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("opacity", 1);
         g_legend.append("text")
             .attr("x", 40)
-            .attr("y", 110)
-            .text("All the influenced states of..")
+            .attr("y", 85)
+            .text("All influenced states of..")
+            .style("font-size", "10px");
+        g_legend.append("text")
+            .attr("x", 40)
+            .attr("y", 95)
+            .text("the influencing nodes")
             .style("font-size", "10px");
         g_legend.append("path")
             .attr("class", "legend_path_to_targets")
-            .attr("d", "M10,120L30,120")
+            .attr("d", "M10,110L30,110")
             .style("stroke", "indigo")
             .style("stroke-width", 2)
             .style("stroke-opacity", 0.6)
@@ -374,12 +359,12 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("opacity", 1);
         g_legend.append("text")
             .attr("x", 40)
-            .attr("y", 125)
+            .attr("y", 115)
             .text("To the influenced state")
             .style("font-size", "10px");
         g_legend.append("path")
             .attr("class", "legend_path_from_source")
-            .attr("d", "M10,135L30,135")
+            .attr("d", "M10,125L30,125")
             .style("stroke", "mediumpurple")
             .style("stroke-width", 2)
             .style("stroke-opacity", 0.6)
@@ -388,7 +373,7 @@ let DiffusionView3 = Backbone.View.extend({
             .attr("opacity", 1);
         g_legend.append("text")
             .attr("x", 40)
-            .attr("y", 140)
+            .attr("y", 130)
             .text("From the influencing state")
             .style("font-size", "10px");
         //***** end of For legend
@@ -449,7 +434,7 @@ let DiffusionView3 = Backbone.View.extend({
             .range([0, gs.f.size.rightPaneWidth]),
         _attr.attrGraph_yScale = d4.scaleBand()
             .domain(_attr.nodes.map(function(d){ return d.stateId; }))
-            .range([gs.f.size.height - 100, gs.f.size.upperPaneHeight]),
+            .range([gs.f.size.height - 100, gs.f.size.upperPaneHeight + 10]),
         _attr.attrGraph_colorScale = d4.scaleLinear()
             .domain(d4.extent(_attr.nodes, function(d){ return d.centralities[cType]; }))
             .range(["lavender", "mediumpurple", "indigo"]);
@@ -889,7 +874,7 @@ let DiffusionView3 = Backbone.View.extend({
                             if(relevantNodes.node === e.node ||
                                 (relevantNodes.source !== null && relevantNodes.source === e.node) ||
                                 (relevantNodes.targets && relevantNodes.targets.length && relevantNodes.targets.indexOf(e.node) > -1)) {
-                                return "crispEdges";
+                                return "none";
                             }
                             return "none";
                         })
@@ -988,7 +973,7 @@ let DiffusionView3 = Backbone.View.extend({
             })
             .attr("x", 0)
             .attr("y", function(d){
-                return _attr.attrGraph_yScale(d.stateId); })
+                return _attr.attrGraph_yScale(d.stateId)-1; })
             .attr("width", function(d){ return _attr.attrGraph_xScale(d.centralities[cType]); })
             .attr("height", _attr.attrGraph_yScale.bandwidth())
             .style("fill", function(d){
@@ -1095,52 +1080,92 @@ let DiffusionView3 = Backbone.View.extend({
         return line(points);
     },
     doSort() {
+        let centralityList = ['centrality', 'outdegree', 'pageRank', 'betweenness', 'hit', 'close'],
+            metadataList = ['adoptionYear', 'perCapitaIncome', 'minorityDiversity', 'legislativeProfessionalism', 'citizenIdeology', 'totalPopulation', 'populationDensity'];
+
         let _self = this,
             _attr = _self._attr,
             c = _attr.c,
-            selectedAttr = c.get("centrality");
+            isSortingByCentrality,
+            selectAttr;
+
+            if (centralityList.includes(c.get('factor'))){
+                isSortingByCentrality = true;
+            }
+            else if (metadataList.includes(c.get('factor'))){
+                isSortingByCentrality = false;
+            }
+            
+            selectedAttr = (isSortingByCentrality ?
+                                c.get("factor") : 
+                                conf.pipe.metaToId[c.get("factor")]);
 
         var transition = _attr.svg.transition().duration(750),
             transition2 = _attr.g_attrGraph.transition().duration(750),
-            sortedNodes = _attr.nodes.sort(function(a, b){ 
-                        return d4.ascending(a.centralities[selectedAttr], b.centralities[selectedAttr]); });
+            sortedNodes;
 
-        _attr.yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
+        console.log("c.factors, isSortingByCentrality, selectedAttr:", c.get('factor'), isSortingByCentrality, selectedAttr);
+        //console.log(_attr.nodes.map(function(e){ return e.metadata[selectedAttr]; }));
+
+        if (isSortingByCentrality) {
+            _attr.nodes.sort(function(a, b){
+                return d4.ascending(a.centralities[selectedAttr], b.centralities[selectedAttr]);
+            });
+        } else {
+            _attr.nodes.sort(function(a, b){
+                if(b['metadata'][selectedAttr] === 'undefined'){
+                    b['metadata'][selectedAttr] = 0
+                }
+                if(a['metadata'][selectedAttr] === 'undefined'){
+                    a['metadata'][selectedAttr] = 0
+                }
+                return d4.ascending(a.metadata[selectedAttr], b.metadata[selectedAttr]);
+            });
+        }
+
+        _attr.yScale.domain(_attr.nodes.map(function(d){ return d.stateId; }));
         transition.select(".yAxis").call(d4.axisRight(_attr.yScale).tickSize(0));
 
         transition.selectAll(".gcell")
                 .attr("transform", function(d){
-                    return "translate(" + _attr.xScale(new Date(d.year, 0, 1)) + "," + _attr.yScale(d.node) + ")";
+                    return "translate(" + _attr.xScale(new Date(d.year, d.month, d.day)) + "," + _attr.yScale(d.node) + ")";
                 });
         transition.selectAll(".rect_node")
-                .attr("x", function(d){ return _attr.xScale(new Date(d.year, 0, 1)); })
-                .attr("y", function(d){ return _attr.yScale(d.node); });
+                .attr("transform", function(d){
+                    var nodeYear = d.year,
+                        sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+                    var rotate = "";
+
+                    if(sourceYear <= nodeYear) {
+                        rotate = "rotate(0)";
+                        return "translate(" + (_attr.xScale(new Date(d.year, d.month, d.day)) + 5) + "," + (_attr.yScale(d.node) + _attr.cellSideLength/2) + ") " + rotate;
+                    }else {
+                        rotate = "rotate(180)";
+                        return "translate(" + (_attr.xScale(new Date(d.year, d.month, d.day)) + 5) + "," + (_attr.yScale(d.node) + _attr.cellSideLength/2) + ") " + rotate;
+                    }
+                });
+        
+        
 
         // Sort the attribute bars
-        _attr.attrGraph_xScale.domain([0, d4.max(sortedNodes, function(d){ return d.centralities[selectedAttr]; })])
-        _attr.attrGraph_yScale.domain(sortedNodes.map(function(d){ return d.stateId; }));
-        _attr.attrGraph_colorScale.domain(d4.extent(sortedNodes, function(d){ return d.centralities[selectedAttr]; }))
-        transition2.selectAll("rect")
-                   .attr("y", function(d){ return _attr.attrGraph_yScale(d.stateId); })
-                   .attr("width", function(d){ return _attr.attrGraph_xScale(d.centralities[selectedAttr]); })
-                   .style("fill", function(d){ return _attr.attrGraph_colorScale(d.centralities[selectedAttr]); });
-
-        // _attr.g_attrGraph.selectAll(".attrRect")
-        //     .data(_attr.nodes)
-        //     .enter().append("rect")
-        //     .attr("class", function(d){
-        //         return "attrRect " + d.stateId;
-        //     })
-        //     .attr("x", 0)
-        //     .attr("y", function(d){
-        //         return _attr.attrGraph_yScale(d.stateId); })
-        //     .attr("width", function(d){ return _attr.attrGraph_xScale(d.centralities[cType]); })
-        //     .attr("height", _attr.attrGraph_yScale.bandwidth())
-        //     .style("fill", function(d){
-        //         return _attr.attrGraph_colorScale(d.centralities[cType]);
-        //     })
-        //     .style("stroke", "white")
-        //     .style("stroke-width", 2);
+        if (isSortingByCentrality) {
+            _attr.attrGraph_xScale.domain([0, d4.max(_attr.nodes, function(d){ return d.centralities[selectedAttr]; })]);
+            _attr.attrGraph_yScale.domain(_attr.nodes.map(function(d){ return d.stateId; }));
+            _attr.attrGraph_colorScale.domain(d4.extent(_attr.nodes, function(d){ return d.centralities[selectedAttr]; }));
+            transition2.selectAll("rect")
+                    .attr("y", function(d){ return _attr.attrGraph_yScale(d.stateId); })
+                    .attr("width", function(d){ return _attr.attrGraph_xScale(d.centralities[selectedAttr]); })
+                    .style("fill", function(d){ return _attr.attrGraph_colorScale(d.centralities[selectedAttr]); });
+        }
+        else {
+            _attr.attrGraph_xScale.domain([0, d4.max(_attr.nodes, function(d){ return d.metadata[selectedAttr]; })]);
+            _attr.attrGraph_yScale.domain(_attr.nodes.map(function(d){ return d.stateId; }));
+            _attr.attrGraph_colorScale.domain(d4.extent(_attr.nodes, function(d){ return d.metadata[selectedAttr]; }));
+            transition2.selectAll("rect")
+                    .attr("y", function(d){ return _attr.attrGraph_yScale(d.stateId); })
+                    .attr("width", function(d){ return _attr.attrGraph_xScale(d.metadata[selectedAttr]); })
+                    .style("fill", function(d){ return _attr.attrGraph_colorScale(d.metadata[selectedAttr]); });
+        }
     },
     colorRectsBetween() {
         let _self = this,
@@ -1156,14 +1181,14 @@ let DiffusionView3 = Backbone.View.extend({
                         nodeYear = nodeData.year,
                         sourceYear = nodeData.inEdges[0].sourceStateInfo.adoptedYear;
                     // Select rects on the way from source to target
-                    if(sourceYear > nodeYear) {  // If it goes backward
+                    if (sourceYear > nodeYear) {  // If it goes backward
                         d4.selectAll(".rect_" + nodeName)
                             .filter(function(e){
                                 return nodeYear == e.year ? e.month!=0 : (sourceYear > e.year)&&(nodeYear < e.year);
                             })
                             .style("fill", "pink")
-                            .style("opacity", 0.15);
-                    } else {
+                            .style("opacity", 0.35);
+                    } else if (sourceYear < nodeYear) {
                         d4.selectAll(".rect_" + nodeName)
                             .filter(function(e){
                                 return sourceYear == e.year ? e.month!=0 : (sourceYear < e.year)&&(nodeYear > e.year);

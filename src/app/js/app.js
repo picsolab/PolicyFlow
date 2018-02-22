@@ -45,6 +45,9 @@ let policyDetailView = new View.PolicyDetailView({
     attributeDropdown = new View.DropdownController({
         el: "#metadata-dropdown"
     }),
+    factorDropdown = new View.DropdownController({
+        el: "#factor-dropdown"
+    }),
     influenceDropdown = new View.DropdownController({
         el: "#centrality-dropdown"
     }),
@@ -105,8 +108,12 @@ function setupRenderingControllers() {
                 diffusionModel2.populate(conditions);
             }
             //diffusionModel2.populate(conditions);
-
+        
         } else {
+            if (conditions.hasChanged('factor')) {
+                console.log(conditions.get('factor'));
+                diffusionView2.doSort();
+            }
             if (conditions.hasChanged('centrality')) {
                 // // the inspection view is disabled when no policy has been selected, so do not update it's sub-component.
                 // if (conditions.get('policy') !== conf.bases.policy.default) {
@@ -119,10 +126,9 @@ function setupRenderingControllers() {
                 // }
                 networkView.preRender();
                 networkView.update();
-                diffusionView2.doSort();
             }
             if (conditions.hasChanged('metadata')) {
-                diffusionView.doSort("metadata");
+                //diffusionView.doSort("metadata");
                 geoView.update();
                 if (conditions.get("geoBase") === "state") {
                     networkView.preRender();
@@ -264,30 +270,43 @@ function bindDomEvents() {
     document.getElementById("overview-tab").addEventListener('click', function() {
         // change label of attributeDropdown to `Attribute`
         attributeDropdown.label("Attribute");
+        attributeDropdown.enable();
+        factorDropdown.disable();
     });
 
     document.getElementById("policy-inspection-tab").addEventListener('click', function() {
         // change label of attributeDropdown to `x-axis`
-        attributeDropdown.label("Y-Axis");
+        attributeDropdown.disable();
+        factorDropdown.enable();
+        influenceDropdown.disable();
     });
 
     // set conditions:centrality from centrality dropdown
     document.getElementById("centrality-dropdown").addEventListener("click", function(e) {
         let centrality = $(e.target).attr("aid");
         if (centrality) {
-            influenceDropdown.pickOption(centrality);
+            centralityDropdown.pickOption(centrality);
             conditions.set("centrality", centrality);
         }
     });
 
-    // // set conditions:metadata from metadata dropdown
-    // document.getElementById("metadata-dropdown").addEventListener("click", function(e) {
-    //     let metadata = $(e.target).attr("aid");
-    //     if (metadata) {
-    //         attributeDropdown.pickOption(metadata);
-    //         conditions.set("metadata", metadata);
-    //     }
-    // });
+    // set conditions:factor from factor dropdown
+    document.getElementById("factor-dropdown").addEventListener("click", function(e) {
+        let factor = $(e.target).attr("aid");
+        if (factor) {
+            factorDropdown.pickOption(factor);
+            conditions.set("factor", factor);
+        }
+    });
+
+    // set conditions:metadata from metadata dropdown
+    document.getElementById("metadata-dropdown").addEventListener("click", function(e) {
+        let metadata = $(e.target).attr("aid");
+        if (metadata) {
+            attributeDropdown.pickOption(metadata);
+            conditions.set("metadata", metadata);
+        }
+    });
 
     // // setup x-seq to conditions
     // sequenceSwitch.$switch().on("switchChange.bootstrapSwitch", (e, state) => {
@@ -465,6 +484,9 @@ function recoverDomBy(conditions) {
     // recover method tab, ring view
     $("#method-tab-wrapper a[value=" + conditions.get("method") + "]").tab('show');
 
+    // recover factor dropdown
+    attributeDropdown.pickOption(conditions.get("factor"));
+
     // recover centrality dropdown
     attributeDropdown.pickOption(conditions.get("centrality"));
 
@@ -496,6 +518,7 @@ function setupNav(conditions) {
         $("#policy-inspection-tab").addClass("disabled");
         // disable `Attribute` dropdown
         attributeDropdown.disable();
+        factorDropdown.disable();
     } else {
         // enable `Policy Inspection` tab
         $("#policy-inspection-tab").removeClass("disabled");

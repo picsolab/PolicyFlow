@@ -19,7 +19,7 @@ const Config = {
             }
         ],
         yAttributeList: [
-            // the first element will be choosen as the default
+            // the first element will be chosen as the default
             // [prod]
             {
                 id: "centrality",
@@ -70,6 +70,79 @@ const Config = {
             }
         ],
         centralityList: [{
+                id: "outdegree",
+                domId: "centrality-option-outdegree",
+                description: "Outdegree"
+            },
+            {
+                id: "pageRank",
+                domId: "centrality-option-page-rank",
+                description: "Page Rank"
+            },
+            {
+                id: "betweenness",
+                domId: "centrality-option-betweenness",
+                description: "Betweenness"
+            },
+            {
+                id: "hit",
+                domId: "centrality-option-hit",
+                description: "Hit"
+            },
+            {
+                id: "close",
+                domId: "centrality-option-close",
+                description: "Closeness"
+            }
+        ],
+        factorList: [
+            {
+                id: "adoptionYear",
+                domId: "y-option-centrality",
+                description: "Factors"
+            },
+            {
+                id: "adoptionYear",
+                domId: "x-option-adoption-year",
+                description: "Adoption Year"
+            },
+            // [dev]
+            {
+                id: "perCapitaIncome",
+                domId: "y-option-per-capita-income",
+                description: "Per Capita Income"
+            },
+            {
+                id: "minorityDiversity",
+                domId: "y-option-minority-diversity",
+                description: "Minority Diversity"
+            },
+            {
+                id: "legislativeProfessionalism",
+                domId: "y-option-citizen-ideology",
+                description: "Legislative Professionalism"
+            },
+            {
+                id: "citizenIdeology",
+                domId: "y-option-citizen-ideology",
+                description: "Citizen Ideology"
+            },
+            {
+                id: "totalPopulation",
+                domId: "y-option-total-population",
+                description: "Total Population"
+            },
+            {
+                id: "populationDensity",
+                domId: "y-option-population-density",
+                description: "Population Density"
+            },
+            {
+                id: "centrality",
+                domId: "x-option-centrality",
+                description: "Centrality"
+            },
+            {
                 id: "outdegree",
                 domId: "centrality-option-outdegree",
                 description: "Outdegree"
