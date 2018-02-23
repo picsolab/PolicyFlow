@@ -79,7 +79,7 @@ The backend is powered by [Flask](http://flask.pocoo.org/). To begin with, make 
     basedir = os.path.abspath(os.path.dirname(__file__))
 
     # supposing "diffusion2017vis" as the database schema name, 3306 as its port
-    SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://[your_database_user_name]:[your_database_password]@localhost:3306/diffusion2017vis'
+    SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://[your_database_user_name]:[your_database_password]@localhost:3306/policyflow'
     SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     # set to False to disable database logs in console
