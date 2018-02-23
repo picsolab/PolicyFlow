@@ -604,7 +604,7 @@ let DiffusionView3 = Backbone.View.extend({
                         cellSideLength = _attr.cellSideLength;
 
                     // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
-                    var sourceData = inEdge,
+                    let sourceData = inEdge,
                         sourceName = inEdge.sourceName,
                         sourceYear = inEdge.sourceStateInfo.adoptedYear,
                         nodeName = inEdge.targetName,  // node is the mouseovered node, which acts as target in this context
@@ -613,7 +613,7 @@ let DiffusionView3 = Backbone.View.extend({
                     
                     let point = [];
                         
-                    var line = d4.line()
+                    let line = d4.line()
                         .x( function(point) { return point.lx; })
                         .y( function(point) { return point.ly; })
                         .curve(d4.curveBasis);
@@ -628,10 +628,7 @@ let DiffusionView3 = Backbone.View.extend({
                             y2 = yScale(nodeName) + cellSideLength*2;
                         }
 
-                        points = [
-                            {lx: x1, ly: y1},
-                            {lx: x2, ly: y2}
-                        ];
+                        points.push({lx: x1, ly: y1}, {lx: x2, ly: y2});
                     }
                     else {
                         x1 = xScale(new Date(sourceYear, 0, 1)) + (cellSideLength / 2);
@@ -650,11 +647,11 @@ let DiffusionView3 = Backbone.View.extend({
                         }
                         y3 = yScale(nodeName) + cellSideLength / 2;
 
-                        points = [
+                        points.push(
                             {lx: x1, ly: y1},
                             {lx: x2, ly: y2},
                             {lx: x3, ly: y3}
-                        ];
+                        );
                     }
                     console.log(points);
 
@@ -669,13 +666,13 @@ let DiffusionView3 = Backbone.View.extend({
                         yScale = _attr.yScale,
                         cellSideLength = _attr.cellSideLength;
 
-                    var targetData = outEdge,
+                    let targetData = outEdge,
                         targetName = outEdge.targetName,
                         targetYear = outEdge.targetStateInfo.adoptedYear,
                         nodeName = outEdge.sourceName,  // node is the mouseovered node, which acts as source in this context
                         nodeYear = outEdge.sourceStateInfo.adoptedYear,
                         x1, y1, x2, y2, x3, y3, // point 1: sourceRectangle, point 2: perpendicular to the node, point 3: the node
-                        point = [];
+                        points = [];
 
                     var line = d4.line()
                         .x( function(point) { return point.lx; })
