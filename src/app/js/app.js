@@ -328,9 +328,9 @@ function bindDomEvents() {
         }
     });
 
-    // $("#add-snapshot").on("click", () => {
-    //     snapshotCollection.add(diffusionView, conditions);
-    // });
+    $("#add-snapshot").on("click", () => {
+        snapshotCollection.add(diffusionView2, conditions);
+    });
 
     document.getElementById("snapshot-wrapper").addEventListener('click', retrieveCascadeHandler, false);
 }

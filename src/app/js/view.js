@@ -67,6 +67,14 @@ let DiffusionView3 = Backbone.View.extend({
     initialize() {
         this._attr = {};
     },
+    /**
+     * render and prepare static elements that do not change according to different `conditions`, including
+     * - svg groups
+     * - some of scales
+     * - labels
+     * - and so on.
+     * @param {object} conditions Backbone.Model 
+     */
     render(conditions){
         let _self = this,
             _attr = this._attr,

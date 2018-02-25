@@ -26,9 +26,10 @@ SnapshotCollection.prototype = Object.create({
     initialize(diffusionView) {
         let _self = this,
             el = "#snapshot-view-0";
+        console.log("intialized?"); 
         $(_self.container).append('<svg id="' + _.trimStart(el, "#") + '" class="snapshot"></svg>');
         let itsConditions = diffusionView._attr.c,
-            viewToBeAdded = new View.DiffusionView({
+            viewToBeAdded = new View.DiffusionView2({
                 el: "#snapshot-view-0",
                 model: diffusionView.model
             });
@@ -46,6 +47,7 @@ SnapshotCollection.prototype = Object.create({
         _self.viewList.forEach((view, i) => {
             let _svg = _self.viewList[i].$el,
                 _svgWrapper = _svg.parent();
+            console.log("svgWrapper:", _svgWrapper);
             _svg.attr("id", "snapshot-view-" + (i + 1));
             _svgWrapper.attr("id", "snapshot-wrapper-" + (i + 1))
         });
@@ -56,14 +58,17 @@ SnapshotCollection.prototype = Object.create({
             scaledWidth = rawWidth * gs.d.multiplier.snapshot;
 
         // prepend empty shapshot container
+        console.log("self.container", $(_self.container));
         $(_self.container).prepend('<div id="snapshot-wrapper-0" class="snapshot-wrapper"></div>');
         let _svgWrapper = $(_self.container).find("#snapshot-wrapper-0");
         _svgWrapper.prepend('<svg id="snapshot-view-0" class="snapshot"></svg>');
-        let newView = new View.DiffusionView({
+        let newView = new View.DiffusionView2({
             el: "#snapshot-view-0",
             model: aModelCopy
         });
         newView.render(aConditionCopy, false);
+        console.log(newView);
+        console.log(aConditionCopy);
 
         // unshift a shadow copy of current condition, view at the front
         this.conditionList.unshift(aConditionCopy);
