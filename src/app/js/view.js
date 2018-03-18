@@ -95,7 +95,7 @@ let DiffusionView3 = Backbone.View.extend({
         let cellSideLength,
             matrixWidth;
 
-        var plot = d4.select("#new-diffusion-view"),
+        var plot = d4.select("#"+_self.el.id),
             svg = plot
                 .append("svg")
                 //.attr('preserveAspectRatio', 'xMidYMin meet')
@@ -345,7 +345,7 @@ let DiffusionView3 = Backbone.View.extend({
         g_legend.append("text")
             .attr("x", 40)
             .attr("y", 85)
-            .text("All influenced states of..")
+            .text("All influenced states of")
             .style("font-size", "10px");
         g_legend.append("text")
             .attr("x", 40)
@@ -518,12 +518,18 @@ let DiffusionView3 = Backbone.View.extend({
             })
             .attr("d", _attr.circleArc)
             .attr("transform", function(d){
-                var nodeYear = d.year,
-                    sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
-                var rotate = "";
+                let nodeYear, sourceYear;
+                let rotate = "";
 
+                if(d.isSource === true){ // If node is a source
+                    sourceYear = d.year;
+                    targetYear = d.outEdges[0].targetStateInfo.adoptedYear;
+                } else {
+                    sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+                    targetYear = d.year;
+                }
                 // Arc heading to the right if the adoption
-                if(sourceYear <= nodeYear) {
+                if(sourceYear <= targetYear) {
                     rotate = "rotate(0)";
                     return "translate(" + (_attr.xScale(new Date(d.year, 0, 1)) + 5) + "," + (_attr.yScale(d.node) + _attr.cellSideLength/2) + ") " + rotate;
                 }else {
@@ -1199,561 +1205,6 @@ let DiffusionView3 = Backbone.View.extend({
                 }
             }
         });
-    }
-});
-
-/**
- * DiffusionView: new diffusion view
- */
-let DiffusionView2 = Backbone.View.extend({
-    el: "#new-diffusion-view",
-    initialize() {
-        this._attr = {
-            // xScale, yScale, xScale_timeline, yScale_timeline, xKernelScale_timeline, yKernelScale_timeline;
-            dims: [],
-            dimsClusterInfo: d4.map(),
-            timeView: {}
-        };
-    },
-    render(conditions) {
-        let _self = this;
-        var plot = d4.select("#new-diffusion-view"),
-            svg = plot
-            .append("svg")
-            .attr("width", gs.f.size.width)
-            .attr("height", gs.f.size.height),
-            xScale = d4.scalePoint().rangeRound([0, gs.f.size.width - gs.f.padding * 2], 1),
-            yScale = d4.scaleBand().range([gs.f.size.height - 100, gs.f.padding]);
-
-        let curvePaths = svg.append("g")
-            .attr("class", "curvePaths")
-            .attr("transform", "translate(30, 0)");
-
-        $.extend(_self._attr, {
-            svg: svg,
-            xScale: xScale,
-            yScale: yScale,
-            curvePaths: curvePaths,
-            c: conditions,
-            dims: _self.calcDimsFromClustering()
-        });
-
-        this.drawDims();
-
-        let curveData = [];
-        // Organize data for feeding to edge bundling part
-        this.model.get("data").forEach(function(edge) {
-            var edge_obj = {};
-
-            //@@@@@@@@@@@@@@@@@
-            // If source and target are placed at the same dimension, move the target to the next dimension
-            // if (edge.sourceDimension == edge.targetDimension) {
-            //     edge.targetDimension = "dim_" + (parseInt(edge.targetDimension.replace("dim_", "")) + 1).toString();
-            // }
-
-            edge_obj = {"sourceDimension": edge.sourceDimension, "sourceName": edge.sourceName,
-                        "targetDimension": edge.targetDimension, "targetName": edge.targetName };
-            curveData.push(edge_obj);
-        });
-
-        console.log("pageRank");
-        _self.compute_cluster_centroids("pageRank");
-        //@@@@@@@@@@@@ Suppressed backward edge
-        curveData.forEach(function(d) {
-            console.log(d.sourceName, d.targetName, d.sourceDimension, d.targetDimension);
-            if(_self.getDimNum(d.sourceDimension) != _self.getDimNum(d.targetDimension)){
-                _self.draw_single_curve(d);
-            }
-        });
-
-        //********* Timeline graph
-        _self._attr.timeView.xScale_timeline = d4.scaleTime().rangeRound([0, gs.f.size.width - gs.f.padding * 2]);
-        _self._attr.timeView.yScale_timeline = d4.scaleLinear().rangeRound([20, 10]);
-
-        _self._attr.timeView.xScale_timeline.domain([new Date(d4.min(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }), 0, 1),
-            new Date(d4.max(_self.model.get("nodesWithEdge"), function(d) { return d.adoptedYear; }), 0, 1)
-        ]).nice();
-        _self._attr.timeView.yScale_timeline.domain([d4.max(_self.model.get("yearCount"), function(d) { return d.count; }), 0]);
-
-        var g_chart = svg.append("g")
-            .attr("class", "bar_chart")
-            .data(_self.model.get("yearCount"))
-            .attr("transform", "translate(" + gs.f.padding + ", 450)");
-
-        g_chart.append("g")
-            .attr("class", "x-axis-timeline")
-            .attr("transform", "translate(0," + gs.f.size.timeLineHeight + ")")
-            .call(d4.axisBottom(_self._attr.timeView.xScale_timeline).tickFormat(d4.timeFormat("%Y")).ticks(5));
-
-        var rects = g_chart.selectAll(".bar")
-            .data(_self.model.get("yearCount")).enter()
-            .append("rect")
-            .attr("class", "bar")
-            .attr("x", function(d) { return _self._attr.timeView.xScale_timeline(new Date(d.year, 0, 1)) - 5; })
-            .attr("y", function(d) { return _self._attr.timeView.yScale_timeline(d.count); })
-            .attr("width", 7)
-            .attr("height", function(d) { return (gs.f.size.timeLineHeight - _self._attr.timeView.yScale_timeline(d.count)); })
-            .style("fill", function(d) {
-                if (d.year < 1865) {
-                    return "rgb(250, 200, 255)";
-                } else if (d.year >= 1865 && d.year < 1883) {
-                    return "rgb(200, 150, 255)";
-                } else if (d.year >= 1883 && d.year < 1905) {
-                    return "rgb(150, 100, 255)";
-                }
-                if (d.year >= 1905) {
-                    return "rgb(100, 50, 255)";
-                }
-            });
-
-        rects.transition()
-            .attr('height', function(d) {
-                return _self._attr.timeView.yScale_timeline(d.count);
-            })
-            .attr('y', function(d) { return gs.f.size.timeLineHeight - _self._attr.timeView.yScale_timeline(d.count); })
-            .delay(function(d, i) { return i * 200; })
-            .duration(2000)
-            .ease(d4.easeElastic);
-
-
-        /********** For tree structure
-        // Identify the data as tree strgucture
-        var edges_data_copy = edges_data.slice()
-        var root_id = find_root(edges_data_copy, edges_data[0]); // copy the array by slice()
-        var root_edge = {};
-        edges_data.forEach(function(edge){
-            if(edge.source == root_id){
-                edge.level = 1;
-                root_edge = edge;
-            }
-        });
-        // Calculate the number of phases by getting the tree height
-        var tree_height = calculate_height_of_tree(edges_data, nodes_data, root_edge);
-        console.log(tree_height);
-    
-        // Go over all nodes ("nodes" property") in the dataset
-        var states_to_ids = [];
-    
-        console.log(edges_data);
-        // Add more metadata to nodes(add level) and edges(add state abbreviation)
-        nodes_data.forEach(function(node){
-            if("adoptedYear" != 9999){
-                states_to_ids.push({ "stateName": node.stateId, "stateId": node.metadataOrder, "level": node.level }); }
-        });
-    
-        // Get stateNames from nodes_data and add them to edges
-        edges_data.forEach(function(edge){
-            nodes_data.forEach(function(node){
-                if(edge.source == node.metadataOrder){
-                    edge.sourceState = node.stateId;
-                }
-                if(edge.target == node.metadataOrder){
-                    edge.targetState = node.stateId;
-                }
-            });
-        });
-        ***** The end of For tree structure *******/
-
-    },
-    drawDims: function() {
-        var _self = this,
-            _attr = this._attr;
-
-        _attr.xScale.domain(_self._attr.dims);
-        _attr.yScale.domain(_self.model.get("nodes").sort(function(a, b) {
-                return a.centralities["pageRank"] - b.centralities["pageRank"]
-            })
-            .map(function(d) { return d.stateId; }));
-
-        var dimensions = _attr.svg.selectAll(".dimension")
-            .data(_self._attr.dims)
-            .enter()
-            .append("g")
-            .attr("class", function(d) { return d; })
-            .attr("transform", function(d) { return "translate(" + _attr.xScale(d) + ", 0)"; });
-
-        // Inject axis to svg
-        dimensions.append("g")
-            .attr("class", function(d) { return d; })
-            .attr("class", "y-axis")
-            .attr("transform", "translate(" + gs.f.padding + ",0)")
-            .each(function(d) {
-                d4.select(this).call(d4.axisLeft(_attr.yScale).tickSize(1));
-                d4.select(this).select("path").attr("opacity", 0);
-                //d4.select(this).selectAll(".tick").attr("transform", "translate(6, -3)");
-                d4.select(this).selectAll("text")
-                    .style("opacity", function(label) {
-                        var label_match = _self.model.get("data").filter(function(edge) {
-                            return (edge.sourceDimension == d && edge.sourceName == label) || (edge.targetDimension == d && edge.targetName == label);
-                        });
-                        if (label_match == undefined || label_match.length == 0) {
-                            return 0;
-                        } else {
-                            return 1;
-                        }
-                    })
-                    .attr("fill", "#717171")
-                    .attr("y", -4)
-                    .attr("x", 18);
-
-                d4.select(this).selectAll(".tick")
-                    .each(function() {
-                        var stateName = d4.select(this).select("text").text();
-                        var attr_measure = _self.model.get("nodes").filter(function(node) {
-                            return node.stateId == stateName;
-                        }).map(function(d) { return d.centralities[selectedAttr]; });
-                        d4.select(this).append("circle")
-                            .attr("class", "attr_circle")
-                            .attr("r", 100 * attr_measure)
-                            .style("fill", "#D9D3DF")
-                            .style("opacity", function() {
-                                var label_match = _self.model.get("data").filter(function(edge) {
-                                    return (edge.sourceDimension == d && edge.sourceName == stateName) || (edge.targetDimension == d && edge.targetName == stateName);
-                                });
-                                if (label_match == undefined || label_match.length == 0) {
-                                    return 0;
-                                } else {
-                                    return 1;
-                                }
-                            })
-                            .style("stroke", "#3C0078")
-                            .attr("cy", -4);
-                    });
-
-            });
-    },
-    calcDimsFromClustering: function() {
-        // Get dimension of states
-        var dims_array = [],
-            stateDimsData = conf.static.stateDims;
-        var nDim = d4.max(Object.values(stateDimsData)) + 1;
-        d4.range(0, nDim, 1).forEach(function(num_dim) {
-            var dim = "dim_" + num_dim.toString();
-            dims_array.push(dim);
-        }); // dimension => ["dim_0", "dim_1", "dim_2", ...]
-
-        return dims_array;
-    },
-    compute_cluster_centroids: function() {
-        let _self = this;
-        var dimClusterCentroids = {};
-        var dims = _self._attr.dims;
-        var nodesOnDimWithDuplicates = [];
-        var dupCheckArray = [];
-        var nodesOnDim = []; // Nodes that have an edge on the dimension
-        var attrOnDim = [];
-
-        // Get the metadata for sorting
-        // For each dimension?? dim0, dim1, ...
-        for (var i = 0; i < dims.length; i++) {
-            // Investigate which nodes are on which dimensions (Get nodes for each dimension)
-            // if it is the first dimension, look at the source of edges starting from it
-            // if(i == 0){
-            //  nodesOnDimWithDuplicates = dataset.data.filter(function(edge){ 
-            //                  return edge.sourceDimension == dims[i];
-            //              }).map(function(d){ return { 
-            //                                      "id": d.source,
-            //                                      "dimension": d.sourceDimension,
-            //                                      "name": d.sourceName,
-            //                                      "stateInfo": d.sourceStateInfo,
-            //                                      "centralities": d.sourceCentralities  }; 
-            //                                  });
-            //  // Check duplicates of nodes
-            //  nodesOnDimWithDuplicates.forEach(function(node1){
-            //      var dupCheckArray = nodesOnDim.filter(function(node2){
-            //                              return node1.id == node2.id;
-            //                          });
-            //      // If there is no match, then add the unique node
-            //      if(typeof dupCheckArray == undefined || dupCheckArray.length == 0){
-            //          nodesOnDim.push(node1);
-            //      }
-            //  });
-            // // if it is not the first one, just look at the target of edges
-            // } else {
-            nodesOnDim = _self.model.get("data").filter(function(edge) {
-                return (edge.sourceDimension == dims[i] || edge.targetDimension == dims[i]);
-            }).map(function(d) {
-                if (d.sourceDimension == dims[i]) {
-                    return {
-                        "id": d.source,
-                        "dimension": d.sourceDimension,
-                        "name": d.sourceName,
-                        "stateInfo": d.sourceStateInfo,
-                        "centralities": d.sourceCentralities
-                    };
-                } else if (d.targetDimension == dims[i]) {
-                    return {
-                        "id": d.target,
-                        "dimension": d.targetDimension,
-                        "name": d.targetName,
-                        "stateInfo": d.targetStateInfo,
-                        "centralities": d.targetCentralities
-                    };
-                }
-            });
-            // }
-
-            attrOnDim = nodesOnDim.map(function(d) { return d.centralities[selectedAttr]; });
-
-            //@@@@@@@@@@@@@@@@@@@@@@
-            nodesOnDim = nodesOnDim.sort(function(a, b) { return d4.ascending(a.centralities["pageRank"], b.centralities["pageRank"]); })
-
-            // Clustering based on the attribute
-            // Save clustering information into "diffView._attr.dimsClusterInfo"
-            for (var j = 0; j < nodesOnDim.length; j++) {
-                var cluster;
-                var node = nodesOnDim[j];
-
-                // For now, simply create clusters based on index (the first half / the second half)
-                if (j < nodesOnDim.length / 3) {
-                    // Insert clustering data into edge dataset (Which clusters do source and target of edge belong to?)
-                    cluster = dims[i] + "-cl_" + 0;
-                } else if ((j >= nodesOnDim.length / 3) && (j < nodesOnDim.length / 3 * 2)) {
-                    cluster = dims[i] + "-cl_" + 1;
-                } else {
-                    cluster = dims[i] + "-cl_" + 2;
-                }
-
-                // Organize cluster information 
-                // dimsClusterInfo = [ { dim: "dim_1", cl: "dim_1-cl_1", nodes: [ nodeObj1, nodeObj2, ... ] } ]
-                // If the array is empty, push a first object
-                if (!_self._attr.dimsClusterInfo.has(dims[i])) {
-                    _self._attr.dimsClusterInfo.set(dims[i], d4.map());
-                }
-                if (!_self._attr.dimsClusterInfo.get(dims[i]).has(cluster)) {
-                    _self._attr.dimsClusterInfo.get(dims[i]).set(cluster, d4.map());
-                }
-                if (!_self._attr.dimsClusterInfo.get(dims[i]).get(cluster).has("nodes")) {
-                    _self._attr.dimsClusterInfo.get(dims[i]).get(cluster).set("nodes", []);
-                }
-                _self._attr.dimsClusterInfo.get(dims[i]).get(cluster).get("nodes").push(node);
-            }
-        }
-
-    },
-    // draw single cubic bezier curve
-    draw_single_curve: function(d) {
-        var _self = this,
-            centroids = _self.compute_centroids(d);
-        //console.log(centroids);
-        var cps = _self.compute_control_points(centroids);
-
-        var cubicPath = function(c) {
-            return `M${c.start[0]},${c.start[1]} C${c.control1[0]},${c.control1[1]} ${c.control2[0]},${c.control2[1]} ${c.end[0]},${c.end[1]}`;
-        }
-
-        for (var i = 0; i < cps.length - 1; i += 3) {
-            var curvePoints = {};
-            curvePoints.start = [cps[i].e(1), cps[i].e(2)];
-            //console.log("i = ", i);
-
-            //curves.push([cps[i].e(1), cps[i].e(2), cps[i+1].e(1), cps[i+1].e(2), cps[i+2].e(1), cps[i+2].e(2) ]);
-            //path.lineTo(cps[i].e(1), cps[i].e(2), cps[i+1].e(1), cps[i+1].e(2), cps[i+2].e(1), cps[i+2].e(2));
-            curvePoints.control1 = [cps[i + 1].e(1), cps[i + 1].e(2)];
-            curvePoints.control2 = [cps[i + 2].e(1), cps[i + 2].e(2)];
-            curvePoints.end = [cps[i + 3].e(1), cps[i + 3].e(2)];
-            //path.closePath();
-
-            _self._attr.curvePaths
-                .append("path")
-                .attr("class", "curvePath")
-                .attr("stroke", function() {
-                    if (_self.getDimNum(d.sourceDimension) > _self.getDimNum(d.targetDimension)) {
-                        return "red";
-                    }
-                    return "purple";
-                })
-                .attr("stroke-width", 1.2)
-                .attr("opacity", 0.5)
-                .style("fill", "none")
-                .attr("d", cubicPath(curvePoints));
-        }
-    },
-    compute_centroids: function(edge) {
-        var _self = this,
-            _attr = this._attr,
-            dimsClusterInfo = _self._attr.dimsClusterInfo,
-            sourceDim, targetDim,
-            sourceState, targetState,
-            sourceCl, targetCl, sourceCls, targetCls,
-            nodesInSourceCluster, nodesInTargetCluster,
-            sourceCentroid, targetCentroid,
-            sourceCX, sourceCY, targetCX, targetCY;
-        var centroids = [];
-
-        //// Source
-        /// Get the source cluster
-        sourceDim = edge.sourceDimension;
-        sourceState = edge.sourceName;
-        sourceCls = dimsClusterInfo.get(sourceDim).entries();
-        sourceCls.forEach(function(cluster) {
-            var nodes = cluster.value.get("nodes");
-            var sourceStateIsMatched = nodes.filter(function(node) {
-                return node.name == sourceState;
-            });
-            if (sourceStateIsMatched && sourceStateIsMatched.length) {
-                sourceCl = cluster.key;
-            }
-        });
-
-        nodesInSourceCluster = dimsClusterInfo.get(sourceDim).get(sourceCl).get("nodes");
-
-        /// Get the target cluster
-        targetDim = edge.targetDimension;
-        targetState = edge.targetName;
-        targetCls = dimsClusterInfo.get(targetDim).entries();
-        targetCls.forEach(function(cluster) {
-            var nodes = cluster.value.get("nodes");
-            var targetStateIsMatched = nodes.filter(function(node) {
-                return node.name == targetState;
-            });
-            if (targetStateIsMatched && targetStateIsMatched.length) {
-                targetCl = cluster.key;
-            }
-        });
-
-        console.log(dimsClusterInfo.get(targetDim));
-        console.log(targetCl);
-        nodesInTargetCluster = dimsClusterInfo.get(targetDim).get(targetCl).get("nodes");
-
-        /// Source part
-        // centroids on 'real' axes
-        var sourceX = _attr.xScale(sourceDim);
-        var sourceY = _attr.yScale(sourceState);
-
-        var targetX = _attr.xScale(targetDim);
-        var targetY = _attr.yScale(targetState);
-
-        var sourceVirtualCentroid, targetVirtualCentroid;
-
-        var sourceClusterWidth = d4.max(nodesInSourceCluster, function(d) { return _attr.yScale(d.name); }) -
-            d4.min(nodesInSourceCluster, function(d) { return _attr.yScale(d.name); });
-
-        var sourceClusterCentroid = d4.min(nodesInSourceCluster, function(d) { return _attr.yScale(d.name); }) +
-            (sourceClusterWidth / 2);
-
-        var targetClusterWidth = d4.max(nodesInTargetCluster, function(d) { return _attr.yScale(d.name); }) -
-            d4.min(nodesInTargetCluster, function(d) { return _attr.yScale(d.name); });
-
-        var targetClusterCentroid = d4.min(nodesInTargetCluster, function(d) { return _attr.yScale(d.name); }) +
-            (targetClusterWidth / 2);
-
-        // // Compare y coordinates of source and target cluster
-        // if (sourceClusterCentroid >= targetClusterCentroid) {
-        //     sourceVirtualCentroid = sourceClusterCentroid - 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
-        //     targetVirtualCentroid = targetClusterCentroid + 1 / 10 * (sourceClusterCentroid - targetClusterCentroid);
-        // } else {
-        //     sourceVirtualCentroid = sourceClusterCentroid + 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
-        //     targetVirtualCentroid = targetClusterCentroid - 1 / 10 * (targetClusterCentroid - sourceClusterCentroid);
-        // }
-
-        sourceVirtualCentroid = sourceClusterCentroid;
-        targetVirtualCentroid = targetClusterCentroid;
-
-        // If the edge goes backward,
-        if (_self.getDimNum(sourceDim) > _self.getDimNum(targetDim)) {
-            sourceCX = sourceX - (1 / 7) * (sourceX - _attr.xScale("dim_" + (_self.getDimNum(sourceDim) - 1).toString()));
-            sourceCY = sourceVirtualCentroid;
-            targetCX = targetX + (1 / 7) * (_attr.xScale("dim_" + (_self.getDimNum(targetDim) + 1).toString()) - targetX);
-            //targetCY = targetVirtualCentroid + 1 / 100 * (targetY - targetClusterCentroid);
-            targetCY = targetVirtualCentroid;
-            //console.log(sourceX, sourceCX, targetX, targetCX);
-        } else {
-            sourceCX = sourceX + (1 / 7) * (_attr.xScale("dim_" + (_self.getDimNum(sourceDim) + 1).toString()) - sourceX);
-            //sourceCY = sourceVirtualCentroid + 1 / 100 * (sourceY - sourceClusterCentroid);
-            sourceCY = sourceVirtualCentroid;
-            targetCX = targetX - (1 / 7) * (targetX - _attr.xScale("dim_" + (_self.getDimNum(targetDim) - 1).toString()));
-            //targetCY = targetVirtualCentroid + 1 / 100 * (targetY - targetClusterCentroid);
-            targetCY = targetVirtualCentroid;
-            //console.log(sourceX, sourceCX, targetX, targetCX);
-        }
-
-        // _self._attr.curvePaths
-        //     .append("circle")
-        //     .attr("r", 2)
-        //     .attr("class", "control-point")
-        //     .attr("cx", sourceCX)
-        //     .attr("cy", sourceCY);
-        //
-        // _self._attr.curvePaths
-        //     .append("circle")
-        //     .attr("r", 2)
-        //     .attr("class", "control-point")
-        //     .attr("cx", targetCX)
-        //     .attr("cy", targetCY);
-
-
-        centroids.push(sylvester.$V([sourceX, sourceY]));
-        centroids.push(sylvester.$V([sourceCX, sourceCY]));
-        centroids.push(sylvester.$V([targetCX, targetCY]));
-        centroids.push(sylvester.$V([targetX, targetY]));
-
-        return centroids;
-    },
-    compute_control_points: function(centroids) {
-        //console.log(centroids);
-        var cols = centroids.length;
-        var a = gs.f.config.smoothness;
-        var cps = [];
-
-        var sourceV = centroids[0];
-        var sourceCV = centroids[1];
-        var targetCV = centroids[2];
-        var targetV = centroids[3];
-
-        //console.log(centroids[0], centroids[0].e(1), centroids[0].e(2), centroids[1]);
-        cps.push(centroids[0]);
-
-        // if the edge goes forward, (virtual axis is on the right of actual axis)
-        if (centroids[1].e(1) - centroids[0].e(1) > 0) {
-            cps.push(sylvester.$V([centroids[0].e(1) + a * 2 * (centroids[1].e(1) - centroids[0].e(1)), centroids[0].e(2)]));
-        } else {
-            cps.push(sylvester.$V([centroids[1].e(1) - a * 2 * (centroids[0].e(1) - centroids[1].e(1)), centroids[0].e(2)]));
-        }
-
-        // For the source-side virtual axis
-        // centroids[1] => right on the virtual axis
-        // centroids[0],[2] => control points on both sides of centroids[1]
-        var diff = centroids[0].subtract(centroids[1]);
-
-        cps.push(sylvester.$V([centroids[1].e(1) - a * 2 * (centroids[1].e(1) - centroids[0].e(1)), centroids[1].e(2)]));
-        cps.push(centroids[1]);
-        cps.push(sylvester.$V([centroids[1].e(1) + a * 2 * (centroids[2].e(1) - centroids[1].e(1)), centroids[1].e(2)]));
-
-        // For the target-side virtual axis
-        // centroids[1] => right on the virtual axis
-        // centroids[0],[2] => control points on both sides of centroids[1]
-        cps.push(sylvester.$V([centroids[2].e(1) - a * 2 * (centroids[2].e(1) - centroids[1].e(1)), centroids[2].e(2)]));
-        cps.push(centroids[2]);
-        cps.push(sylvester.$V([centroids[2].e(1) + a * 2 * (centroids[3].e(1) - centroids[2].e(1)), centroids[2].e(2)]));
-
-        // this._attr.curvePaths
-        //     .append("circle")
-        //     .attr("r", 2)
-        //     .attr("class", "control-point")
-        //     .style("fill", "green")
-        //     .attr("cx", centroids[1].e(1) + a * 2 * (centroids[1].e(1) - centroids[0].e(1)))
-        //     .attr("cy", centroids[1].e(2));
-
-        // If the edge goes forward,
-        if (centroids[3].e(1) - centroids[2].e(1) > 0) {
-            cps.push(sylvester.$V([centroids[3].e(1) - a * 2 * (centroids[3].e(1) - centroids[2].e(1)), centroids[3].e(2)]));
-        } else {
-            cps.push(sylvester.$V([centroids[3].e(1) + a * 2 * (centroids[2].e(1) - centroids[3].e(1)), centroids[3].e(2)]));
-        }
-        cps.push(centroids[3]);
-
-        // this._attr.curvePaths
-        //     .append("circle")
-        //     .attr("r", 2)
-        //     .attr("class", "control-point")
-        //     .style("fill", "red")
-        //     .attr("cx", centroids[3].e(1) + a * 2 * (centroids[2].e(1) - centroids[3].e(1)))
-        //     .attr("cy", centroids[0].e(2));
-        return cps;
-    },
-    getDimNum: function(dim) {
-        return parseInt(dim.replace("dim_", ""));
     }
 });
 
@@ -3423,1006 +2874,235 @@ let PolicyGroupView = Backbone.View.extend({
     }
 });
 
-/**
- * DiffusionView: (inspection view, cascade view)
- * to perform visual hypothesis test.
- * Allows for comparing specific policy cascades with 
- * a) the expected patterns in a group network, or 
- * b) the state contexts (attributes)
- *  x-axis: influence or adoption order
- *  y-axis: attribute ranking
- *  (top) cascade follows expected influence direction
- *  (bottom) cascade violates expected influence direction
- */
-let DiffusionView = Backbone.View.extend({
-    el: "#svg-diffusion-view",
+let PolicyPlotView = Backbone.View.extend({
+    el: "#svg-policy-plot-view",
     initialize() {
         this._attr = {};
     },
-    /**
-     * render and prepare static elements that do not change according to different `conditions`, including
-     * - svg groups
-     * - some of scales
-     * - labels
-     * - and so on.
-     * @param {object} conditions Backbone.Model 
-     */
+    events: {
+        'click': 'switchCluster'
+    },
     render(conditions) {
         let _self = this,
-            _attr = this._attr, // closure vars
-            isSnapshot = arguments.length !== 1;
+            _attr = this._attr;
+        
+        $(_self.el).empty();
 
-        // toggle notification jumbotron and stop rendering
-        if (conditions.get("policy") === conf.bases.policy.default) {
-            this.postRender(conditions);
-            return this;
-        }
+        let policies = _self.model.get("policy");
+        console.log("policies in PolicyPlotView:", policies);
 
-        this.$el.empty();
+        var margin = { top: 20, right: 50, bottom: 50, left: 50 },
+            outerWidth = d4.select(_self.el).node().width.animVal.value,
+            outerHeight = d4.select(_self.el).node().height.animVal.value,
+            width = outerWidth - margin.left - margin.right,
+            height = outerHeight - margin.top - margin.bottom;
+        
+        let _width = gs.pp.margin.left + gs.pp.margin.right + gs.pp.size.width,
+            _height = gs.pp.margin.top + gs.pp.margin.bottom + gs.pp.size.height;
 
-        let _height = gs.d.margin.top + gs.d.size.pathHeight + gs.d.margin.bottom,
-            _width = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth + gs.d.size.pathWidth + gs.d.margin.right,
-            pathXShift = gs.d.margin.left + gs.d.size.barWidth + gs.d.size.labelWidth, // min x of pathG
-            bottomLabelYShift = gs.d.margin.top + gs.d.size.pathHeight,
-            circleXShift = pathXShift,
-            xAxisLableXShift = pathXShift + gs.d.size.pathWidth,
-            circleYShift = gs.d.margin.top + gs.d.size.pathHeight / 2,
-            yLabelXShift = gs.d.margin.left + gs.d.size.barWidth;
+        var x = d4.scaleLinear()
+            .range([0, _width]).nice();
 
-        // _width *= isSnapshot ? gs.d.multiplier.snapshot : 1;
-        // _height *= isSnapshot ? gs.d.multiplier.snapshot : 1;
+        var y = d4.scaleLinear()
+            .range([_height, 10]).nice();
 
-        let svg = _attr.svg = d3.select(_self.el)
-            .attr('preserveAspectRatio', 'xMidYMin meet')
-            .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
-            .classed('svg-content-responsive', true);
+        var xCat = "V1",
+            yCat = "V2",
+            colorCat = "policy_start",
+            sizeCat = ""
+            title = "Policy_id",
+            ramp=d4.scaleLinear().domain([0,2]).range(["red","green","blue"]);
 
-        // create unique ids to prevent incorrect interaction behaviors for snapshot
-        let idPrefix = isSnapshot ? Math.random().toString(36).substr(2, 8) + "-" : '',
-            guidanceLineG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-guidance-line-group',
-                'class': 'guidances',
-                'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
-            }),
-            circleG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-circle-group',
-                'class': 'circles',
-                'transform': "translate(" + (circleXShift) + "," + (circleYShift) + ")"
-            }),
-            xAxisLableG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-x-axis-label-group',
-                'class': 'x-labels',
-                'transform': "translate(" + (xAxisLableXShift) + "," + (circleYShift) + ")"
-            }),
-            pathG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-path-group',
-                'class': 'paths',
-                'transform': "translate(" + (pathXShift) + "," + (gs.d.margin.top) + ")"
-            }),
-            xLabelG = circleG.append('g').attr({
-                'id': idPrefix + 'diffusion-x-label-group',
-                'class': 'label-group',
-                'transform': "translate(" + (0) + "," + (0) + ")"
-            }),
-            upBarG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-up-bar-group',
-                'class': 'bars',
-                'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
-            }),
-            bottomBarG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-bottom-bar-group',
-                'class': 'bars',
-                'transform': "translate(" + (gs.d.margin.left) + "," + (gs.d.margin.top) + ")"
-            }),
-            bottomLabelG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-bottom-label-group',
-                'class': 'x-labels',
-                'transform': "translate(" + (xAxisLableXShift) + "," + (bottomLabelYShift) + ")"
-            }),
-            yLabelG = svg.append('g').attr({
-                'id': idPrefix + 'diffusion-y-label-group',
-                'class': 'label-group',
-                'transform': "translate(" + (yLabelXShift) + "," + (gs.d.margin.top) + ")"
-            }),
-            refLineG = pathG.append('g').attr({
-                'id': idPrefix + 'diffusion-ref-line-group',
-                'class': 'refs',
-                'transform': "translate(" + (0) + "," + (0) + ")"
-            }),
-            defs = svg.append('defs');
-
-        bottomLabelG.selectAll("text")
-            .data(["Deviant Cascades"])
-            .enter()
-            .append("text")
-            .attr({
-                transform: "translate(-120, -10)"
-            })
-            .text(d => d);
-
-        let xScale = d3.scale.linear()
-            .domain([0, 49])
-            .range([0, gs.d.size.pathWidth]),
-            yTopScale = d3.scale.linear()
-            .domain([0, 49])
-            .range([0, gs.d.size.pathHeight / 2]),
-            yBottomScale = d3.scale.linear()
-            .domain([0, 49])
-            .range([gs.d.size.pathHeight, gs.d.size.pathHeight / 2]);
-
-        // data join
-        let nodes = _self.model.get("nodes"),
-            links = _self.model.get("edges"),
-            stat = _self.model.get("stat"),
-            cstat = _self.model.get("cstat"),
-            _colorMap = utils.getColorMap(nodes, css_variables["--color-trans-out"], css_variables["--color-trans-in"]);
-
-        $.extend(_attr, {
-            getPrefix: () => {
-                return (isSnapshot ? idPrefix : "");
-            },
-            isSnapshot: isSnapshot,
-            pathG: pathG,
-            circleG: circleG,
-            xLabelG: xLabelG,
-            upBarG: upBarG,
-            bottomBarG: bottomBarG,
-            yLabelG: yLabelG,
-            xAxisLableG: xAxisLableG,
-            bottomLabelG: bottomLabelG,
-            refLineG: refLineG,
-            guidanceLineG: guidanceLineG,
-            defs: defs,
-            nodes: nodes,
-            links: links,
-            stat: stat,
-            cstat: cstat,
-            xScale: xScale,
-            yTopScale: yTopScale,
-            yBottomScale: yBottomScale,
-            c: conditions,
-            _colorMap: _colorMap
-        });
-
-        // do init sort
-        _self.doInitSort();
-
-        _self.update();
-
-        // only listen to event if it isn't a snapshot
-        !isSnapshot && _self.bindTriggers();
-
-        return this;
-    },
-    update() {
-        console.log("updating diffusion...");
-        console.log("in DiffusionView, ", this.model);
-        console.log(this._attr.links);
-        let _self = this,
-            _attr = this._attr,
-            cstat = this.model.get("cstat"),
-            nodes = _attr.nodes,
-            links = _attr.links,
-            getDescriptionStr = function(d) {
-                let description = conf.bases.xAttributeList.find(x => x.id === d).description;
-                if (d === conf.bases.xAttributeList[0].id) {
-                    let cType = _attr.c.get("centrality"),
-                        cString = conf.bases.centralityList.find(x => x.id === cType).description;
-                    description += (": " + cString);
-                }
-                return description;
-            };
-
-        // define radius scale for circles
-        let xSeq = _attr.c.get("centrality"),
-            radiusScale = d3.scale.linear()
-            .domain([cstat.min[xSeq], cstat.max[xSeq]])
-            .range(gs.d.size.circle);
-
-        // data binding 
-        let paths = _attr.pathG.selectAll('path')
-            .data(links),
-            guids = _attr.guidanceLineG.selectAll('path')
-            .data(links),
-            circles = _attr.circleG.selectAll('circle')
-            .data(nodes),
-            xlabels = _attr.xLabelG.selectAll('text')
-            .data(nodes),
-            upBars = _attr.upBarG.selectAll('rect')
-            .data(nodes),
-            bottomBars = _attr.bottomBarG.selectAll('rect')
-            .data(nodes);
-
-        // add anotation for y-axis
-        _attr.yLabelG.selectAll("text").remove();
-        _attr.yLabelG.selectAll("text")
-            .data([_attr.c.get("metadata")])
-            .enter()
-            .append("text")
-            .attr({
-                transform: gs.d.margin.yLabelTransform
-            })
-            .text(d => conf.bases.yAttributeList.find(x => x.id === d).description);
-
-        _attr.xAxisLableG.selectAll("text").remove();
-        _attr.xAxisLableG.selectAll("text")
-            .data([_attr.c.get("sequence")])
-            .enter()
-            .append("text")
-            .attr({
-                transform: (d) => {
-                    let description = getDescriptionStr(d);
-                    return "translate(" + (-description.length * gs.d.multiplier.text) + ", " + gs.d.margin.xLabel + ")";
-                }
-            })
-            .text(d => getDescriptionStr(d));
-
-        paths.transition()
-            .duration(gs.d.config.transitionTime)
-            .attrTween("d", (d) => {
-                let c = d.coords,
-                    n = _self.processCoordinates(d),
-                    interpolateX1 = d3.interpolate(c.x1, n.x1),
-                    interpolateX2 = d3.interpolate(c.x2, n.x2),
-                    interpolateXMid = d3.interpolate(c.xMid, n.xMid),
-                    interpolateY1 = d3.interpolate(c.y1, n.y1),
-                    interpolateY2 = d3.interpolate(c.y2, n.y2),
-                    interpolateYM1 = d3.interpolate(c.ym1, n.ym1),
-                    interpolateYM2 = d3.interpolate(c.ym2, n.ym2);
-
-                return function(t) {
-                    d.coords.x1 = interpolateX1(t);
-                    d.coords.x2 = interpolateX2(t);
-                    d.coords.xMid = interpolateXMid(t);
-                    d.coords.y1 = interpolateY1(t);
-                    d.coords.y2 = interpolateY2(t);
-                    d.coords.ym1 = interpolateYM1(t);
-                    d.coords.ym2 = interpolateYM2(t);
-
-                    if (nodes[d.source].valid && nodes[d.target].valid) {
-                        let x = d.coords.x1 < d.coords.x2,
-                            y = d.coords.y1 < d.coords.y2,
-                            x1 = x ? "0" : "1",
-                            x2 = x ? "1" : "0",
-                            y1 = y ? "0" : "1",
-                            y2 = y ? "1" : "0",
-                            gradientIdentifier = _attr.getPrefix() + "gradient-" + nodes[d.source].stateId + nodes[d.target].stateId;
-
-                        $("#" + gradientIdentifier).attr("x1", x1);
-                        $("#" + gradientIdentifier).attr("x2", x2);
-                        $("#" + gradientIdentifier).attr("y1", y1);
-                        $("#" + gradientIdentifier).attr("y2", y2);
-                    }
-                    return _self.linkBuilder(d);
-                }
+        d4.csv("/static/data/dim_reduction_result.csv", function(data) {
+            data.forEach(function(d) {
+                d.V1 = +d.V1;
+                d.V2 = +d.V2;
+                d.Cluster = d.Cluster;
+                d.Id = d.Id;
             });
 
-        guids.transition()
-            .duration(gs.d.config.transitionTime)
-            .attrTween("d", (d) => {
-                let c = d.gcoords,
-                    n = _self.processCoordinates(d),
-                    interpolateX1 = d3.interpolate(c.x1, n.x1),
-                    interpolateX2 = d3.interpolate(c.x2, n.x2),
-                    interpolateXMid = d3.interpolate(c.xMid, n.xMid),
-                    interpolateY1 = d3.interpolate(c.y1, n.y1),
-                    interpolateY2 = d3.interpolate(c.y2, n.y2),
-                    interpolateYM1 = d3.interpolate(c.ym1, n.ym1);
+            var xMax = d4.max(data, function(d) { return d[xCat]; }) * 1.05,
+                xMin = d4.min(data, function(d) { return d[xCat]; }),
+                xMin = xMin > 0 ? 0 : xMin,
+                yMax = d4.max(data, function(d) { return d[yCat]; }) * 1.05,
+                yMin = d4.min(data, function(d) { return d[yCat]; }),
+                yMin = yMin > 0 ? 0 : yMin;
 
-                return function(t) {
-                    d.gcoords.x1 = interpolateX1(t);
-                    d.gcoords.x2 = interpolateX2(t);
-                    d.gcoords.xMid = interpolateXMid(t);
-                    d.gcoords.y1 = interpolateY1(t);
-                    d.gcoords.y2 = interpolateY2(t);
-                    d.gcoords.ym1 = interpolateYM1(t);
+            console.log(xMin, xMax);
+            console.log(yMin, yMax);
+            x.domain([xMin, xMax]);
+            y.domain([yMin, yMax]);
 
-                    return _self.guidanceBuilder(d);
-                }
-            });
+            var xAxis = d4.axisBottom(x)
+                .tickFormat((d) => '').tickSize(0);
 
-        circles.transition()
-            .duration(gs.d.config.transitionTime)
-            .attrTween("cx", (d) => {
-                let interpolateX = d3.interpolate(d.circleX, _attr.xScale(d.sequenceOrder));
-                return function(t) {
-                    return d.circleX = interpolateX(t);
-                }
-            })
-            .attrTween("r", (d) => {
-                let interpolateR = d3.interpolate(d.circleR, radiusScale(d.centralities[xSeq]));
-                return function(t) {
-                    return d.circleR = interpolateR(t);
-                }
-            });
+            var yAxis = d4.axisLeft(y)
+                .tickFormat((d) => '').tickSize(0);
 
-        // enter
-        circles.enter()
-            .append('circle')
-            .attr({
-                cy: 0,
-                cx: (d) => {
-                    d.circleX = _attr.xScale(d.sequenceOrder);
-                    return d.circleX;
-                },
-                r: (d) => {
-                    d.circleR = radiusScale(d.centralities[xSeq]);
-                    return d.circleR;
-                },
-                class: "diffusion-circles",
-                id: (d, i) => _attr.getPrefix() + "diffusion-node-" + i,
-                nodeId: (d, i) => i
-            })
-            .style({
-                fill: (d) => {
-                    if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
-                    } else {
-                        if (_self.isNodeDefault(d)) {
-                            return css_variables["--color-unadopted"];
-                        } else {
-                            return d.valid ? _attr._colorMap[d.adoptedYear] : css_variables["--color-unadopted"];
-                        }
-                    }
-                },
-                stroke: (d) => {
-                    if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                    } else {
-                        if (_self.isNodeDefault(d)) {
-                            return d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                        } else {
-                            return d.valid ? d3.rgb(_attr._colorMap[d.adoptedYear]).darker(1) : d3.rgb(css_variables["--color-unadopted"]).darker(1);
-                        }
-                    }
-                }
-            });
-
-        xlabels.transition()
-            .duration(gs.d.config.transitionTime)
-            .attrTween("transform", (d) => {
-                let interpolateX = d3.interpolate(d.labelX, _attr.xScale(d.sequenceOrder) - gs.d.size.circle[0]);
-                return function(t) {
-                    d.labelX = interpolateX(t);
-                    return "translate(" + d.labelX + "," + d.labelY + ") rotate(90)";
-                }
-            });
-
-        xlabels.enter()
-            .append('text')
-            .attr({
-                class: "text-tip"
-            })
-            .text((d) => " - " + d.stateId)
-            .attr({
-                transform: (d) => {
-                    d.labelX = _attr.xScale(d.sequenceOrder) - gs.d.size.circle[0];
-                    d.labelY = gs.d.size.circle[1];
-                    return "translate(" + d.labelX + "," + d.labelY + ") rotate(90)";
-                }
-            })
-            .style({
-                opacity: 0.5
-            });
-
-        paths.enter()
-            .append('path')
-            .attr({
-                d: (d) => {
-                    d.coords = _self.processCoordinates(d);
-                    return _self.linkBuilder(d);
-                },
-                class: (d) => {
-                    let source = nodes[d.source],
-                        target = nodes[d.target],
-                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
-
-                    d.isValid = source.valid && target.valid;
-
-                    if (printDiagnoseInfo) {
-                        console.groupCollapsed("Source: node-" + d.source + "\t" + source.stateId, "Target: node-" + d.target + "\t" + target.stateId + "\t" + d.isValid + "\t" + isFollowingNetworkRule)
-                        if (d.isValid) {
-                            console.log("Both valid.");
-                        } else {
-                            console.log("Source " + (source.valid ? "valid." : "invalid."));
-                            console.log("Target " + (target.valid ? "valid." : "invalid."));
-                        }
-                        console.log((isFollowingNetworkRule ? "Following " : "Violating ") + "rule.");
-                        console.groupEnd();
-                    }
-
-                    if (d.isValid) {
-                        _self.createGradient(source, target);
-                        if (isFollowingNetworkRule) {
-                            return "diffusion-strokes follow-the-rule";
-                        } else {
-                            return "diffusion-strokes violate-the-rule";
-                        }
-                    } else {
-                        return "diffusion-strokes invalid-arc";
-                    }
-                },
-                source: (d) => d.source,
-                target: (d) => d.target,
-                id: (d, i) => _attr.getPrefix() + "diffusion-path-" + i
-            })
-            .style({
-                fill: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
-                stroke: (d) => _self.getPathColor(nodes[d.source], nodes[d.target]),
-                opacity: (d) => (_self.isNodeDefault(nodes[d.source]) && _self.isNodeDefault(nodes[d.target]) ?
-                    0.25 :
-                    0.6)
-            });
-
-        guids.enter()
-            .append('path')
-            .attr({
-                d: (d) => {
-                    d.gcoords = _self.processCoordinates(d);
-                    return _self.guidanceBuilder(d);
-                },
-                class: (d) => {
-                    let isValid = nodes[d.source].valid && nodes[d.target].valid,
-                        isFollowingNetworkRule = _self.isFollowingNetworkRule(d);
-
-                    if (isValid) {
-                        if (isFollowingNetworkRule) {
-                            return "diffusion-guidances follow-the-rule";
-                        } else {
-                            return "diffusion-guidances violate-the-rule";
-                        }
-                    } else {
-                        return "diffusion-guidances invalid-arc";
-                    }
-                }
-            });
-
-        upBars.transition()
-            .duration(gs.d.config.transitionTime)
-            .call(_self.barTween, _attr, "up");
-        _self.createBars(upBars, "up");
-
-        bottomBars.transition()
-            .duration(gs.d.config.transitionTime)
-            .call(_self.barTween, _attr, "bottom");
-        _self.createBars(bottomBars, "bottom");
-        _self.postRender(_attr.c);
-        return this;
-    },
-    preRender() {
-        this.$el.hide();
-        $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").hide();
-        $("#diffusiion-policy-unselected-notitication").hide();
-        $("#diffusion-wrapper").find(".loader-img").show();
-    },
-    postRender(conditions) {
-        $("#diffusion-wrapper").find(".loader-img").hide();
-        if (conditions.get("policy") === conf.bases.policy.default) {
-            $("#diffusiion-policy-unselected-notitication").show();
-        } else {
-            $("#diffusion-wrapper").find(".bootstrap-switch-id-sequence-checkbox").show();
-            this.$el.show();
-        }
-    },
-    getPathColor(source, target) {
-        if (this.isNodeDefault(source) && this.isNodeDefault(target)) {
-            return css_variables["--color-default-black"];
-        } else {
-            let gradientIdentifier = this._attr.getPrefix() + "gradient-" + source.stateId + target.stateId;
-            return "url(#" + gradientIdentifier + ")";
-        }
-    },
-    isNodeDefault(node) {
-        return node.valid && node.adoptedYear === 9999;
-    },
-    createBars(bars, section) {
-        let _attr = this._attr,
-            stat = this.model.get("stat"),
-            cstat = this.model.get("cstat"),
-            isSortingByCentrality = (_attr.c.get('metadata') === "centrality"),
-            actualStat = isSortingByCentrality ? cstat : stat,
-            ySeq = (isSortingByCentrality ?
-                _attr.c.get('centrality') :
-                conf.pipe.metaToId[_attr.c.get('metadata')]),
-            rectScale = d3.scale.linear()
-            .domain([actualStat.min[ySeq], actualStat.max[ySeq]])
-            .range(gs.d.size.rect);
-
-        bars.enter()
-            .append('rect')
-            .attr({
-                width: (d) => {
-                    d.meta = (isSortingByCentrality ?
-                        d.centralities[ySeq] :
-                        d.metadata[ySeq]);
-                    d.width = typeof d.meta === "undefined" ?
-                        gs.d.size.rect[0] :
-                        rectScale(d.meta);
-                    return d.width;
-                },
-                height: gs.d.size.rectHeight,
-                x: (d) => {
-                    d.pad = typeof d.meta === "undefined" ?
-                        gs.d.size.rect[0] :
-                        rectScale(d.meta);
-                    return gs.d.size.barWidth - d.pad;
-                },
-                y: (d) => {
-                    if (section === "up") {
-                        d.upY = _attr.yTopScale(d.metadataOrder);
-                        return d.upY;
-                    } else {
-                        d.bottomY = _attr.yBottomScale(d.metadataOrder);
-                        return d.bottomY;
-                    }
-                },
-                class: (d, i) => "bar-" + i
-            })
-            .style({
-                fill: (d) => {
-                    if (d.stateId === "NE") {
-                        return d3.rgb(css_variables["--color-unadopted"]).brighter(1);
-                    } else {
-                        if (this.isNodeDefault(d)) {
-                            return css_variables["--color-unadopted"];
-                        } else {
-                            return d.valid ?
-                                _attr._colorMap[d.adoptedYear] :
-                                css_variables["--color-unadopted"];
-                        }
-                    }
-                }
-            });
-    },
-    barTween(transition, _attr, section) {
-        transition.attrTween("width", (d) => {
-                let stat = _attr.stat,
-                    cstat = _attr.cstat,
-                    isSortingByCentrality = (_attr.c.get("metadata") === "centrality"),
-                    actualStat = isSortingByCentrality ? cstat : stat,
-                    ySeq = (isSortingByCentrality ?
-                        _attr.c.get("centrality") :
-                        conf.pipe.metaToId[_attr.c.get("metadata")]);
-
-                d.meta = (isSortingByCentrality ?
-                    d.centralities[ySeq] :
-                    d.metadata[ySeq]);
-
-                d.rectScale = d3.scale.linear()
-                    .domain([actualStat.min[ySeq], actualStat.max[ySeq]])
-                    .range(gs.d.size.rect);
-                let newWidth = typeof d.meta === "undefined" ?
-                    gs.d.size.rect[0] :
-                    d.rectScale(d.meta),
-                    interpolateWidth = d3.interpolate(d.width, newWidth);
-                return function(t) {
-                    d.width = interpolateWidth(t);
-                    return d.width;
-                }
-            })
-            .attrTween("x", (d) => {
-                let newPad = (typeof d.meta === "undefined" ?
-                        gs.d.size.rect[0] :
-                        d.rectScale(d.meta)),
-                    interpolatePad = d3.interpolate(d.pad, newPad);
-
-                return function(t) {
-                    d.pad = interpolatePad(t);
-                    return gs.d.size.barWidth - d.pad;
-                }
-            })
-            .attrTween("y", (d) => {
-                let interpolateY;
-                if (section === "up") {
-                    interpolateY = d3.interpolate(d.upY, _attr.yTopScale(d.metadataOrder));
-                    return function(t) {
-                        d.upY = interpolateY(t);
-                        return d.upY;
-                    }
-                } else {
-                    interpolateY = d3.interpolate(d.bottomY, _attr.yBottomScale(d.metadataOrder));
-                    return function(t) {
-                        d.bottomY = interpolateY(t);
-                        return d.bottomY;
-                    }
-                }
-            });
-    },
-    createGradient(source, target) {
-        let _self = this,
-            isFollowingNetworkRule = +source.adoptedYear <= +target.adoptedYear,
-            x = source.sequenceOrder < target.sequenceOrder,
-            y = (isFollowingNetworkRule ?
-                source.metadataOrder < target.metadataOrder :
-                source.metadataOrder > target.metadataOrder),
-            x1 = x ? "0" : "1",
-            x2 = x ? "1" : "0",
-            y1 = y ? "0" : "1",
-            y2 = y ? "1" : "0",
-            prefix = _self._attr.getPrefix();
-
-        let grad = this._attr.defs.append("linearGradient")
-            .attr({
-                id: prefix + "gradient-".concat(source.stateId, target.stateId),
-                x1: x1,
-                x2: x2,
-                y1: y1,
-                y2: y2,
-                spreadMethod: "pad"
-            });
-
-        grad.append("stop")
-            .attr("offset", "5%")
-            .attr("stop-color", _self._attr._colorMap[source.adoptedYear])
-            .attr("stop-opacity", 1);
-
-        grad.append("stop")
-            .attr("offset", "95%")
-            .attr("stop-color", _self._attr._colorMap[target.adoptedYear])
-            .attr("stop-opacity", 1);
-
-        return grad;
-    },
-    guidanceBuilder(d) {
-        let _attr = this._attr,
-            xScale = _attr.xScale,
-            yTopScale = _attr.yTopScale,
-            yBottomScale = _attr.yBottomScale,
-            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
-            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale,
-            c = d.gcoords;
-
-        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
-
-        return interpolate([
-            [xScale(c.x1), yScale(c.y1)],
-            [xScale(c.xMid), yScale(c.ym1)],
-            [xScale(c.x2), yScale(c.y2)]
-        ]);
-    },
-    linkBuilder(d) {
-        let _attr = this._attr,
-            xScale = _attr.xScale,
-            yTopScale = _attr.yTopScale,
-            yBottomScale = _attr.yBottomScale,
-            isFollowingNetworkRule = this.isFollowingNetworkRule(d),
-            yScale = isFollowingNetworkRule ? yTopScale : yBottomScale,
-            c = d.coords;
-
-        let interpolate = d3.svg.line().interpolate("monotone"); // monotone, linear
-
-        return interpolate([
-            [xScale(c.x1), yScale(c.y1)],
-            [xScale(c.xMid), yScale(c.ym1)],
-            [xScale(c.x2), yScale(c.y2)],
-            [xScale(c.xMid), yScale(c.ym2)],
-            [xScale(c.x1), yScale(c.y1)]
-        ]);
-    },
-    processCoordinates(d) {
-        let divider = 0.3,
-            _attr = this._attr,
-            nodes = _attr.nodes,
-            cstat = _attr.cstat,
-            // yPartition1 = 0.25,
-            // yPartition2 = 0.75,
-            centralityType = this._attr.c.get("centrality"),
-            thicknessParam = nodes[d.source].centralities[centralityType],
-            standardizedThickness = this.standardized(thicknessParam, cstat.min[centralityType], cstat.max[centralityType]);
-        // ySeq = conf.pipe.metaToId[c.get("metadata")],
-        // xSeq = conf.pipe.metaToId[c.get("sequence")];
-
-        let x1 = nodes[d.source].sequenceOrder,
-            x2 = nodes[d.target].sequenceOrder,
-            y1 = nodes[d.source].metadataOrder,
-            y2 = nodes[d.target].metadataOrder,
-            xMid = x1 + (x2 - x1) * divider,
-            // tan = (y2 - y1) / (x2 - x1),
-            // fullShift = (x2 - x1) * divider * tan,
-            // ym1 = y1 + yPartition1 * fullShift,
-            // ym2 = ym1 + standardizedThickness * (yPartition2 - yPartition1) * fullShift;
-            unitGap = gs.d.size.labelHeight / 150,
-            ym1 = y1,
-            ym2 = ym1 + (y1 > y2 ? -1 : 1) * unitGap * standardizedThickness;
-
-        return {
-            x1: x1,
-            x2: x2,
-            xMid: xMid,
-            y1: y1,
-            y2: y2,
-            ym1: ym1,
-            ym2: ym2
-        }
-    },
-    lightUpBars(validityCategory, nodeId) {
-        switch (validityCategory) {
-            case "follow-the-rule":
-                $(this._attr.upBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
-                break;
-            case "violate-the-rule":
-                $(this._attr.bottomBarG[0]).find(".bar-" + nodeId).addClass("hovered-item");
-                break;
-            default:
-                console.log("Congrats on seeing a bug!");
-                break;
-        }
-    },
-    pathOverHandler(e) {
-        let _self = this,
-            _curr = $(e.target),
-            className = _curr.attr("class"),
-            classNameList = className.split(' '),
-            isStroke = (classNameList[0] === 'diffusion-strokes'),
-            isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
-
-        if (isStroke && isValidPath) {
-
-            let validityCategory = classNameList[1];
-
-            [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-                // add ref lines
-                _self.drawRefLines(+nodeId, validityCategory);
-
-                // light up bars
-                _self.lightUpBars(validityCategory, nodeId);
-
-                // light up circles
-                $("#diffusion-node-" + nodeId).addClass("hovered-item");
-
-                // move mouseovered nodes to front
-                // d3.select("#diffusion-node-" + nodeId).moveToFront();
-            });
-
-            // light up mouseovered path
-            _curr.addClass("hovered-item");
-
-            // move mouseovered to front
-            // d3.select("#" + pathId).moveToFront();
-
-        }
-    },
-    pathOutHandler(e) {
-        let _curr = $(e.target),
-            className = _curr.attr("class"),
-            classNameList = className.split(' '),
-            isStroke = (classNameList[0] === 'diffusion-strokes'),
-            isValidPath = e.target && e.target.nodeName.toUpperCase() === "PATH" && !className.includes("invalid-arc");
-
-        if (isStroke && isValidPath) {
-            let _curr = $(e.target);
-
-            // remove ref lines
-            $("#diffusion-ref-line-group").empty();
-
-            [_curr.attr("source"), _curr.attr("target")].forEach((nodeId) => {
-
-                // recover lighted bars
-                $(".bar-" + nodeId).removeClass("hovered-item");
-
-                // recover up circles
-                $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-            });
-
-            // recover lighted path
-            _curr.removeClass("hovered-item");
-
-        }
-    },
-    circleOverHandler(e) {
-        let _curr = $(e.target),
-            className = _curr.attr("class"),
-            isCircle = (className === "diffusion-circles");
-        if (isCircle) {
-            this.lightUpStrokes(_curr.attr("nodeId"));
-        }
-    },
-    circleOutHandler(e) {
-        let _curr = $(e.target),
-            className = _curr.attr("class"),
-            classNameList = className.split(' '),
-            isCircle = (classNameList.length != 1 && classNameList[0] === "diffusion-circles");
-
-        if (isCircle) {
-            this.turnOffStrokes(_curr.attr("nodeId"));
-        }
-    },
-    lightUpStrokes(nodeId) {
-        let _self = this,
-            __pathG = $("#" + _self._attr.pathG.attr('id')),
-            __asSource = __pathG.find("path[source=" + nodeId + "]"),
-            __asTarget = __pathG.find("path[target=" + nodeId + "]");
-
-        let nodeMap = {};
-        nodeMap[nodeId] = true;
-
-        __asSource.each((i) => {
-            let __theStroke = $(__asSource[i]);
-            if (!__theStroke.hasClass("invalid-arc")) {
-                nodeMap[__theStroke.attr("target")] = true;
-                __theStroke.addClass("hovered-item");
-
-                [__theStroke.attr("source"), __theStroke.attr("target")].forEach(nodeId => {
-                    let validityCategory = __theStroke.attr("class").split(' ')[1];
-                    // add ref lines
-                    _self.drawRefLines(+nodeId, validityCategory);
-                    // light up bars
-                    _self.lightUpBars(validityCategory, nodeId);
+            //var color = d4.scale.category10();
+            var color = d4.scaleOrdinal().range(["#c9f1ec","#0f584c"])
+            var tip = d3tip()
+                .attr("class", "d3-tip")
+                .offset([-10, 0])
+                .html(function(d) {
+                    //return xCat + ": " + d[xCat] + "<br>" + yCat + ": " + d[yCat];
+                    return title + ": " + d['policy_name'];
                 });
-            }
-        });
 
-        __asTarget.each((i) => {
-            let __theStroke = $(__asTarget[i]);
-            if (!__theStroke.hasClass("invalid-arc")) {
-                nodeMap[__theStroke.attr("source")] = true;
-                __theStroke.addClass("hovered-item");
+            var zoomBeh = d4.zoom()
+                .scaleExtent([0, 500])
+                .on("zoom", zoom);
 
-                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
-                    let validityCategory = __theStroke.attr("class").split(' ')[1];
-                    // add ref lines
-                    _self.drawRefLines(+nodeId, validityCategory);
-                    // light up bars
-                    _self.lightUpBars(validityCategory, nodeId);
+            var svg = d4.select(_self.el)
+                //.attr("width", outerWidth)
+                //.attr("height", outerHeight)
+                .attr('preserveAspectRatio', 'xMidYMid meet')
+                .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
+                .attr('class', 'svg-content-responsive');
+            
+            var g_plot = svg.append("g")
+                    .attr("transform", "translate(0,0)")
+                    .call(zoomBeh);
+
+            g_plot.call(tip);
+
+            g_plot.append("rect")
+                .attr("width", _width)
+                .attr("height", _height)
+                .style("fill", "transparent")
+                .style("shape-rendering", "crispEdges")
+                .style("stroke", "#bbb");
+
+            g_plot.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + _height + ")")
+                .call(xAxis)
+                .append("text")
+                .attr("class", "label")
+                .attr("x", _width)
+                .attr("y", margin.bottom - 20)
+                .style("text-anchor", "end")
+                .text("x");
+
+            g_plot.append("g")
+                .attr("class", "y axis")
+                .call(yAxis)
+                .append("text")
+                .attr("class", "label")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end")
+                .text("y");
+
+            var objects = svg.append("svg")
+                .attr("class", "objects")
+                .attr("width", _width)
+                .attr("height", height);
+
+            g_plot.append("svg:line")
+                .attr("class", "axisLine hAxisLine")
+                .attr("x1", 0)
+                .attr("y1", 0)
+                .attr("x2", _width)
+                .attr("y2", 0)
+                .attr("transform", "translate(0," + _height + ")");
+
+            g_plot.append("svg:line")
+                .attr("class", "axisLine vAxisLine")
+                .attr("x1", 0)
+                .attr("y1", 0)
+                .attr("x2", 0)
+                .attr("y2", _height);
+
+
+            g_plot.selectAll(".dot")
+                .data(data)
+                .enter().append("circle")
+                .attr("class", function(d, i){
+                    return "dot dot_" + (i+1);
+                })
+                .attr("id", function(d, i){
+                    return i+1;
+                })
+                .attr("r", function(d) { return d.adoption_count/7; })
+                .attr("transform", transform)
+                .style("fill", function(d) { return color(d[colorCat]); })
+                .style("opacity", 0.7)
+                .on("mouseover", function(d, i){
+                    tip.show(d, this);
+
+                    d4.select(this)
+                    .style("stroke", "black")
+                    .style("stroke-width", 3);
+                    
+                    d4.select("path.user" + (i+1))
+                    .style("stroke", "black")
+                    .style("stroke-width", 2)
+                    .attr("opacity", 1);
+                })
+                .on("mouseout", function(d, i){
+                    tip.hide(d);
+
+                    d4.select(this).style("stroke", "none");
+
+                    d4.select("path.user" + (i+1))
+                    .style("stroke", "black")
+                    .style("stroke-width", 1)
+                    .attr("opacity", 0.2);
                 });
+
+            var legend = svg.selectAll(".legend")
+                .data(color.domain())
+                .enter().append("g")
+                .classed("legend", true)
+                .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+            legend.append("circle")
+                .attr("r", 3.5)
+                .attr("cx", _width + 20)
+                .attr("fill", color);
+
+            legend.append("text")
+                .attr("x", _width + 26)
+                .attr("dy", ".35em")
+                .text(function(d) { return d; });
+
+            d4.select("input").on("click", change);
+
+            function change() {
+                xCat = "Carbs";
+                xMax = d4.max(data, function(d) { return d[xCat]; });
+                xMin = d4.min(data, function(d) { return d[xCat]; });
+
+                zoomBeh.x(x.domain([xMin, xMax])).y(y.domain([yMin, yMax]));
+
+                var svg = d4.select("#svg-policy-plot-view").transition();
+
+                svg.select(".x.axis").duration(750).call(xAxis).select(".label").text(xCat);
+
+                objects.selectAll(".dot").transition().duration(1000).attr("transform", transform);
             }
-        });
 
-        Object.keys(nodeMap).forEach((nodeId) => {
-            $("#diffusion-node-" + nodeId).addClass("hovered-item");
-        });
-    },
-    turnOffStrokes(nodeId) {
-        let _self = this,
-            __pathG = $("#" + _self._attr.pathG.attr('id')),
-            __asSource = __pathG.find("path[source=" + nodeId + "]"),
-            __asTarget = __pathG.find("path[target=" + nodeId + "]");
+            function zoom() {
+                var new_xScale = d4.event.transform.rescaleX(x),
+                    new_yScale = d4.event.transform.rescaleY(y);
 
-        let nodeMap = {};
-        nodeMap[nodeId] = true;
+                g_plot.select(".x.axis").call(d4.axisBottom(new_xScale).tickFormat((d) => '').tickSize(0));
+                g_plot.select(".y.axis").call(d4.axisLeft(new_yScale).tickFormat((d) => '').tickSize(0));
 
-        __asSource.each((i) => {
-            let __theStroke = $(__asSource[i]);
-            if (!__theStroke.hasClass("invalid-arc")) {
-                nodeMap[__theStroke.attr("target")] = true;
-                __theStroke.removeClass("hovered-item");
-                // recover lighted bars
-                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
-                    $(".bar-" + nodeId).removeClass("hovered-item");
-                });
-            }
-        });
-
-        __asTarget.each((i) => {
-            let __theStroke = $(__asTarget[i]);
-            if (!__theStroke.hasClass("invalid-arc")) {
-                nodeMap[__theStroke.attr("source")] = true;
-                __theStroke.removeClass("hovered-item");
-                // recover lighted bars
-                [__theStroke.attr("source"), __theStroke.attr("target")].forEach((nodeId) => {
-                    $(".bar-" + nodeId).removeClass("hovered-item");
-                });
-            }
-        });
-
-        // remove ref lines
-        $("#diffusion-ref-line-group").empty();
-
-        Object.keys(nodeMap).forEach((nodeId) => {
-            $("#diffusion-node-" + nodeId).removeClass("hovered-item");
-        });
-    },
-    bindTriggers() {
-        let _self = this,
-            __pathG = $("#" + _self._attr.pathG.attr('id')),
-            __circleG = $("#" + _self._attr.circleG.attr('id'));
-
-        __pathG.off();
-        __circleG.off();
-
-        // mouseover events
-        __pathG.on('mouseover', e => _self.pathOverHandler(e));
-        __circleG.on('mouseover', e => _self.circleOverHandler(e));
-
-        // mouseout events
-        __pathG.on('mouseout', e => _self.pathOutHandler(e));
-        __circleG.on('mouseout', e => _self.circleOutHandler(e));
-
-    },
-    drawRefLines(nodeId, validityCategory) {
-
-        let _attr = this._attr,
-            nodes = _attr.nodes,
-            xScale = _attr.xScale,
-            yTopScale = _attr.yTopScale,
-            yBottomScale = _attr.yBottomScale,
-            refLineG = _attr.refLineG;
-
-        let y = (validityCategory.includes("follow-the-rule") ?
-            yTopScale(nodes[nodeId].metadataOrder) :
-            yBottomScale(nodes[nodeId].metadataOrder));
-
-        refLineG.append('line')
-            .attr({
-                x1: xScale(nodes[nodeId].sequenceOrder),
-                y1: gs.d.size.pathHeight / 2,
-                x2: xScale(nodes[nodeId].sequenceOrder),
-                y2: y,
-                class: "reference-line vertical"
-            });
-
-        refLineG.append('line')
-            .attr({
-                x1: xScale(nodes[nodeId].sequenceOrder),
-                y1: y,
-                x2: 0,
-                y2: y,
-                class: "reference-line horizontal"
-            });
-
-    },
-    isFollowingNetworkRule(d) {
-        let nodes = this._attr.nodes;
-        return +nodes[d.source].adoptedYear <= +nodes[d.target].adoptedYear;
-    },
-    standardized(curr, min, max) {
-        return (curr - min) / (max - min);
-    },
-    doInitSort() {
-        this.doSort("metadata");
-        this.doSort("sequence");
-    },
-    doSort(axis) {
-        let nodes = this._attr.nodes,
-            c = this._attr.c,
-            nodeMap = [],
-            identifier = axis + "Order",
-            isSortingByCentrality = c.get(axis) === "centrality";
-
-        nodes.forEach((node, i) => {
-            nodeMap.push($.extend({ index: i }, node));
-        });
-
-        if (axis === "metadata") {
-            let selectedAttrId = (isSortingByCentrality ?
-                c.get("centrality") : 
-                conf.pipe.metaToId[c.get("metadata")]);
-            if (isSortingByCentrality) {
-                nodeMap.sort((a, b) => b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId]);
-            } else {
-                nodeMap.sort((a, b) => b['metadata'][selectedAttrId] - a['metadata'][selectedAttrId]);
-            }
-        } else {
-            let selectedAttr = c.get("sequence");
-            switch (selectedAttr) {
-                case "adoptionYear":
-                    nodeMap.sort((a, b) => {
-                        let diff = a.adoptedYear - b.adoptedYear;
-                        return (diff !== 0 ?
-                            diff :
-                            a.stateName.localeCompare(b.stateName));
+                g_plot.selectAll(".dot")
+                    .attr("transform", function(d){
+                    return "translate(" + new_xScale(d[xCat]) + "," + new_yScale(d[yCat]) + ")";
                     });
-                    break;
-                default:
-                    let selectedAttrId = c.get("centrality");
-                    nodeMap.sort((a, b) => {
-                        let diff = b['centralities'][selectedAttrId] - a['centralities'][selectedAttrId];
-                        return (diff !== 0 ?
-                            diff :
-                            a.stateName.localeCompare(b.stateName));
-                    });
-                    break;
             }
-        }
 
-        nodeMap.forEach((node, i) => {
-            nodes[node.index][identifier] = i;
+            function transform(d) {
+                return "translate(" + x(d[xCat]) + "," + y(d[yCat]) + ")";
+            }
         });
-
-        return nodes;
     }
 });
-
 /**
  * RingView:
  * - to display policy cluster
@@ -4861,8 +3541,8 @@ module.exports = {
     PolicyNetworkView: PolicyNetworkView,
     GeoView: GeoView,
     RingView: RingView,
+    PolicyPlotView: PolicyPlotView,
     NetworkView: NetworkView,
-    DiffusionView: DiffusionView,
     PolicyGroupView: PolicyGroupView,
     DropdownController: DropdownController,
     BootstrapSwitchView: BootstrapSwitchView,

@@ -16,6 +16,7 @@ let conditions = new Model.Conditions(),
     networkModel = new Model.NetworkModel(),
     // diffusionModel = new Model.DiffusionModel(),
     diffusionModel2 = new Model.DiffusionModel2(),
+    policyPlotModel = new Model.PolicyPlotModel(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
     snapshotCollection = new Collection.SnapshotCollection();
 let policyDetailView = new View.PolicyDetailView({
@@ -41,6 +42,9 @@ let policyDetailView = new View.PolicyDetailView({
     }),
     policyGroupView = new View.PolicyGroupView({
         model: policyGroupModel
+    }),
+    policyPlotView = new View.PolicyPlotView({
+        model: policyPlotModel
     }),
     attributeDropdown = new View.DropdownController({
         el: "#metadata-dropdown"
@@ -107,7 +111,7 @@ function setupRenderingControllers() {
                 // diffusionModel.populate(conditions);
                 diffusionModel2.populate(conditions);
             }
-            //diffusionModel2.populate(conditions);
+            diffusionModel2.populate(conditions);
         
         } else {
             if (conditions.hasChanged('factor')) {
@@ -211,13 +215,16 @@ function setupRenderingTriggers() {
 
     dynamicNetworkModel.on("change", () => {
         networkModel.populate(conditions, dynamicNetworkModel.get("edgesInStateIds"));
-        // diffusionModel.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
         diffusionModel2.populate(conditions, dynamicNetworkModel.get("edgesInIndices"));
     });
 
     policyGroupModel.on("change", () => {
         policyGroupView.preRender();
         policyGroupView.render(conditions);
+    });
+
+    policyPlotModel.on("change", () => {
+        policyPlotView.render(conditions);
     });
 }
 
@@ -230,6 +237,7 @@ function initRendering() {
     geoModel.populate(conditions);
     dynamicNetworkModel.populate(conditions);
     //diffusionModel2.populate(conditions);
+    policyPlotModel.populate(conditions);
 }
 
 function bindDomEvents() {

@@ -333,6 +333,26 @@ let RingModel = Backbone.Model.extend({
     }
 });
 
+let PolicyPlotModel = Backbone.Model.extend({
+    initialize(){
+        this.url = conf.api.root + conf.api.policyPlotBase;
+    },
+    populate(conditions){
+        let _self = this,
+            coords = conf.static.policyPlotCoord;  // Results of MDS
+        
+        console.log(coords);
+        return $.getJSON(_self.url).done(data => {
+            for(var i in [...Array(data.length).keys()]){
+                Object.assign(data[i], coords[i]);  // For each policy i, data[i]: policy metadata, coords[i]: coord from mds result
+            }
+
+            console.log("in PolicyPlotModel:", data);
+            this.set({ "policy": data });
+        });
+    }
+});
+
 let DiffusionModel2 = Backbone.Model.extend({
     initialize() {
         this.urlRoot = conf.api.root + conf.api.diffusionBase2;
@@ -349,7 +369,6 @@ let DiffusionModel2 = Backbone.Model.extend({
         this.url = this.urlRoot + conditions.get("policy");
 
         return $.getJSON(_self.url).done(data => {
-            console.log("In DiffusionModel2", data);
             let nodes = data.nodes,
                 edgesData = _self.setData(edges, nodes),
                 nodesWithEdge = nodes.filter(function(d) { return d.adoptedYear !== 9999; });
@@ -618,5 +637,6 @@ module.exports = {
     StateModel: StateModel,
     PolicyGroupModel: PolicyGroupModel,
     RingModel: RingModel,
-    DiffusionModel2: DiffusionModel2
+    DiffusionModel2: DiffusionModel2,
+    PolicyPlotModel: PolicyPlotModel
 };

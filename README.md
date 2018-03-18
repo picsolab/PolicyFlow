@@ -1,6 +1,6 @@
-# diffusion2017vis
+# PolicyFlow
 
-This visualization project enable users to explore and inspect policy diffusion patterns. It's a project of [PICSO lab](https://picsolab.github.io/). Check out demo [here](http://picso.org:50005/).
+This visualization project enable users to explore and inspect policy diffusion patterns. It's a project of [PICSO lab](https://picsolab.github.io/). Check out demo [here](http://picso.org:9001/).
 
 ## setup
 
@@ -90,7 +90,7 @@ The backend is powered by [Flask](http://flask.pocoo.org/). To begin with, make 
 
     Start the server by executing `/server.py`.
 
-Everything should be ready now, check out http://localhost:50005 in your browser.
+Everything should be ready now, check out http://localhost:9001 in your browser.
 
 ## collaborate
 

@@ -215,6 +215,22 @@ const GraphSettings = {
 
         },
         config: {}
+    },
+
+    // policy plot view settings
+    pp: {
+        margin: {
+            top: 10,
+            left: 10,
+            bottom: 10,
+            right: 10,
+            tShiftX: 10,
+            tShiftY: 10
+        },
+        size: {
+            height: 300,
+            width: 500,
+        }
     }
 }
 

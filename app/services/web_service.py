@@ -1,5 +1,5 @@
 from collections import Counter
-from flask import request, g, json
+from flask import request, g, json, jsonify
 from app import app
 
 import random
@@ -359,6 +359,7 @@ class NetworkService(BaseService):
             cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
             network = computing_service.get_network_by(cascade_text, iters=iters)
 
+        print(network)
         return json.dumps(network, cls=DecimalEncoder)
 
     @staticmethod
@@ -398,6 +399,30 @@ class NetworkService(BaseService):
             data_object[item["stateId"]] = item
         return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
 
+class PolicyPlotService(BaseService):
+    @staticmethod
+    @app.route("/api/plot/")
+    def get_policy_metadata():
+        policies = PolicyDao.get_all_policies()
+        policy_list = []
+
+        for policy in policies:
+            policy_dict = {
+                #"policy_id": policy.polidyId,
+                "policy_name": policy.policyName,
+                "policy_subject_id": policy.policySubjectId,
+                "policy_start": policy.policyStart,
+                "policy_end": policy.policyEnd,
+                "policy_lda": policy.policyLda1
+            }
+            print(policy)
+            print(policy.policyName)
+            print(policy.policySubjectId)
+            policy_list.append(policy_dict)
+
+        
+        print(policies)
+        return json.dumps(policy_list, cls=DecimalEncoder)
 
 class PolicySimilarityService(BaseService):
     @staticmethod
@@ -425,7 +450,6 @@ class PolicyTextService(BaseService):
         for policy in policies:
             policy_set.add(policy.policyId)
         return policy_set
-
 
 class SubjectService(BaseService):
     @staticmethod

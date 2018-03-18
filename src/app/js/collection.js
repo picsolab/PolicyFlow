@@ -60,10 +60,10 @@ SnapshotCollection.prototype = Object.create({
         // prepend empty shapshot container
         console.log("self.container", $(_self.container));
         $(_self.container).prepend('<div id="snapshot-wrapper-0" class="snapshot-wrapper"></div>');
-        let _svgWrapper = $(_self.container).find("#snapshot-wrapper-0");
-        _svgWrapper.prepend('<svg id="snapshot-view-0" class="snapshot"></svg>');
+        // let _svgWrapper = $(_self.container).find("#snapshot-wrapper-0");
+        // _svgWrapper.prepend('<svg id="snapshot-view-0" class="snapshot"></svg>');
         let newView = new View.DiffusionView2({
-            el: "#snapshot-view-0",
+            el: "#snapshot-wrapper-0",
             model: aModelCopy
         });
         newView.render(aConditionCopy, false);
@@ -74,7 +74,7 @@ SnapshotCollection.prototype = Object.create({
         this.conditionList.unshift(aConditionCopy);
         this.viewList.unshift(newView);
 
-        this.size++;
+    this.size++;
     },
     echo() {
         console.groupCollapsed("SnapshotCollection of size " + this.size);

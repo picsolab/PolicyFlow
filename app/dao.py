@@ -44,8 +44,8 @@ class CascadeDao(BaseDao):
         return Cascade.query.filter(Cascade.policyId == policy_id)
 
     @staticmethod
-    def get_cascades_for_policies(policies):
-        pass
+    def get_all_cascades():
+        return Cascade.query
 
 
 class SubjectDao(BaseDao):
@@ -106,6 +106,10 @@ class PolicyDao(BaseDao):
     @staticmethod
     def get_all_policies():
         return Policy.query.all()
+    
+    @staticmethod
+    def get_all_policies_with_all_information():
+        return Policy.query.with_entities(Policy.policyId, Policy.policyName, Policy.policySubjectId, Policy.policyStart, Policy.policyEnd).all()
 
     @staticmethod
     def get_policy_ids():
