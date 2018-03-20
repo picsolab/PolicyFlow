@@ -7,6 +7,18 @@
 
 /*Nav Bar */
 
+.navbar-inverse {
+    background-color: #fd8d3c !important;
+}
+
+.navbar-brand {
+    color: #ffffff !important;
+}
+
+.navbar-nav>li>a {
+    color: #fd8d3c !important;
+}
+
 #content-wrapper {
     margin-top: 55px;
 }
