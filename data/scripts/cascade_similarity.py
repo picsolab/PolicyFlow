@@ -1,9 +1,10 @@
 import sqlalchemy
 import csv
 import scipy.stats as stats
+import pymysql
 
 engine = sqlalchemy.create_engine(
-    "mysql+pymysql://root:mcom7573@localhost:3306/diffusion2017vis"
+    "mysql+pymysql://root:mcom7573@localhost:3306/policyflow2"
 )
 
 conn = engine.connect()
@@ -44,6 +45,7 @@ for idx, row in enumerate(result1):
             state_to_rank = { key:value for key, value in zip(range(len(common_eles)), common_eles) }
 
             for state_in_seq in common_eles1:
+                print(state_in_seq)
                 for rank, state in state_to_rank.items():
                     if state == state_in_seq:
                         seq1_numeric_rank.append(rank)
@@ -64,6 +66,6 @@ for idx, row in enumerate(result1):
         similarity_score = 0
 
     print(similarity_score)
-    engine.execute("""update policy_similarity set policy_cascade_similarity = %s where policy_id_1 = %s and policy_id_2 = %s""", (similarity_score, policy_id1, policy_id2))
+    #engine.execute("""update policy_similarity set policy_cascade_similarity = %s where policy_id_1 = %s and policy_id_2 = %s""", (similarity_score, policy_id1, policy_id2))
 
 
