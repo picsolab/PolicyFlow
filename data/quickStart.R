@@ -14,4 +14,4 @@ df_matrix <- as.matrix(cascades) ### Create example matrix
 cascades <- as.cascade(df_matrix, node_names = node_names)
 
 result <- netinf(cascades, trans_mod = "exponential", lambda = 1, n_edges = 5)
-print(result)
+

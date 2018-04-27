@@ -14,11 +14,11 @@ class BaseService(object):
     @app.after_request
     def after(response):
         fn = g.get('fn', None)
-        if fn:
-            print ("Printing response", fn)
-            print (response.status, fn)
-            print (response.headers, fn)
-            print (response.get_data(), fn)
+        # if fn:
+        #     print ("Printing response", fn)
+        #     print (response.status, fn)
+        #     print (response.headers, fn)
+        #     print (response.get_data(), fn)
         return response
 
     @staticmethod

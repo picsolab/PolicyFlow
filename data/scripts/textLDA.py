@@ -35,8 +35,6 @@ for (policy_id, text_1, text_2, text_3, text_4, text_5) in cursor:
     texts.append(text)
     ids.append(policy_id)
     count += 1
-    print("No.:", count)
-
 
 def my_LDA(texts, num_tpc):
     # Constructing a document-term matrix

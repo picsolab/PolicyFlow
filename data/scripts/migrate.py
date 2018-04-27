@@ -73,8 +73,8 @@ def add_policy_n_description():
     session.add_all(cascades)
     session.add_all(root_states)
 
-    print """%d of new policy added, %d of overlapping old policy found, and %d of cascaded inserted.""" % (
-        len(new_policies_ids), len(old_policies_ids), len(cascades))
+    # print """%d of new policy added, %d of overlapping old policy found, and %d of cascaded inserted.""" % (
+    #     len(new_policies_ids), len(old_policies_ids), len(cascades))
     # session.commit()
 
 
@@ -87,11 +87,11 @@ def get_stat_for_0708_update():
         policies[state] = df.loc[df['state'] == state, 'policy']
     full_series = pd.concat([policies[state] for state in IGNORING_STATE_LIST])
     distinct_full_series = full_series.drop_duplicates().sort_values()
-    print "%d policies contain one or more states from {'DC' 'GU', 'PR', 'VI'}." % len(distinct_full_series)
-    print "policies that adopted by less that 5 states:"
-    for policy in distinct_full_series.iteritems():
-        if (distinct_df.loc[distinct_df['policy'] == policy[1], 'totadopt'] < 5).bool():
-            print policy[1]
+    # print "%d policies contain one or more states from {'DC' 'GU', 'PR', 'VI'}." % len(distinct_full_series)
+    # print "policies that adopted by less that 5 states:"
+    # for policy in distinct_full_series.iteritems():
+    #     if (distinct_df.loc[distinct_df['policy'] == policy[1], 'totadopt'] < 5).bool():
+    #         print policy[1]
 
 
 def alter_major_topic():
@@ -151,7 +151,7 @@ def alter_major_topic():
             session.execute("UPDATE policy SET policy_subject_id=:policy_subject_id WHERE policy_id=:policy_id",
                             {'policy_subject_id': 98, 'policy_id': policy.policyId})
     # session.commit()
-    print """updated: %d, unknown: %d, raw: %d\n""" % (updated, unknown, raw_to_unknown)
+    # print """updated: %d, unknown: %d, raw: %d\n""" % (updated, unknown, raw_to_unknown)
 
 
 if __name__ == '__main__':

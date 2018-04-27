@@ -83,7 +83,7 @@ The backend is powered by [Flask](http://flask.pocoo.org/). To begin with, make 
     SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     # set to False to disable database logs in console
-    SQLALCHEMY_ECHO = True
+    SQLALCHEMY_ECHO = False
     ```
 
 4. Start the server.

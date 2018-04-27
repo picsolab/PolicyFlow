@@ -16,6 +16,7 @@ let conditions = new Model.Conditions(),
     networkModel = new Model.NetworkModel(),
     // diffusionModel = new Model.DiffusionModel(),
     diffusionModel2 = new Model.DiffusionModel2(),
+    metadataDropdownModel = new Model.MetadataDropdownModel(),
     policyPlotModel = new Model.PolicyPlotModel(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
     snapshotCollection = new Collection.SnapshotCollection();
@@ -110,6 +111,7 @@ function setupRenderingControllers() {
                 networkModel.populate(conditions);
                 // diffusionModel.populate(conditions);
                 diffusionModel2.populate(conditions);
+                metadataDropdownModel.populate(conditions);
             }
             diffusionModel2.populate(conditions);
         
@@ -533,6 +535,20 @@ function setupNav(conditions) {
         // enable attributeDropdown
         attributeDropdown.enable();
     }
+}
+
+/**
+ * Add correlation score to metadata dropdown
+ * For the selected policy, calculate the correlation between socio-economic status vs. influence score of states
+ */
+function setupAttributeDropdownCorr(){
+    // Load the network from the model
+
+    // Load state list relevant to the policy
+
+    // Load influence 
+
+    // Load socio-economic attributes (static)
 }
 
 /**

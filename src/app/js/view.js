@@ -1625,6 +1625,8 @@ let GeoView = Backbone.View.extend({
             regionColorMap = gs.g.config.regionColorMap,
             _altIndexForWest = 47;
 
+        console.log("in geo view");
+
         // TO FIND OUT INDEX FOR UT
         //  - use centroid of NV as alternative for west region
         // stateFeatures.forEach((feature, i) => {

@@ -358,8 +358,7 @@ class NetworkService(BaseService):
         if policies is not None:
             cascade_text = reduce(lambda x, y: x + y.serialize(), policies, "")
             network = computing_service.get_network_by(cascade_text, iters=iters)
-
-        print(network)
+    
         return json.dumps(network, cls=DecimalEncoder)
 
     @staticmethod
@@ -415,13 +414,8 @@ class PolicyPlotService(BaseService):
                 "policy_end": policy.policyEnd,
                 "policy_lda": policy.policyLda1
             }
-            print(policy)
-            print(policy.policyName)
-            print(policy.policySubjectId)
             policy_list.append(policy_dict)
 
-        
-        print(policies)
         return json.dumps(policy_list, cls=DecimalEncoder)
 
 class PolicySimilarityService(BaseService):
@@ -440,6 +434,30 @@ class PolicySimilarityService(BaseService):
             text_similarities[i][i] = 1
             cascade_similarities[i][i] = 1
         return text_similarities, cascade_similarities
+
+class PolicyCorrelationService(BaseService):
+    @staticmethod
+    @app.route("/api/policy/correlation/<policy_id>")
+    def get_correlations(policy_id):
+        data_list, stat = NetworkService.get_policy_detail(policy_id)
+        print("data_list: ", data_list)
+        print("request.args: ", request.args)
+
+        corr_scores_dict = {}
+        nodes = data_list
+        for attr in ["md", "pi", "cd", "pop", "pci", "lp"]:
+            # Prepare metadata ranking
+            state_attr_dict = {}
+            for stateInfo in nodes:
+                stateId = stateInfo["stateId"]
+                state_attr_dict[stateId] = stateInfo["metadata"][attr]  # Add { state: attr } item
+            # Rank metadata (socio-economic status)    
+            sorted_state_attr_dict = sorted(state_attr_dict.items(), key=itemgetter(1))
+            metadata_state_ranking = sorted_state_attr_dict.keys()
+
+        # Rank attribute (influence)
+
+        return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
 
 
 class PolicyTextService(BaseService):

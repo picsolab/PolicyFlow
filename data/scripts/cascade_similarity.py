@@ -15,7 +15,6 @@ result1 = engine.execute("""select * from policy_similarity;""")
 for idx, row in enumerate(result1):
     policy_id1 = row[0]
     policy_id2 = row[1]
-    print(policy_id1, policy_id2)
 
     policy1 = engine.execute("""select p.policy_name, p.policy_id, c.adopted_year, c.state_id
                                 from `policy` as p, `cascade` as c
@@ -31,7 +30,6 @@ for idx, row in enumerate(result1):
     seq2_numeric_rank = []
 
     common_eles = set(seq1).intersection(seq2)
-    print(common_eles)
     if common_eles: # if common element exists
         common_eles1 = [state for state in seq1 if state in seq2]
         common_eles2 = [state for state in seq2 if state in seq1]
@@ -45,7 +43,6 @@ for idx, row in enumerate(result1):
             state_to_rank = { key:value for key, value in zip(range(len(common_eles)), common_eles) }
 
             for state_in_seq in common_eles1:
-                print(state_in_seq)
                 for rank, state in state_to_rank.items():
                     if state == state_in_seq:
                         seq1_numeric_rank.append(rank)
@@ -60,12 +57,9 @@ for idx, row in enumerate(result1):
 
         kendall_score = abs((kendall_score + 1) / 2) # normalize to 0-1 scale
         similarity_score = float(round(jaccard_score * kendall_score, 2))
-        print(jaccard_score, kendall_score)
 
     else: # no common element
         similarity_score = 0
-
-    print(similarity_score)
     #engine.execute("""update policy_similarity set policy_cascade_similarity = %s where policy_id_1 = %s and policy_id_2 = %s""", (similarity_score, policy_id1, policy_id2))
 
 
