@@ -61,6 +61,12 @@ let color7 = [
         css_variables['--color-20'],
         css_variables['--color-21']
     ];
+let DiffusionView = Backbone.View.extend({
+    render(conditions){
+        let _self = this;
+        console.log(_self.model);
+    }
+});
 
 let DiffusionView3 = Backbone.View.extend({
     el: "#new-diffusion-view",
@@ -85,7 +91,7 @@ let DiffusionView3 = Backbone.View.extend({
         //     this.postRender(conditions);
         //     return this;
         // }
-
+        console.log("_self.model in render: ", _self.model);
 
         if(conditions.get("policy") === conf.bases.policy.default) return;
 
@@ -110,7 +116,11 @@ let DiffusionView3 = Backbone.View.extend({
             nodesWithEdge = _self.model.get("nodesWithEdge"),
             yearCount = _self.model.get("yearCount"),
             stat = _self.model.get("stat"),
-            cstat = _self.model.get("cstat");
+            cstat = _self.model.get("cstat"),
+            conformingScore = _self.model.get("conformingScore");
+            //geoCorrelation = _self.model.get("geoCorrelation");
+
+        //console.log("geoCorrelation: ", geoCorrelation);
             
         // Define scales and axes
         let xScale = d4.scaleTime(),     // xScale.range is dynamic according to the length of yearly timeline
@@ -381,6 +391,13 @@ let DiffusionView3 = Backbone.View.extend({
             .text("From the influencing state")
             .style("font-size", "10px");
         //***** end of For legend
+        // Conforming score below the legend
+        console.log(conformingScore);
+        g_legend.append("text")
+            .attr("x", 10)
+            .attr("y", 180)
+            .text("Conforming score: " + conformingScore.toString())
+            .style("font-size", "10px");
         
         $.extend(_attr, {
             // getPrefix: () => {
@@ -425,6 +442,7 @@ let DiffusionView3 = Backbone.View.extend({
             cType = _attr.c.get("centrality"),
             nodes = _attr.nodes;
 
+        console.log("model in update: ", _self.model);
         //*** Lines to source and targets
 
         _attr.g_matrix
@@ -1482,6 +1500,12 @@ let PolicyView = Backbone.View.extend({
 });
 
 /**
+ * MetadataDropdownView:
+ * - to display metadata dropdown menu, and correlation scores for a selected policy
+ *  + please refer to the template file.
+ */
+
+/**
  * PolicyDetailView:
  * - to display detail information for a selected policy, including:
  *  + please refer to the template file.
@@ -1494,6 +1518,7 @@ let PolicyDetailView = Backbone.View.extend({
         if (conditions.get("policy") === conf.bases.policy.default) {
             this.$el.html(require('../templates/policy-detail-empty-template.html'));
         } else {
+            console.log("policy detail view model: ", _self.model.attributes);
             this.$el.html(_self.template(_self.model.attributes));
         }
     }
@@ -2876,235 +2901,6 @@ let PolicyGroupView = Backbone.View.extend({
     }
 });
 
-let PolicyPlotView = Backbone.View.extend({
-    el: "#svg-policy-plot-view",
-    initialize() {
-        this._attr = {};
-    },
-    events: {
-        'click': 'switchCluster'
-    },
-    render(conditions) {
-        let _self = this,
-            _attr = this._attr;
-        
-        $(_self.el).empty();
-
-        let policies = _self.model.get("policy");
-        console.log("policies in PolicyPlotView:", policies);
-
-        var margin = { top: 20, right: 50, bottom: 50, left: 50 },
-            outerWidth = d4.select(_self.el).node().width.animVal.value,
-            outerHeight = d4.select(_self.el).node().height.animVal.value,
-            width = outerWidth - margin.left - margin.right,
-            height = outerHeight - margin.top - margin.bottom;
-        
-        let _width = gs.pp.margin.left + gs.pp.margin.right + gs.pp.size.width,
-            _height = gs.pp.margin.top + gs.pp.margin.bottom + gs.pp.size.height;
-
-        var x = d4.scaleLinear()
-            .range([0, _width]).nice();
-
-        var y = d4.scaleLinear()
-            .range([_height, 10]).nice();
-
-        var xCat = "V1",
-            yCat = "V2",
-            colorCat = "policy_start",
-            sizeCat = ""
-            title = "Policy_id",
-            ramp=d4.scaleLinear().domain([0,2]).range(["red","green","blue"]);
-
-        d4.csv("/static/data/dim_reduction_result.csv", function(data) {
-            data.forEach(function(d) {
-                d.V1 = +d.V1;
-                d.V2 = +d.V2;
-                d.Cluster = d.Cluster;
-                d.Id = d.Id;
-            });
-
-            var xMax = d4.max(data, function(d) { return d[xCat]; }) * 1.05,
-                xMin = d4.min(data, function(d) { return d[xCat]; }),
-                xMin = xMin > 0 ? 0 : xMin,
-                yMax = d4.max(data, function(d) { return d[yCat]; }) * 1.05,
-                yMin = d4.min(data, function(d) { return d[yCat]; }),
-                yMin = yMin > 0 ? 0 : yMin;
-
-            console.log(xMin, xMax);
-            console.log(yMin, yMax);
-            x.domain([xMin, xMax]);
-            y.domain([yMin, yMax]);
-
-            var xAxis = d4.axisBottom(x)
-                .tickFormat((d) => '').tickSize(0);
-
-            var yAxis = d4.axisLeft(y)
-                .tickFormat((d) => '').tickSize(0);
-
-            //var color = d4.scale.category10();
-            var color = d4.scaleOrdinal().range(["#c9f1ec","#0f584c"])
-            var tip = d3tip()
-                .attr("class", "d3-tip")
-                .offset([-10, 0])
-                .html(function(d) {
-                    //return xCat + ": " + d[xCat] + "<br>" + yCat + ": " + d[yCat];
-                    return title + ": " + d['policy_name'];
-                });
-
-            var zoomBeh = d4.zoom()
-                .scaleExtent([0, 500])
-                .on("zoom", zoom);
-
-            var svg = d4.select(_self.el)
-                //.attr("width", outerWidth)
-                //.attr("height", outerHeight)
-                .attr('preserveAspectRatio', 'xMidYMid meet')
-                .attr('viewBox', ("0 0 " + _width + " " + _height + ""))
-                .attr('class', 'svg-content-responsive');
-            
-            var g_plot = svg.append("g")
-                    .attr("transform", "translate(0,0)")
-                    .call(zoomBeh);
-
-            g_plot.call(tip);
-
-            g_plot.append("rect")
-                .attr("width", _width)
-                .attr("height", _height)
-                .style("fill", "transparent")
-                .style("shape-rendering", "crispEdges")
-                .style("stroke", "#bbb");
-
-            g_plot.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0," + _height + ")")
-                .call(xAxis)
-                .append("text")
-                .attr("class", "label")
-                .attr("x", _width)
-                .attr("y", margin.bottom - 20)
-                .style("text-anchor", "end")
-                .text("x");
-
-            g_plot.append("g")
-                .attr("class", "y axis")
-                .call(yAxis)
-                .append("text")
-                .attr("class", "label")
-                .attr("transform", "rotate(-90)")
-                .attr("y", -margin.left)
-                .attr("dy", ".71em")
-                .style("text-anchor", "end")
-                .text("y");
-
-            var objects = svg.append("svg")
-                .attr("class", "objects")
-                .attr("width", _width)
-                .attr("height", height);
-
-            g_plot.append("svg:line")
-                .attr("class", "axisLine hAxisLine")
-                .attr("x1", 0)
-                .attr("y1", 0)
-                .attr("x2", _width)
-                .attr("y2", 0)
-                .attr("transform", "translate(0," + _height + ")");
-
-            g_plot.append("svg:line")
-                .attr("class", "axisLine vAxisLine")
-                .attr("x1", 0)
-                .attr("y1", 0)
-                .attr("x2", 0)
-                .attr("y2", _height);
-
-
-            g_plot.selectAll(".dot")
-                .data(data)
-                .enter().append("circle")
-                .attr("class", function(d, i){
-                    return "dot dot_" + (i+1);
-                })
-                .attr("id", function(d, i){
-                    return i+1;
-                })
-                .attr("r", function(d) { return d.adoption_count/7; })
-                .attr("transform", transform)
-                .style("fill", function(d) { return color(d[colorCat]); })
-                .style("opacity", 0.7)
-                .on("mouseover", function(d, i){
-                    tip.show(d, this);
-
-                    d4.select(this)
-                    .style("stroke", "black")
-                    .style("stroke-width", 3);
-                    
-                    d4.select("path.user" + (i+1))
-                    .style("stroke", "black")
-                    .style("stroke-width", 2)
-                    .attr("opacity", 1);
-                })
-                .on("mouseout", function(d, i){
-                    tip.hide(d);
-
-                    d4.select(this).style("stroke", "none");
-
-                    d4.select("path.user" + (i+1))
-                    .style("stroke", "black")
-                    .style("stroke-width", 1)
-                    .attr("opacity", 0.2);
-                });
-
-            var legend = svg.selectAll(".legend")
-                .data(color.domain())
-                .enter().append("g")
-                .classed("legend", true)
-                .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
-
-            legend.append("circle")
-                .attr("r", 3.5)
-                .attr("cx", _width + 20)
-                .attr("fill", color);
-
-            legend.append("text")
-                .attr("x", _width + 26)
-                .attr("dy", ".35em")
-                .text(function(d) { return d; });
-
-            d4.select("input").on("click", change);
-
-            function change() {
-                xCat = "Carbs";
-                xMax = d4.max(data, function(d) { return d[xCat]; });
-                xMin = d4.min(data, function(d) { return d[xCat]; });
-
-                zoomBeh.x(x.domain([xMin, xMax])).y(y.domain([yMin, yMax]));
-
-                var svg = d4.select("#svg-policy-plot-view").transition();
-
-                svg.select(".x.axis").duration(750).call(xAxis).select(".label").text(xCat);
-
-                objects.selectAll(".dot").transition().duration(1000).attr("transform", transform);
-            }
-
-            function zoom() {
-                var new_xScale = d4.event.transform.rescaleX(x),
-                    new_yScale = d4.event.transform.rescaleY(y);
-
-                g_plot.select(".x.axis").call(d4.axisBottom(new_xScale).tickFormat((d) => '').tickSize(0));
-                g_plot.select(".y.axis").call(d4.axisLeft(new_yScale).tickFormat((d) => '').tickSize(0));
-
-                g_plot.selectAll(".dot")
-                    .attr("transform", function(d){
-                    return "translate(" + new_xScale(d[xCat]) + "," + new_yScale(d[yCat]) + ")";
-                    });
-            }
-
-            function transform(d) {
-                return "translate(" + x(d[xCat]) + "," + y(d[yCat]) + ")";
-            }
-        });
-    }
-});
 /**
  * RingView:
  * - to display policy cluster
@@ -3403,7 +3199,16 @@ let RingView = Backbone.View.extend({
  * - has a changeable label
  */
 let DropdownController = Backbone.View.extend({
-    render() {},
+    templateForMetadataDropdown: require('../templates/metadata-dropdown-template.html'),
+    renderMetadataDropdown(conditions) {
+        let _self = this;
+        if (conditions.get("policy") === conf.bases.policy.default) {
+            this.$el.html(require('../templates/metadata-dropdown-empty-template.html'));
+        } else {
+            console.log("metadata dropdown model: ", _self.model.attributes);
+            this.$el.html(_self.templateForMetadataDropdown(_self.model.attributes));
+        }
+    },
     /**
      * set dropdown label text.
      * @param {string} labelString to be set to the dropdown.
@@ -3543,11 +3348,11 @@ module.exports = {
     PolicyNetworkView: PolicyNetworkView,
     GeoView: GeoView,
     RingView: RingView,
-    PolicyPlotView: PolicyPlotView,
     NetworkView: NetworkView,
     PolicyGroupView: PolicyGroupView,
     DropdownController: DropdownController,
     BootstrapSwitchView: BootstrapSwitchView,
     PlaygroundView: PlaygroundView,
+    DiffusionView: DiffusionView,
     DiffusionView2: DiffusionView3
 };

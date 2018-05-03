@@ -171,12 +171,14 @@ class PolicyDao(BaseDao):
         p_ts = PolicySimilarity.policyTextSimilarity.label('policyTextSimilarity')
         p_cs = PolicySimilarity.policyCascadeSimilarity.label('policyCascadeSimilarity')
         p_name = Policy.policyName.label('policyName')
+        p_subject_id = Policy.policySubjectId.label('policySubjectId')
         all_filtered_policies = Session().query(PolicySimilarity) \
             .filter(p_id_1 == policy_id, p_id_2.in_(q_policies.from_self(Policy.policyId).subquery()))
-        text_top = all_filtered_policies.from_self(p_id_2, p_name, p_ts) \
+        text_top = all_filtered_policies.from_self(p_id_2, p_name, p_ts, p_subject_id) \
             .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_ts.desc()).limit(top_count)
-        cascade_top = all_filtered_policies.from_self(p_id_2, p_name, p_cs) \
+        cascade_top = all_filtered_policies.from_self(p_id_2, p_name, p_cs, p_subject_id) \
             .join(Policy, PolicySimilarity.policyId2 == Policy.policyId).order_by(p_cs.desc()).limit(top_count)
+
         return text_top, cascade_top
 
 

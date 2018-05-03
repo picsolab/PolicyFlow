@@ -333,26 +333,6 @@ let RingModel = Backbone.Model.extend({
     }
 });
 
-let PolicyPlotModel = Backbone.Model.extend({
-    initialize(){
-        this.url = conf.api.root + conf.api.policyPlotBase;
-    },
-    populate(conditions){
-        let _self = this,
-            coords = conf.static.policyPlotCoord;  // Results of MDS
-        
-        console.log(coords);
-        return $.getJSON(_self.url).done(data => {
-            for(var i in [...Array(data.length).keys()]){
-                Object.assign(data[i], coords[i]);  // For each policy i, data[i]: policy metadata, coords[i]: coord from mds result
-            }
-
-            console.log("in PolicyPlotModel:", data);
-            this.set({ "policy": data });
-        });
-    }
-});
-
 let DiffusionModel2 = Backbone.Model.extend({
     initialize() {
         this.urlRoot = conf.api.root + conf.api.diffusionBase2;
@@ -360,6 +340,8 @@ let DiffusionModel2 = Backbone.Model.extend({
         
     },
     populate() {
+        console.log("arguments: ", arguments);
+
         let _self = this,
             centralities = conf.static.centrality.centralities,
             centralityStat = conf.static.centrality.stat,
@@ -368,6 +350,9 @@ let DiffusionModel2 = Backbone.Model.extend({
                 arguments[1] :
                 this.get("edges"));
         this.url = this.urlRoot + conditions.get("policy");
+
+        console.log("edges: ", edges)
+        console.log("this.edge: ", this.get("edges"));
 
         return $.getJSON(_self.url).done(data => {
             let nodes = data.nodes,
@@ -388,12 +373,16 @@ let DiffusionModel2 = Backbone.Model.extend({
                 "yearCount": _self.setYearCountData(nodesWithEdge),
                 "dMatrix": _self.setMatrixData(nodes, edgesData),
                 "stat": data.stat,
-                "cstat": centralityStat
+                "cstat": centralityStat,
+                "conformingScore": _self.calculateConformingScore(edgesData)
+                //"geoCorrelation": _self.calculateGeoCorrelation(edgesData)
             });
         });
     },
     setData: function(edgesData, nodes) {
-        edgesData.forEach(function(edge) {
+        console.log("in setData: ", edgesData);
+        edgesData.map(function(edge) {
+            console.log("edge...:", edge);
             edge.sourceStateInfo = {};
             edge.targetStateInfo = {};
 
@@ -411,6 +400,8 @@ let DiffusionModel2 = Backbone.Model.extend({
                     edge.targetCentralities = node.centralities;
                 }
             });
+
+            return edge;
         });
 
         return edgesData;
@@ -428,13 +419,17 @@ let DiffusionModel2 = Backbone.Model.extend({
     setNodesWithEdges: function() {
         var _self = this;
 
-        return _self.nodes.filter(function(d) { return d.adoptedYear != 9999; });
+        return _self.nodes.filter(function(d) { 
+            return d.adoptedYear != 9999; 
+        });
     },
     setYearCountData: function(nodesWithEdge) {
         var yearCount = [];
 
         nodesWithEdge.forEach(function(node) {
-            var year_overlaps = yearCount.filter(function(d) { return node.adoptedYear == d.year; });
+            var year_overlaps = yearCount.filter(function(d) { 
+                    return node.adoptedYear == d.year; 
+                });
             // if year_count does not have a year
             if (year_overlaps.length == 0 || year_overlaps == "undefined") {
                 yearCount.push({
@@ -451,6 +446,71 @@ let DiffusionModel2 = Backbone.Model.extend({
         });
 
         return yearCount;
+    },
+    calculateConformingScore: function(edgesData) {  // For each policy, How conforming and deviating edges are proportioned
+        var conformingEdgeCount = 0, 
+            deviatingEdgeCount = 0,
+            wholeEdgeCount = edgesData.length,
+            conformingScore = 0;
+
+        edgesData.forEach(function(edge) {
+            var sourceYear, targetYear;
+            sourceYear = edge.sourceStateInfo.adoptedYear;
+            targetYear = edge.targetStateInfo.adoptedYear;
+
+            if(sourceYear <= targetYear)
+                conformingEdgeCount = conformingEdgeCount + 1;
+            else
+                deviatingEdgeCount = deviatingEdgeCount + 1;
+        });
+
+        conformingScore = conformingEdgeCount / wholeEdgeCount;
+
+        return conformingScore;
+    },
+    calculateGeoCorrelation: function(edgesData) {  // correlation between edge weight and geo-proximity
+        var edgeWeights = [],
+            geoDistances = [],
+            edgeWeightsNormalized, geoDistancesNormalized;
+
+        console.log("edgesData: ", edgesData);
+
+        if(edgesData === undefined)
+            return "None";
+
+        console.log("edgesData: ", edgesData);
+
+        edgesData.forEach(function(edge){
+            console.log(edge);
+            // distance between source and target geo coordinates
+            var geoDistance = Math.sqrt(
+                                Math.pow(edge.gcoords.x1 - edge.gcoords.x2, 2)
+                              + Math.pow(edge.gcoords.y1 - edge.gcoords.y2, 2)
+                            );
+            edgeWeights.push(edge.value);
+            geoDistances.push(geoDistance);
+        });
+
+        // Normalize two arrays
+        edgeWeightsNormalized = normalize(edgeWeights);
+        geoDistancesNormalized = normalize(geoDistances);
+
+        console.log("edgeWeightsNormalized", edgeWeightsNormalized);
+        console.log("geoDistanceNormalized", geoDistancesNormalized);
+
+        return "Okay";
+
+        function normalize(arr) {
+            // find the max value
+            var m = 0;
+            for(var x=0; x<arr.length; x++) m = Math.max(m, arr[x]);
+            // find the ratio
+            var r = max / m;
+            // normalize the array
+            for(var x=0; x<arr.length; x++) arr[x] = arr[x] * r;
+            
+            return arr;
+        }
     },
     setMatrixData: function(nodes, edgesData) {
         var dMatrix = [];
@@ -644,263 +704,19 @@ let MetadataDropdownModel = Backbone.Model.extend({
         this.urlCorr = this.urlRootCorr + conditions.get("policy");
 
         console.log("url: ", _self.urlCorr);
+        console.log(centralities);
 
-        return $.postJSON(_self.urlCorr, {
-            "centralities": centralities
-        }).done(data => {
-                console.log(data);
-                let nodes = data.nodes;
-
-                console.log("dd");
-                // After receiving nodes and edges data => Send another request to calculate the correlation
-
-                nodes.forEach((node, i) => {
-                    nodes[i]["centralities"] = centralities[node.stateId];
-                });
-
-                _self.set({
-                    "rawData": data,
-                    "nodes": nodes,
-                    "edges": edges,
-                    "data": edgesData,
-                    "nodesWithEdge": nodesWithEdge,
-                    "stateYear": _self.setStateYearData(nodes),
-                    "yearCount": _self.setYearCountData(nodesWithEdge),
-                    "dMatrix": _self.setMatrixData(nodes, edgesData),
-                    "stat": data.stat,
-                    "cstat": centralityStat
-                });
-            });
-    },
-    setData: function(edgesData, nodes) {
-        edgesData.forEach(function(edge) {
-            edge.sourceStateInfo = {};
-            edge.targetStateInfo = {};
-
-            nodes.forEach(function(node) {
-                if (edge.source == node.stateIndex) {
-                    edge.sourceStateInfo.adoptedYear = node.adoptedYear;
-                    edge.sourceStateInfo.metadata = node.metadata;
-                    edge.sourceName = node.stateId;
-                    edge.sourceCentralities = node.centralities;
-                }
-                if (edge.target == node.stateIndex) {
-                    edge.targetStateInfo.adoptedYear = node.adoptedYear;
-                    edge.targetStateInfo.metadata = node.metadata;
-                    edge.targetName = node.stateId;
-                    edge.targetCentralities = node.centralities;
-                }
-            });
-        });
-
-        return edgesData;
-    },
-    // For the coordinates of pcView
-    setStateYearData: function(nodes) {
-        var stateYear = {};
-        nodes.filter(function(d, i) {
-                return d.adoptedYear != 9999;
-            })
-            .forEach(function(d) { stateYear[d.stateId] = d.adoptedYear; });
-
-        return stateYear;
-    },
-    setNodesWithEdges: function() {
-        var _self = this;
-
-        return _self.nodes.filter(function(d) { return d.adoptedYear != 9999; });
-    },
-    setYearCountData: function(nodesWithEdge) {
-        var yearCount = [];
-
-        nodesWithEdge.forEach(function(node) {
-            var year_overlaps = yearCount.filter(function(d) { return node.adoptedYear == d.year; });
-            // if year_count does not have a year
-            if (year_overlaps.length == 0 || year_overlaps == "undefined") {
-                yearCount.push({
-                    "year": node.adoptedYear,
-                    "count": 1
-                });
-            } else { // If a year exists
-                yearCount.forEach(function(d) {
-                    if (d.year == node.adoptedYear) {
-                        d.count += 1;
-                    }
-                });
+        return $.ajax({
+            url: _self.urlCorr,
+            type: "POST",
+            dataType: "json",
+            data: { centralities: centralities,
+                    currentCentrality: conditions.get("centrality") 
             }
-        });
-
-        return yearCount;
-    },
-    setMatrixData: function(nodes, edgesData) {
-        var dMatrix = [];
-        var years = nodes.filter(function(d){ return d.adoptedYear != 9999; })
-                                .map(function(d){ return d.adoptedYear; });
-        var yearArray = [];
-
-        var minYear = d4.min(years),
-            maxYear = d4.max(years);
-
-        for(var i=minYear-1; i<=maxYear; i++){  // Start from minYear-1 for a dummy year as the leftmost dummy column
-            yearArray.push(i);
-        }
-
-        edgesData = edgesData.filter(function(d){ return d.sourceStateInfo.adoptedYear != 9999 && d.targetStateInfo.adoptedYear != 9999; });
-
-        // Initialize matrix
-        nodes.forEach(function(node){
-            yearArray.forEach(function(year){
-               // Identify edges that are connected to the corresponding cell
-               // sourceEdges = edges from sources to this node
-               var inEdgeMatch = edgesData.filter(function(edge){
-                   return edge.targetName == node.stateId
-                       && edge.targetStateInfo.adoptedYear == year
-                       && edge.sourceStateInfo.adoptedYear != 9999
-                       && edge.targetStateInfo.adoptedYear != 9999; });
-
-               // targetEdge = edges from this node to target
-               var outEdgeMatch = edgesData.filter(function(edge){
-                   return edge.sourceName == node.stateId
-                       && edge.sourceStateInfo.adoptedYear == year
-                       && edge.sourceStateInfo.adoptedYear != 9999
-                       && edge.targetStateInfo.adoptedYear != 9999; });
-
-               var cellArray = []; 
-
-               cellArray.push({
-                   isSource: false,
-                   isTarget: false,
-                   node: node.stateId,
-                   year: year,
-                   month: 0,
-                   day: 1,
-                   outEdges: [],  // this node is a source node, and the edge goes from this node
-                   inEdges: []       // this node is a target node, and the edge goes to this node
-               });
-
-               // Add a dummy cell if year range is short enough to be equal to or less than 5
-               // Don't assign dummy columns for the last year
-               if (maxYear - minYear <= 5 && year !== yearArray[yearArray.length - 1]) {
-                    cellArray.push({
-                       isSource: false,
-                       isTarget: false,
-                       node: node.stateId,
-                       year: year,
-                       month: 2,
-                       day: 1,
-                       outEdges: [],
-                       inEdges: []
-                   });
-                    cellArray.push({
-                       isSource: false,
-                       isTarget: false,
-                       node: node.stateId,
-                       year: year,
-                       month: 4,
-                       day: 1,
-                       outEdges: [],
-                       inEdges: []
-                   });
-                    cellArray.push({
-                       isSource: false,
-                       isTarget: false,
-                       node: node.stateId,
-                       year: year,
-                       month: 6,
-                       day: 1,
-                       outEdges: [],
-                       inEdges: []
-                   });
-                    cellArray.push({
-                        isSource: false,
-                        isTarget: false,
-                        node: node.stateId,
-                        year: year,
-                        month: 8,
-                        day: 1,
-                        outEdges: [],
-                        inEdges: []
-                    });
-                    cellArray.push({
-                        isSource: false,
-                        isTarget: false,
-                        node: node.stateId,
-                        year: year,
-                        month: 10,
-                        day: 1,
-                        outEdges: [],
-                        inEdges: []
-                    });
-               }
-               else if (maxYear - minYear >= 5 && maxYear - minYear <= 10 && year !== yearArray[yearArray.length - 1]) {
-                    cellArray.push({
-                        isSource: false,
-                        isTarget: false,
-                        node: node.stateId,
-                        year: year,
-                        month: 3,
-                        day: 1,
-                        outEdges: [],
-                        inEdges: []
-                    });
-                    cellArray.push({
-                        isSource: false,
-                        isTarget: false,
-                        node: node.stateId,
-                        year: year,
-                        month: 6,
-                        day: 1,
-                        outEdges: [],
-                        inEdges: []
-                    });
-                    cellArray.push({
-                        isSource: false,
-                        isTarget: false,
-                        node: node.stateId,
-                        year: year,
-                        month: 9,
-                        day: 1,
-                        outEdges: [],
-                        inEdges: []
-                    });
-            }
-            else if (maxYear - minYear > 10 && maxYear - minYear <= 15 && year !== yearArray[yearArray.length - 1]) {
-                cellArray.push({
-                    isSource: false,
-                    isTarget: false,
-                    node: node.stateId,
-                    year: year,
-                    month: 4,
-                    day: 1,
-                    outEdges: [],
-                    inEdges: []
-                });
-                cellArray.push({
-                    isSource: false,
-                    isTarget: false,
-                    node: node.stateId,
-                    year: year,
-                    month: 8,
-                    day: 1,
-                    outEdges: [],
-                    inEdges: []
-                });
-        }
-
-               if(inEdgeMatch && inEdgeMatch.length != 0){
-                   cellArray[0].isTarget = true;
-                   cellArray[0].inEdges = inEdgeMatch;
-               }
-               if(outEdgeMatch && outEdgeMatch.length != 0){
-                   cellArray[0].isSource = true;
-                   cellArray[0].outEdges = outEdgeMatch;
-               }
-
-               dMatrix.push.apply(dMatrix, cellArray);
-           });
-        });
-
-        return dMatrix;
+          }).done(data => {
+                this.set(data);
+                this.trigger('change');
+            });
     }
 });
 
@@ -920,6 +736,5 @@ module.exports = {
     PolicyGroupModel: PolicyGroupModel,
     RingModel: RingModel,
     DiffusionModel2: DiffusionModel2,
-    PolicyPlotModel: PolicyPlotModel,
     MetadataDropdownModel: MetadataDropdownModel
 };

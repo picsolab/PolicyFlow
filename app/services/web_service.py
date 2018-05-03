@@ -6,6 +6,9 @@ import random
 import sys
 import json
 import numpy as np
+import re
+import scipy.stats as stats
+from operator import itemgetter
 
 from ..services.helper import rel_path
 from .helper import DecimalEncoder
@@ -14,7 +17,7 @@ from .computing_service import ComputingService
 from ..models import get_state_index
 from ..dao import BaseDao, SubjectDao, PolicyDao, TextQueryDao, StateDao, CascadeDao, MetadataDao, PolicyTextDao, \
     PolicySimilarityDao
-from operator import itemgetter
+
 
 computing_service = ComputingService()
 
@@ -62,6 +65,7 @@ class PageService(BaseService):
         output["size"] = reduce(lambda x, y: x + y["size"], children, 0)
         return json.dumps(output)
 
+    
 
 class StateService(BaseService):
     """state service handling requests from bar chart"""
@@ -193,6 +197,23 @@ class PolicyService(BaseService):
         return json.dumps({})
 
     @staticmethod
+    @app.route("/api/policies/conforming_score_per_topic", methods=["GET"])
+    def get_conforming_scores_by_subject():
+        """get conforming(accuracy) scores of policies by topic"""
+        policies = PolicyDao.get_policy_id_name_subject()
+        for policy in policies:
+            policy_id = policy.policyId
+            print(policy_id)
+
+        return json.dumps(policies)
+            #data_list, stat = NetworkService.get_policy_detail(policy_id)
+
+        #     if policy.policySubjectId in subject_pipe:
+        #         policy_set.setdefault(subject_pipe[policy.policySubjectId], []).append(policy.policyId)
+        #         policy_pipe[policy.policyId] = policy.policyName
+        # all_policies = reduce(lambda x, y: x + y, map(lambda z: policy_set[z], policy_set), [])
+
+    @staticmethod
     @app.route("/api/policy/detail/")
     def get_policy_detail():
         args = request.args
@@ -211,15 +232,18 @@ class PolicyService(BaseService):
 
         q_policies = PolicyService.get_q_policy_group(method, param, start_year, end_year)
         text_top, cascade_top = policy_dao.get_top_similar_policies(q_policies, policy_id, 5)
+
         text_similarities = [{
             "policy_id": item.policyId2,
             "policy_name": item.policyName,
-            "policy_text_similarity": item.policyTextSimilarity}
+            "policy_text_similarity": item.policyTextSimilarity,
+            "policy_subject_id": item.policySubjectId }
             for item in text_top]
         cascade_similarities = [{
             "policy_id": item.policyId2,
             "policy_name": item.policyName,
-            "policy_cascade_similarity": item.policyCascadeSimilarity}
+            "policy_cascade_similarity": item.policyCascadeSimilarity,
+            "policy_subject_id": item.policySubjectId }
             for item in cascade_top]
         output["text_similarities"] = text_similarities
         output["cascade_similarities"] = cascade_similarities
@@ -384,7 +408,8 @@ class NetworkService(BaseService):
         """get_specified_diffusion2_by policy_id"""
         # return a sample json file
         data_list, stat = NetworkService.get_policy_detail(policy_id)
-        #sample_file_path = rel_path("../resource/ex-policy-diffusion.json")
+        
+        print("data list in: ", data_list)
 
         return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
 
@@ -397,26 +422,6 @@ class NetworkService(BaseService):
         for item in data_list:
             data_object[item["stateId"]] = item
         return json.dumps({"nodes": data_object, "stat": stat}, cls=DecimalEncoder)
-
-class PolicyPlotService(BaseService):
-    @staticmethod
-    @app.route("/api/plot/")
-    def get_policy_metadata():
-        policies = PolicyDao.get_all_policies()
-        policy_list = []
-
-        for policy in policies:
-            policy_dict = {
-                #"policy_id": policy.polidyId,
-                "policy_name": policy.policyName,
-                "policy_subject_id": policy.policySubjectId,
-                "policy_start": policy.policyStart,
-                "policy_end": policy.policyEnd,
-                "policy_lda": policy.policyLda1
-            }
-            policy_list.append(policy_dict)
-
-        return json.dumps(policy_list, cls=DecimalEncoder)
 
 class PolicySimilarityService(BaseService):
     @staticmethod
@@ -437,28 +442,65 @@ class PolicySimilarityService(BaseService):
 
 class PolicyCorrelationService(BaseService):
     @staticmethod
-    @app.route("/api/policy/correlation/<policy_id>")
+    @app.route("/api/policy/correlation/<policy_id>", methods=['POST'])
     def get_correlations(policy_id):
+        """Term: centrality(influence), and attributes"""
         data_list, stat = NetworkService.get_policy_detail(policy_id)
-        print("data_list: ", data_list)
-        print("request.args: ", request.args)
 
+        request_dict = dict(request.form)
+        currentCentrality = request_dict["currentCentrality"][0]
+        del request_dict["currentCentrality"] # Rest of dict is about centralities # [('centrality[AK][betweenness]', u'0.5'), ... ]
+        
+        # Reorganize as real dict
+        current_centrality_dict = {}
+        for key, value in request_dict.items():
+            key_splits = re.split(r'\[', key)
+            stateId = key_splits[1].strip(']')
+            centrality = key_splits[2].strip(']')
+            centralityScore = value[0]
+
+            if centrality == currentCentrality:
+                current_centrality_dict[stateId] = centralityScore
+
+        # current_centrality_dict = { 'AK': 0.5, ... } for current centrality
+        
+        print("request form to dictionary: ", current_centrality_dict)
         corr_scores_dict = {}
-        nodes = data_list
-        for attr in ["md", "pi", "cd", "pop", "pci", "lp"]:
-            # Prepare metadata ranking
+
+        stateInfos = data_list   # socio-economic data
+        state_centrality_dict = {}
+        for attr in ["md", "ci", "pd", "pop", "pci", "lp"]:
             state_attr_dict = {}
-            for stateInfo in nodes:
-                stateId = stateInfo["stateId"]
-                state_attr_dict[stateId] = stateInfo["metadata"][attr]  # Add { state: attr } item
-            # Rank metadata (socio-economic status)    
-            sorted_state_attr_dict = sorted(state_attr_dict.items(), key=itemgetter(1))
-            metadata_state_ranking = sorted_state_attr_dict.keys()
+            for stateInfo in stateInfos: # Go over all states
+                # filter out states non-related to the current policy, and NE (doesn't have statistic)
+                if stateInfo["adoptedYear"] != 9999 and len(stateInfo["metadata"]) != 0:
+                    stateId = stateInfo["stateId"]
+                    state_attr_dict[stateId] = stateInfo["metadata"][attr]  # Add { state: attr } item
+                    state_centrality_dict[stateId] = current_centrality_dict[stateId]
 
-        # Rank attribute (influence)
+            # Prepare centrality ranking list
+            rank_centrality_dict = {key: rank for rank, key in enumerate(sorted(set(state_centrality_dict.values()), reverse=True), 1)}
+            state_centrality_ranking_dict = {key: rank_centrality_dict[value] for key, value in state_centrality_dict.items()}
+            # Sort again by key(state name) to pair up with attribute ranking
+            state_centrality_ranking_dict_sorted = sorted(state_centrality_ranking_dict.items(), key=itemgetter(0))
+            state_centrality_ranking_list = [ stateRanking[1] for stateRanking in state_centrality_ranking_dict_sorted ]
 
-        return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
+            # Prepare attribute ranking list
+            rank_attr_dict = {key: rank for rank, key in enumerate(sorted(set(state_attr_dict.values()), reverse=True), 1)}
+            state_attr_ranking_dict = {key: rank_attr_dict[value] for key, value in state_attr_dict.items()}
 
+            # Sort again by key(state name) to pair up with centrality ranking
+            state_attr_ranking_dict_sorted = sorted(state_attr_ranking_dict.items(), key=itemgetter(0))
+            state_attr_ranking_list = [ stateRanking[1] for stateRanking in state_attr_ranking_dict_sorted ]
+            
+            tau, p_value = stats.kendalltau(state_attr_ranking_list, state_centrality_ranking_list)
+            kendall_score = tau
+            kendall_score_normalized = abs((kendall_score + 1) / 2) # normalize to 0-1 scale
+
+            corr_scores_dict[attr] = round(kendall_score_normalized, 2)
+
+        return json.dumps({ "corrScores": corr_scores_dict }, cls=DecimalEncoder)
+        
 
 class PolicyTextService(BaseService):
     @staticmethod

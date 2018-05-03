@@ -14,10 +14,9 @@ let conditions = new Model.Conditions(),
     geoModel = new Model.GeoModel(),
     ringModel = new Model.RingModel(),
     networkModel = new Model.NetworkModel(),
-    // diffusionModel = new Model.DiffusionModel(),
+    diffusionModel = new Model.DiffusionModel(),
     diffusionModel2 = new Model.DiffusionModel2(),
     metadataDropdownModel = new Model.MetadataDropdownModel(),
-    policyPlotModel = new Model.PolicyPlotModel(),
     dynamicNetworkModel = new Model.DynamicNetworkModel(),
     snapshotCollection = new Collection.SnapshotCollection();
 let policyDetailView = new View.PolicyDetailView({
@@ -35,20 +34,18 @@ let policyDetailView = new View.PolicyDetailView({
     networkView = new View.NetworkView({
         model: networkModel
     }),
-    // diffusionView = new View.DiffusionView({
-    //     model: diffusionModel
-    // }),
+    diffusionView = new View.DiffusionView({
+        model: diffusionModel
+    }),
     diffusionView2 = new View.DiffusionView2({
         model: diffusionModel2
     }),
     policyGroupView = new View.PolicyGroupView({
         model: policyGroupModel
     }),
-    policyPlotView = new View.PolicyPlotView({
-        model: policyPlotModel
-    }),
     attributeDropdown = new View.DropdownController({
-        el: "#metadata-dropdown"
+        el: "#metadata-dropdown",
+        model: metadataDropdownModel
     }),
     factorDropdown = new View.DropdownController({
         el: "#factor-dropdown"
@@ -114,10 +111,10 @@ function setupRenderingControllers() {
                 metadataDropdownModel.populate(conditions);
             }
             diffusionModel2.populate(conditions);
+            metadataDropdownModel.populate(conditions);
         
         } else {
             if (conditions.hasChanged('factor')) {
-                console.log(conditions.get('factor'));
                 diffusionView2.doSort();
             }
             if (conditions.hasChanged('centrality')) {
@@ -132,6 +129,7 @@ function setupRenderingControllers() {
                 // }
                 networkView.preRender();
                 networkView.update();
+                metadataDropdownModel.populate(conditions);
             }
             if (conditions.hasChanged('metadata')) {
                 //diffusionView.doSort("metadata");
@@ -148,8 +146,9 @@ function setupRenderingControllers() {
                 conditions.hasChanged('sequence') ||
                 (conditions.hasChanged('centrality') &&
                     conditions.get('policy') !== conf.bases.policy.default)) {
-                // diffusionView.update();
+                diffusionView.render();
                 diffusionView2.update();
+                metadataDropdownModel.populate(conditions);
             }
         }
         if (conditions.hasChanged("param")) {
@@ -190,11 +189,6 @@ function setupRenderingTriggers() {
         networkView.render(conditions);
     });
 
-    // diffusionModel.on("change", () => {
-    //     diffusionView.preRender();
-    //     diffusionView.render(conditions);
-    // });
-
     diffusionModel2.on("change", () => {
         diffusionView2.render(conditions);
     });
@@ -225,13 +219,14 @@ function setupRenderingTriggers() {
         policyGroupView.render(conditions);
     });
 
-    policyPlotModel.on("change", () => {
-        policyPlotView.render(conditions);
-    });
+    metadataDropdownModel.on("change", () => {
+        attributeDropdown.renderMetadataDropdown(conditions);
+    })
 }
 
 function initRendering() {
     policyDetailView.render(conditions);
+    attributeDropdown.renderMetadataDropdown(conditions);
     ringModel.populate(conditions);
     policyTrendModel.populate(conditions);
     policyGroupModel.populate(conditions);
@@ -239,7 +234,6 @@ function initRendering() {
     geoModel.populate(conditions);
     dynamicNetworkModel.populate(conditions);
     //diffusionModel2.populate(conditions);
-    policyPlotModel.populate(conditions);
 }
 
 function bindDomEvents() {
