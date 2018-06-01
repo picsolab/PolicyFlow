@@ -57,7 +57,7 @@
                         <% _.each(text_similarities, function(policy, index, list) { %>
                             <tr pid="<%= policy.policy_id %>">
                                 <td>
-                                    <%= policy.policy_name %> <%= policy.policy_subject_id %>
+                                    <%= policy.policy_name %> <span class="policy_subject_name"><%= policy.policy_subject_name %></span>
                                 </td>
                                 <td>
                                     <%= policy.policy_text_similarity.toFixed(2) %>
@@ -81,7 +81,8 @@
                         <% _.each(cascade_similarities, function(policy, index, list) { %>
                             <tr pid="<%= policy.policy_id %>">
                                 <td>
-                                    <%= policy.policy_name %> <%= policy.policy_subject_id %>
+                                    <span class="policy_subject_indicator">  </span>
+                                    <%= policy.policy_name %> <span class="policy_subject_name"><%= policy.policy_subject_name %></span>
                                 </td>
                                 <td>
                                     <%= policy.policy_cascade_similarity %>

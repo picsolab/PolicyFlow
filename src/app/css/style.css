@@ -154,6 +154,21 @@
     overflow-y: scroll;
 }
 
+.policy_subject_name {
+    background: darkgray;
+    color: black;
+    font-size: 12px;
+    text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
+    border-radius: 8%;
+    border: solid 1px darkgray;
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.policy_subject_indicator {
+    background-color: red;
+}
 
 /* ring view */
 
@@ -179,7 +194,7 @@
 /*policy trend*/
 
 #policy-trend-wrapper {
-    height: 80px;
+    height: 120px;
 }
 
 #policy-trend-wrapper>svg .axis text {

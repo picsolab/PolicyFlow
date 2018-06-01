@@ -64,7 +64,6 @@ let color7 = [
 let DiffusionView = Backbone.View.extend({
     render(conditions){
         let _self = this;
-        console.log(_self.model);
     }
 });
 
@@ -91,7 +90,6 @@ let DiffusionView3 = Backbone.View.extend({
         //     this.postRender(conditions);
         //     return this;
         // }
-        console.log("_self.model in render: ", _self.model);
 
         if(conditions.get("policy") === conf.bases.policy.default) return;
 
@@ -147,7 +145,6 @@ let DiffusionView3 = Backbone.View.extend({
 
         // Set tick values
         if(yearRange <= 5) {
-            console.log(minYear, maxYear, "yearRange equal or less than 5");
             // If yearRange is less than 5, mark all years
             for(var i=minYear - 1; i<=maxYear; i++){ // minYear - 1 because there is a dummy year as the leftmost column
                 ticks.push(new Date(i, 0, 1));
@@ -392,12 +389,12 @@ let DiffusionView3 = Backbone.View.extend({
             .style("font-size", "10px");
         //***** end of For legend
         // Conforming score below the legend
-        console.log(conformingScore);
+
         g_legend.append("text")
             .attr("x", 10)
             .attr("y", 180)
             .text("Conforming score: " + conformingScore.toString())
-            .style("font-size", "10px");
+            .style("font-size", "12px");
         
         $.extend(_attr, {
             // getPrefix: () => {
@@ -442,7 +439,6 @@ let DiffusionView3 = Backbone.View.extend({
             cType = _attr.c.get("centrality"),
             nodes = _attr.nodes;
 
-        console.log("model in update: ", _self.model);
         //*** Lines to source and targets
 
         _attr.g_matrix
@@ -536,7 +532,7 @@ let DiffusionView3 = Backbone.View.extend({
             })
             .attr("d", _attr.circleArc)
             .attr("transform", function(d){
-                let nodeYear, sourceYear;
+                let nodeYear, sourceYear, targetYear;
                 let rotate = "";
 
                 if(d.isSource === true){ // If node is a source
@@ -570,7 +566,6 @@ let DiffusionView3 = Backbone.View.extend({
         // Mouseover the node
         _attr.svg.selectAll(".rect_node")
             .on("mouseover", function(d){
-                console.log("mouseovered on node");
                 var sourceNode, targetNodes,
                     sourceCircle, targetRects,
                     gSourceNode, dataSourceNode;
@@ -685,7 +680,6 @@ let DiffusionView3 = Backbone.View.extend({
                             {lx: x3, ly: y3}
                         );
                     }
-                    console.log(points);
 
                     return line(points);
                 }
@@ -1156,8 +1150,20 @@ let DiffusionView3 = Backbone.View.extend({
                 });
         transition.selectAll(".rect_node")
                 .attr("transform", function(d){
-                    var nodeYear = d.year,
+                    // console.log("rect_node / d: ", d);
+                    // console.log("rect_node / inEdges: ", d.inEdges[0]);
+                    // console.log("rect_node / sourceStateInfo: ", d.inEdges[0].sourceStateInfo);
+                    
+                    var nodeYear, sourceYear;
+
+                    if(d.isSource === true){ // If node is a source
+                        sourceYear = d.year;
+                        nodeYear = d.outEdges[0].targetStateInfo.adoptedYear;
+                    } else {
                         sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
+                        nodeYear = d.year;
+                    }
+                    
                     var rotate = "";
 
                     if(sourceYear <= nodeYear) {
@@ -1514,13 +1520,21 @@ let PolicyDetailView = Backbone.View.extend({
     el: "#policy-detail-wrapper",
     template: require('../templates/policy-detail-template.html'),
     render(conditions) {
-        let _self = this;
+        let _self = this,
+            colorSchema = d3.scale.ordinal()
+            .domain(conf.static.subjectNames)
+            .range(color15);
+
         if (conditions.get("policy") === conf.bases.policy.default) {
             this.$el.html(require('../templates/policy-detail-empty-template.html'));
         } else {
-            console.log("policy detail view model: ", _self.model.attributes);
             this.$el.html(_self.template(_self.model.attributes));
         }
+
+        d3.selectAll("span.policy_subject_name")
+            .style("background-color", function(d){
+                return colorSchema(d3.select(this).text());
+            });
     }
 });
 
@@ -1649,8 +1663,6 @@ let GeoView = Backbone.View.extend({
             regionBorder = {},
             regionColorMap = gs.g.config.regionColorMap,
             _altIndexForWest = 47;
-
-        console.log("in geo view");
 
         // TO FIND OUT INDEX FOR UT
         //  - use centroid of NV as alternative for west region
@@ -3205,7 +3217,6 @@ let DropdownController = Backbone.View.extend({
         if (conditions.get("policy") === conf.bases.policy.default) {
             this.$el.html(require('../templates/metadata-dropdown-empty-template.html'));
         } else {
-            console.log("metadata dropdown model: ", _self.model.attributes);
             this.$el.html(_self.templateForMetadataDropdown(_self.model.attributes));
         }
     },
@@ -3278,8 +3289,6 @@ let DropdownController = Backbone.View.extend({
             // single selection
             this.$el.find("ul a[aid=" + arguments[0] + "]").parent().addClass("active");
         } else {
-            // multi-selection
-            console.log("//TODO");
         }
     },
     /**

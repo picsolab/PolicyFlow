@@ -117,6 +117,27 @@ let PolicyDetailModel = Backbone.Model.extend({
             "end_year": conditions.get("endYear"),
             "policy": conditions.get("policy")
         }).done(data => {
+            //** Add subject name of similar policies (get subject name from given subject id)
+            // For content similarities
+            let similarContentPolicies = data.text_similarities;
+            similarContentPolicies.forEach(function(policy){
+                let subjectId = policy.policy_subject_id;
+                let subjectName = conf.pipe.subjectIdToName[subjectId];
+
+                policy.policy_subject_name = subjectName;   // Assign new property
+            });
+            data.text_similarities = similarContentPolicies;
+
+            // For cascade similarities
+            let similarCascadePolicies = data.cascade_similarities;
+            similarCascadePolicies.forEach(function(policy){
+                let subjectId = policy.policy_subject_id;
+                let subjectName = conf.pipe.subjectIdToName[subjectId];
+
+                policy.policy_subject_name = subjectName;   // Assign new property
+            });
+            data.cascade_similarities = similarCascadePolicies;
+
             this.set(data);
             this.trigger('change');
         });
@@ -259,8 +280,6 @@ let ArcModel = Backbone.Model.extend({
         let _self = this;
         this.url = this.urlRoot + conditions.get("metadata") + "/" + conditions.get("policy");
         $.getJSON(_self.url).done((data) => {
-            console.log("in ArcModel", data);
-            // console.log(_self.url);
             _self.set(data);
         });
     }
@@ -279,7 +298,6 @@ let DiffusionModel = Backbone.Model.extend({
             edges = (arguments.length === 2 ?
                 arguments[1] :
                 this.get("edges"));
-        console.log("edges in diffmodel1:", edges);
         this.url = this.urlRoot + conditions.get("policy");
         return $.getJSON(_self.url).done((data) => {
             // console.log(_self.url);
@@ -340,8 +358,6 @@ let DiffusionModel2 = Backbone.Model.extend({
         
     },
     populate() {
-        console.log("arguments: ", arguments);
-
         let _self = this,
             centralities = conf.static.centrality.centralities,
             centralityStat = conf.static.centrality.stat,
@@ -350,9 +366,6 @@ let DiffusionModel2 = Backbone.Model.extend({
                 arguments[1] :
                 this.get("edges"));
         this.url = this.urlRoot + conditions.get("policy");
-
-        console.log("edges: ", edges)
-        console.log("this.edge: ", this.get("edges"));
 
         return $.getJSON(_self.url).done(data => {
             let nodes = data.nodes,
@@ -380,9 +393,8 @@ let DiffusionModel2 = Backbone.Model.extend({
         });
     },
     setData: function(edgesData, nodes) {
-        console.log("in setData: ", edgesData);
+
         edgesData.map(function(edge) {
-            console.log("edge...:", edge);
             edge.sourceStateInfo = {};
             edge.targetStateInfo = {};
 
@@ -473,15 +485,10 @@ let DiffusionModel2 = Backbone.Model.extend({
             geoDistances = [],
             edgeWeightsNormalized, geoDistancesNormalized;
 
-        console.log("edgesData: ", edgesData);
-
         if(edgesData === undefined)
             return "None";
 
-        console.log("edgesData: ", edgesData);
-
         edgesData.forEach(function(edge){
-            console.log(edge);
             // distance between source and target geo coordinates
             var geoDistance = Math.sqrt(
                                 Math.pow(edge.gcoords.x1 - edge.gcoords.x2, 2)
@@ -495,8 +502,8 @@ let DiffusionModel2 = Backbone.Model.extend({
         edgeWeightsNormalized = normalize(edgeWeights);
         geoDistancesNormalized = normalize(geoDistances);
 
-        console.log("edgeWeightsNormalized", edgeWeightsNormalized);
-        console.log("geoDistanceNormalized", geoDistancesNormalized);
+        // console.log("edgeWeightsNormalized", edgeWeightsNormalized);
+        // console.log("geoDistanceNormalized", geoDistancesNormalized);
 
         return "Okay";
 
@@ -702,9 +709,6 @@ let MetadataDropdownModel = Backbone.Model.extend({
                 this.get("edges"));
         this.url = this.urlRoot + conditions.get("policy");
         this.urlCorr = this.urlRootCorr + conditions.get("policy");
-
-        console.log("url: ", _self.urlCorr);
-        console.log(centralities);
 
         return $.ajax({
             url: _self.urlCorr,
