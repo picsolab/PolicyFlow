@@ -535,13 +535,15 @@ let DiffusionView3 = Backbone.View.extend({
                 let nodeYear, sourceYear, targetYear;
                 let rotate = "";
 
-                if(d.isSource === true){ // If node is a source
+                // Take care three cases (when a node is source or target or source&target)
+                if (d.isSource === true && d.isTarget === false){ // If node is a source
                     sourceYear = d.year;
                     targetYear = d.outEdges[0].targetStateInfo.adoptedYear;
-                } else {
+                } else if (d.isTarget === true){
                     sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
                     targetYear = d.year;
                 }
+
                 // Arc heading to the right if the adoption
                 if(sourceYear <= targetYear) {
                     rotate = "rotate(0)";
@@ -1100,7 +1102,7 @@ let DiffusionView3 = Backbone.View.extend({
     },
     doSort() {
         let centralityList = ['centrality', 'outdegree', 'pageRank', 'betweenness', 'hit', 'close'],
-            metadataList = ['adoptionYear', 'perCapitaIncome', 'minorityDiversity', 'legislativeProfessionalism', 'citizenIdeology', 'totalPopulation', 'populationDensity'];
+            metadataList = ['perCapitaIncome', 'minorityDiversity', 'legislativeProfessionalism', 'citizenIdeology', 'totalPopulation', 'populationDensity'];
 
         let _self = this,
             _attr = _self._attr,
@@ -1113,17 +1115,23 @@ let DiffusionView3 = Backbone.View.extend({
             else if (metadataList.includes(c.get('factor'))){
                 isSortingByCentrality = false;
             }
+            else if (c.get('factor') === 'adoptionYear'){
+                isSortingByCentrality = true;
+
+            }
             
         let selectedAttr = (isSortingByCentrality ?
                                 c.get("factor") : 
                                 conf.pipe.metaToId[c.get("factor")]);
 
+        if (selectedAttr == 'adoptionYear')
+            selectedAttr = 'outdegree';
+
         var transition = _attr.svg.transition().duration(750),
             transition2 = _attr.g_attrGraph.transition().duration(750),
             sortedNodes;
-
-        //console.log("c.factors, isSortingByCentrality, selectedAttr:", c.get('factor'), isSortingByCentrality, selectedAttr);
-        //console.log(_attr.nodes.map(function(e){ return e.metadata[selectedAttr]; }));
+        
+        
 
         if (isSortingByCentrality) {
             _attr.nodes.sort(function(a, b){
@@ -1156,13 +1164,16 @@ let DiffusionView3 = Backbone.View.extend({
                     
                     var nodeYear, sourceYear;
 
-                    if(d.isSource === true){ // If node is a source
+                    // Take care three cases (when a node is source or target or source&target)
+                    if (d.isSource === true && d.isTarget === false){ // If node is a source
                         sourceYear = d.year;
                         nodeYear = d.outEdges[0].targetStateInfo.adoptedYear;
-                    } else {
+                    } else if (d.isTarget === true){
                         sourceYear = d.inEdges[0].sourceStateInfo.adoptedYear;
                         nodeYear = d.year;
                     }
+
+                    console.log("source/target year: ", sourceYear, nodeYear);
                     
                     var rotate = "";
 
@@ -1193,8 +1204,12 @@ let DiffusionView3 = Backbone.View.extend({
             _attr.attrGraph_colorScale.domain(d4.extent(_attr.nodes, function(d){ return d.metadata[selectedAttr]; }));
             transition2.selectAll("rect")
                     .attr("y", function(d){ return _attr.attrGraph_yScale(d.stateId); })
-                    .attr("width", function(d){ return _attr.attrGraph_xScale(d.metadata[selectedAttr]); })
-                    .style("fill", function(d){ return _attr.attrGraph_colorScale(d.metadata[selectedAttr]); });
+                    .attr("width", function(d){ 
+                        return _attr.attrGraph_xScale(d.metadata[selectedAttr]); 
+                    })
+                    .style("fill", function(d){ 
+                        return _attr.attrGraph_colorScale(d.metadata[selectedAttr]); 
+                    });
         }
     },
     colorRectsBetween() {

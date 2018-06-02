@@ -99,13 +99,13 @@ const Config = {
             {
                 id: "adoptionYear",
                 domId: "y-option-centrality",
-                description: "Factors"
-            },
-            {
-                id: "adoptionYear",
-                domId: "x-option-adoption-year",
                 description: "Adoption Year"
             },
+            // {
+            //     id: "adoptionYear",
+            //     domId: "x-option-adoption-year",
+            //     description: "Adoption Year"
+            // },
             // [dev]
             {
                 id: "perCapitaIncome",
@@ -196,7 +196,7 @@ const Config = {
         sortMethodList: ["year", "metadata", "name"],
         sortMethodId: { "year": 0, "metadata": 1, "name": 2 },
         idToMeta: { "ce": "centrality", "md": "minorityDiversity", "ci": "citizenIdeology", "lp": "legislativeProfessionalism", "pci": "perCapitaIncome", "pd": "populationDensity", "pop": "totalPopulation" },
-        metaToId: { "centrality": "ce", "minorityDiversity": "md", "citizenIdeology": "ci", "legislativeProfessionalism": "lp", "perCapitaIncome": "pci", "populationDensity": "pd", "totalPopulation": "pop" },
+        metaToId: { "centrality": "ce", "minorityDiversity": "md", "citizenIdeology": "ci", "legislativeProfessionalism": "lp", "perCapitaIncome": "pci", "populationDensity": "pd", "totalPopulation": "pop", "adoptionYear": "ce" },
         regionOf: { "CT": "northeast", "MA": "northeast", "ME": "northeast", "NH": "northeast", "NJ": "northeast", "NY": "northeast", "PA": "northeast", "RI": "northeast", "VT": "northeast", "IA": "midwest", "IL": "midwest", "IN": "midwest", "KS": "midwest", "MI": "midwest", "MN": "midwest", "MO": "midwest", "ND": "midwest", "NE": "midwest", "OH": "midwest", "SD": "midwest", "WI": "midwest", "AL": "south", "AR": "south", "DE": "south", "FL": "south", "GA": "south", "KY": "south", "LA": "south", "MD": "south", "MS": "south", "NC": "south", "OK": "south", "SC": "south", "TN": "south", "TX": "south", "VA": "south", "WV": "south", "AK": "west", "AZ": "west", "CA": "west", "CO": "west", "HI": "west", "ID": "west", "MT": "west", "NM": "west", "NV": "west", "OR": "west", "UT": "west", "WA": "west", "WY": "west" },
         statesToIndices: { "AK": 0, "AL": 1, "AR": 2, "AZ": 3, "CA": 4, "CO": 5, "CT": 6, "DE": 7, "FL": 8, "GA": 9, "HI": 10, "IA": 11, "ID": 12, "IL": 13, "IN": 14, "KS": 15, "KY": 16, "LA": 17, "MA": 18, "MD": 19, "ME": 20, "MI": 21, "MN": 22, "MO": 23, "MS": 24, "MT": 25, "NC": 26, "ND": 27, "NE": 28, "NH": 29, "NJ": 30, "NM": 31, "NV": 32, "NY": 33, "OH": 34, "OK": 35, "OR": 36, "PA": 37, "RI": 38, "SC": 39, "SD": 40, "TN": 41, "TX": 42, "UT": 43, "VA": 44, "VT": 45, "WA": 46, "WI": 47, "WV": 48, "WY": 49 }
     },
