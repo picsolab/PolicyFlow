@@ -1120,6 +1120,7 @@ let DiffusionView3 = Backbone.View.extend({
 
             }
             
+            
         let selectedAttr = (isSortingByCentrality ?
                                 c.get("factor") : 
                                 conf.pipe.metaToId[c.get("factor")]);
