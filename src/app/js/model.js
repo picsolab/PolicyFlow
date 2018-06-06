@@ -194,7 +194,7 @@ let DynamicNetworkModel = Backbone.Model.extend({
 
         // When initial rendering, get the inferred network from static file "initial_network.json"
         if (conditions === "initial_rendering"){
-            data = initialNetworkData;
+            let data = initialNetworkData;
 
             let edgesInIndices = [];
             if (data.length !== 0) {
