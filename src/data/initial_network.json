@@ -1,0 +1,252 @@
+[
+  {
+    "source": "CA",
+    "target": "OR",
+    "value": 28624.92
+  },
+  {
+    "source": "CA",
+    "target": "NM",
+    "value": 26662.63
+  },
+  {
+    "source": "CA",
+    "target": "MD",
+    "value": 26323.43
+  },
+  {
+    "source": "CA",
+    "target": "TX",
+    "value": 25996.8
+  },
+  {
+    "source": "CA",
+    "target": "FL",
+    "value": 25888.43
+  },
+  {
+    "source": "CA",
+    "target": "CO",
+    "value": 25678.24
+  },
+  {
+    "source": "CA",
+    "target": "NV",
+    "value": 25539.61
+  },
+  {
+    "source": "CA",
+    "target": "WA",
+    "value": 25483.88
+  },
+  {
+    "source": "CA",
+    "target": "NC",
+    "value": 25336.61
+  },
+  {
+    "source": "CA",
+    "target": "AZ",
+    "value": 25246.61
+  },
+  {
+    "source": "CA",
+    "target": "IL",
+    "value": 25164.15
+  },
+  {
+    "source": "CA",
+    "target": "MT",
+    "value": 25148.51
+  },
+  {
+    "source": "CA",
+    "target": "ME",
+    "value": 24602.05
+  },
+  {
+    "source": "CA",
+    "target": "IN",
+    "value": 24589.68
+  },
+  {
+    "source": "CA",
+    "target": "NJ",
+    "value": 24408.95
+  },
+  {
+    "source": "CA",
+    "target": "MO",
+    "value": 24003.22
+  },
+  {
+    "source": "OR",
+    "target": "KY",
+    "value": 23876.13
+  },
+  {
+    "source": "CA",
+    "target": "KS",
+    "value": 23670.86
+  },
+  {
+    "source": "CA",
+    "target": "OH",
+    "value": 23645.76
+  },
+  {
+    "source": "CA",
+    "target": "DE",
+    "value": 23616.49
+  },
+  {
+    "source": "CA",
+    "target": "GA",
+    "value": 23544.22
+  },
+  {
+    "source": "CA",
+    "target": "SC",
+    "value": 23209.13
+  },
+  {
+    "source": "CA",
+    "target": "PA",
+    "value": 22940.66
+  },
+  {
+    "source": "CA",
+    "target": "NE",
+    "value": 22799.3
+  },
+  {
+    "source": "CA",
+    "target": "TN",
+    "value": 22718.66
+  },
+  {
+    "source": "CA",
+    "target": "RI",
+    "value": 22705.93
+  },
+  {
+    "source": "CA",
+    "target": "AR",
+    "value": 22553.93
+  },
+  {
+    "source": "CA",
+    "target": "ND",
+    "value": 22464.2
+  },
+  {
+    "source": "CA",
+    "target": "UT",
+    "value": 22325.57
+  },
+  {
+    "source": "CA",
+    "target": "VT",
+    "value": 22279.84
+  },
+  {
+    "source": "CA",
+    "target": "OK",
+    "value": 22173.93
+  },
+  {
+    "source": "MN",
+    "target": "VA",
+    "value": 22141.38
+  },
+  {
+    "source": "MN",
+    "target": "IA",
+    "value": 22077.01
+  },
+  {
+    "source": "NY",
+    "target": "MI",
+    "value": 21901.74
+  },
+  {
+    "source": "CA",
+    "target": "NH",
+    "value": 21863.38
+  },
+  {
+    "source": "CA",
+    "target": "LA",
+    "value": 21787.47
+  },
+  {
+    "source": "CA",
+    "target": "MN",
+    "value": 21765.01
+  },
+  {
+    "source": "CA",
+    "target": "SD",
+    "value": 21463.01
+  },
+  {
+    "source": "CA",
+    "target": "CT",
+    "value": 20952.91
+  },
+  {
+    "source": "WA",
+    "target": "WY",
+    "value": 20654.82
+  },
+  {
+    "source": "MN",
+    "target": "AL",
+    "value": 20590.09
+  },
+  {
+    "source": "MN",
+    "target": "MS",
+    "value": 20440.72
+  },
+  {
+    "source": "CA",
+    "target": "ID",
+    "value": 20104.72
+  },
+  {
+    "source": "CA",
+    "target": "WI",
+    "value": 20087.99
+  },
+  {
+    "source": "CA",
+    "target": "NY",
+    "value": 19469.16
+  },
+  {
+    "source": "CA",
+    "target": "MA",
+    "value": 18192.87
+  },
+  {
+    "source": "CA",
+    "target": "WV",
+    "value": 17882.87
+  },
+  {
+    "source": "MA",
+    "target": "CA",
+    "value": 17311.05
+  },
+  {
+    "source": "CA",
+    "target": "HI",
+    "value": 16598.85
+  },
+  {
+    "source": "CA",
+    "target": "AK",
+    "value": 16460.49
+  }
+]

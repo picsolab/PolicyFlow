@@ -1,4 +1,5 @@
 let conf = require('../config.js');
+let initialNetworkData = require('../../data/initial_network.json');
 
 let Conditions = Backbone.Model.extend({
     defaults: {
@@ -190,6 +191,30 @@ let DynamicNetworkModel = Backbone.Model.extend({
     },
     populate(conditions) {
         let _self = this;
+
+        // When initial rendering, get the inferred network from static file "initial_network.json"
+        if (conditions === "initial_rendering"){
+            data = initialNetworkData;
+
+            let edgesInIndices = [];
+            if (data.length !== 0) {
+                edgesInIndices = _.map(data, edge => {
+                    return {
+                        "source": conf.pipe.statesToIndices[edge.source],
+                        "target": conf.pipe.statesToIndices[edge.target],
+                        "value": edge.value
+                    };
+                });
+            }
+            _self.set({
+                "edgesInStateIds": data,
+                "edgesInIndices": edgesInIndices
+            }, { silent: true });
+            _self.trigger("change");
+
+            return "initial_network_rendering_done";
+        }
+
         return $.getJSON(_self.url, {
             "method": conditions.get("method"),
             "param": conditions.get("param"),
@@ -197,6 +222,7 @@ let DynamicNetworkModel = Backbone.Model.extend({
             "start_year": conditions.get("startYear"),
             "end_year": conditions.get("endYear")
         }).done(data => {
+            console.log("to grab initial network data: ", data);
             let edgesInIndices = [];
             if (data.length !== 0) {
                 edgesInIndices = _.map(data, edge => {

@@ -91,6 +91,7 @@ function setupRenderingControllers() {
             if (!conditions.hasChanged('param')) {
                 // force loading   
                 policyGroupModel.populate(conditions);
+                console.log("here?");
                 dynamicNetworkModel.populate(conditions);
             }
         }
@@ -232,7 +233,8 @@ function initRendering() {
     policyGroupModel.populate(conditions);
     // policyModel.populate(conditions);
     geoModel.populate(conditions);
-    dynamicNetworkModel.populate(conditions);
+    console.log("here");
+    dynamicNetworkModel.populate("initial_rendering");
     //diffusionModel2.populate(conditions);
 }
 
