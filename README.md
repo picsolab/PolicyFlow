@@ -18,11 +18,10 @@ PolicyFlow is a visual interactive system for exploring the time-evolving patter
 1. **Overview**: provides the underlying policy diffusion network of states as shown in (a) (colored by regions) inferred from the trajectory of policy adoptions
 2. **Context**: helps users explore a context of an interest by adjusting categorical and topical, temporal and geospatial (shown with the resulting network in (c) from multiple filters)
 3. **Structural details**: allows a highlight of specific structural details in the inferred relationships (in (d))
-4. **Assessment**: supports to compare and evaluate the inferred general pattern for multiple policies against actual adoption cases for a policy (
+4. **Assessment**: supports to compare and evaluate the inferred general pattern for multiple policies against actual adoption cases for a policy
 5. **Socio-economic attributes**: allow users to analyze how such state attributes such as total population, minority diversity, citizen ideology, etc may be correlated to the influence of states.
 
-(More detailed introduction can be found in the introductory video via [here]())
-
+(More detailed introduction can be found in the introductory video via [here](https://www.youtube.com/watch?v=28BIgwUZypc))
 
 
 ## Reference
