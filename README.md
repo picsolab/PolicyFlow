@@ -5,12 +5,12 @@ PolicyFlow is a visual interactive system for exploring the time-evolving patter
 
 * 764 state policies spanning over 300 years (1691-2017)
 * Those policies encompass legislations that had a great impact in history, such as medicare, abortion ban or gun control
-* 18,000 policy adoption cases (each adoption case consists of (state, year, policy)) (See the [link](https://dataverse.harvard.edu/dataverse/spid) for details about the dataset)
+* 18,000 policy adoption cases, each of which consists of (state, year, policy) (See the [link](https://dataverse.harvard.edu/dataverse/spid) for details about the dataset)
 
 
 ### What can you do with PolicyFlow?
 <h1 align="center">
-	<img width="80%" src="https://www.dropbox.com/s/36ls7nz2lqlzyb7/policyflow-github-figure.png?raw=1" alt="PolicyFlow">
+	<img src="https://www.dropbox.com/s/36ls7nz2lqlzyb7/policyflow-github-figure.png?raw=1" alt="PolicyFlow">
 	<br>
 </h1>
 *(Left) Initial view of the system, (Right) system highlight
@@ -20,6 +20,8 @@ PolicyFlow is a visual interactive system for exploring the time-evolving patter
 3. **Structural details**: allows a highlight of specific structural details in the inferred relationships (in (d))
 4. **Assessment**: supports to compare and evaluate the inferred general pattern for multiple policies against actual adoption cases for a policy (
 5. **Socio-economic attributes**: allow users to analyze how such state attributes such as total population, minority diversity, citizen ideology, etc may be correlated to the influence of states.
+
+(More detailed introduction can be found in the introductory video via [here]())
 
 ### Reference
 Ahn, Y., & Lin, Y. R. (2020). PolicyFlow: Interpreting Policy Diffusion in Context. ACM Transactions on Interactive Intelligent Systems (TiiS), 10(2), 1-23.
