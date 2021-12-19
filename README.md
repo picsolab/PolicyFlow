@@ -5,7 +5,7 @@ PolicyFlow is a visual interactive system for exploring the time-evolving patter
 
 * 764 state policies spanning over 300 years (1691-2017)
 * Those policies encompass legislations that had a great impact in history, such as medicare, abortion ban or gun control
-* 18,000 policy adoption cases, each of which consists of (state, year, policy) (See the [link](https://dataverse.harvard.edu/dataverse/spid) for details about the dataset)
+* 18,000 policy adoption cases, each of which consists of (state, year, policy) (See the [link](https://dataverse.harvard.edu/dataverse/spid) for latest release and details about the dataset)
 
 
 ## What can you do with PolicyFlow?
