@@ -2,6 +2,7 @@ import subprocess
 from subprocess import Popen, PIPE
 from ..services.helper import rel_path
 from ..models import STATES, get_state_index
+from functools import reduce
 
 
 class Netinf(object):
@@ -29,5 +30,6 @@ class Netinf(object):
         args = [netinf_exe, arg_iters, arg_model, arg_alpha, arg_silent]
         p = Popen(args, stdout=PIPE, stdin=PIPE, stderr=PIPE)
         out, err = p.communicate(input=(self.get_node_def() + cascades).encode())
-        return out.rstrip("\n")
+        print('out: ', out)
+        return out.rstrip(b"\n")
 

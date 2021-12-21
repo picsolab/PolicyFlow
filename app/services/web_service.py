@@ -9,6 +9,7 @@ import numpy as np
 import re
 import scipy.stats as stats
 from operator import itemgetter
+from functools import reduce
 
 from ..services.helper import rel_path
 from .helper import DecimalEncoder
@@ -151,6 +152,7 @@ class PolicyService(BaseService):
     @staticmethod
     def get_annual_adoption_count_list_in_group_specified_by(method, param):
         policies = PolicyService.get_q_policy_group(method, param, 0, 9999).all()
+        
         year_list = list()
         for policy in policies:
             year_list.extend([cascade.adoptedYear for cascade in policy.cascades])
@@ -179,7 +181,7 @@ class PolicyService(BaseService):
     @staticmethod
     @app.route("/api/policies/")
     def get_policies_by_params():
-        global policy_contains_full_text_set
+        #global policy_contains_full_text_set
         method, param, start_year, end_year = PolicyService.parse_args(request.args)
         policies = PolicyService.get_policy_group(method, param, start_year, end_year)
 
@@ -191,7 +193,8 @@ class PolicyService(BaseService):
                 "policy_start": p.policyStart,
                 "policy_end": p.policyEnd,
                 "adoption_count": len(p.cascades),
-                "has_full_text": p.policyId in policy_contains_full_text_set}
+                # "has_full_text": p.policyId in policy_contains_full_text_set
+                }
                 for p in policies]})
 
         return json.dumps({})
@@ -264,7 +267,7 @@ class PolicyService(BaseService):
     def get_annual_adoption_list(method, param):
         output = dict()
         annual_list = PolicyService.get_annual_adoption_count_list_in_group_specified_by(method, param)
-        output["list"] = [{"year": k, "count": v} for k, v in annual_list.iteritems()]
+        output["list"] = [{"year": k, "count": v} for k, v in annual_list.items()]
         return json.dumps(output)
 
 
@@ -408,8 +411,6 @@ class NetworkService(BaseService):
         """get_specified_diffusion2_by policy_id"""
         # return a sample json file
         data_list, stat = NetworkService.get_policy_detail(policy_id)
-        
-        print("data list in: ", data_list)
 
         return json.dumps({"nodes": data_list, "stat": stat}, cls=DecimalEncoder)
 
@@ -549,7 +550,7 @@ def __init__():
     text_similarity_list, cascade_similarity_list = PolicySimilarityService.get_similarity_matrices()
 
     global policy_contains_full_text_set
-    policy_contains_full_text_set = PolicyTextService.get_policy_contain_full_text()
+    #policy_contains_full_text_set = PolicyTextService.get_policy_contain_full_text()
 
 
 __init__()

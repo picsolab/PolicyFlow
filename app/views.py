@@ -8,6 +8,7 @@ cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 @app.route("/")
 @cache.cached(timeout=50)
 def index():
+    print('render...')
     return render_template("index.html")
 
 

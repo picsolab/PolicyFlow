@@ -1,5 +1,6 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
+from functools import reduce
 
 from app import db
 
@@ -140,13 +141,13 @@ class PolicyText(db.Model):
     url3 = db.Column('url_3', db.String(500), index=True)
     url4 = db.Column('url_4', db.String(500), index=True)
     url5 = db.Column('url_5', db.String(500), index=True)
-    fullTextUrl1 = db.Column('full_text_url_1', db.String(500), index=True)
+    #fullTextUrl1 = db.Column('full_text_url_1', db.String(500), index=True)
     text1 = db.Column('text_1', db.String(500), index=True)
     text2 = db.Column('text_2', db.String(500), index=True)
     text3 = db.Column('text_3', db.String(500), index=True)
     text4 = db.Column('text_4', db.String(500), index=True)
     text5 = db.Column('text_5', db.String(500), index=True)
-    fullText1 = db.Column('full_text_1', db.String(2000), index=True)
+    #fullText1 = db.Column('full_text_1', db.String(2000), index=True)
 
     policy = relationship("Policy", back_populates="policyText")
 
@@ -155,7 +156,7 @@ class PolicyText(db.Model):
 
     def serialize(self):
         """serialize policy text"""
-        return [{"url": self.fullTextUrl1, "text": self.fullText1},
+        return [{"url": "google.com", "text": ""},
                 {"url": self.url1, "text": self.text1},
                 {"url": self.url2, "text": self.text2},
                 {"url": self.url3, "text": self.text3},
@@ -194,7 +195,8 @@ class NetinfNetwork:
             < median_timediff > 
             < av_timediff >
             """
-            self.edges = [tuple(x.split("/")) for x in network_text.split("\n")]
+            self.edges = [tuple(x.decode("utf-8").split("/")) for x in network_text.split(b"\n")]
+            print('self.edges: ', self.edges)
             # self.update_range(self.edges)
 
     def update_range(self, edges):
