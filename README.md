@@ -21,9 +21,14 @@ PolicyFlow is a visual interactive system for exploring the time-evolving patter
 4. **Assessment**: supports to compare and evaluate the inferred general pattern for multiple policies against actual adoption cases for a policy
 5. **Socio-economic attributes**: allow users to analyze how such state attributes such as total population, minority diversity, citizen ideology, etc may be correlated to the influence of states.
 
-(More detailed introduction can be found in the introductory video via [here](https://www.youtube.com/watch?v=28BIgwUZypc))
+More detailed introduction can be found in the introductory video: 
 
+[![Video Tutorial](https://img.youtube.com/vi/28BIgwUZypc/hqdefault.jpg)](https://www.youtube.com/watch?v=28BIgwUZypc)
 
+<!-- <a href="http://www.youtube.com/watch?feature=player_embedded&v=28BIgwUZypc" target="_blank">
+ <img src="http://img.youtube.com/vi/28BIgwUZypc/hqdefault.jpg" alt="Watch the video" width="480" border="10" />
+</a>
+ -->
 ## Reference
 Ahn, Y., & Lin, Y. R. (2020). PolicyFlow: Interpreting Policy Diffusion in Context. ACM Transactions on Interactive Intelligent Systems (TiiS), 10(2), 1-23.
 
