@@ -26,7 +26,7 @@ More detailed introduction can be found in the introductory video:
 [![Video Tutorial](https://img.youtube.com/vi/28BIgwUZypc/hqdefault.jpg)](https://www.youtube.com/watch?v=28BIgwUZypc)
 
 <!-- <a href="http://www.youtube.com/watch?feature=player_embedded&v=28BIgwUZypc" target="_blank">
- <img src="http://img.youtube.com/vi/28BIgwUZypc/hqdefault.jpg" alt="Watch the video" width="480" border="10" />
+ <img src="http://img.youtube.com/vi/28BIgwUZypc/hqdefault.jpg" alt="Watch the video" width="80%" border="10" />
 </a>
  -->
 ## Reference
