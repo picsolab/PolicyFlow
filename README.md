@@ -39,8 +39,8 @@ Ahn, Y., & Lin, Y. R. (2020). PolicyFlow: Interpreting Policy Diffusion in Conte
 Clone the repository.
 
 ```shell
-https://github.com/chukunx/diffusion2017vis
-cd diffusion2017vis
+https://github.com/chukunx/policyflow
+cd policyflow
 ```
 
 ### frontend
@@ -122,4 +122,4 @@ The backend is powered by [Flask](http://flask.pocoo.org/). To begin with, make 
 
     Start the server by executing `/server.py`.
 
-Everything should be ready now, check out http://localhost:9001 in your browser.
+Everything should be ready now, check out http://localhost:63001 in your browser.
